@@ -1,0 +1,242 @@
+//prisma/schema.prisma
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider    = "postgresql"
+    url         = env("DATABASE_URL")
+}
+
+// ===================================
+// ENUMS
+// ===================================
+
+enum UserRole {
+  TEACHER       // FIX: Uppercase biar konsisten dengan enum lain
+  SCHOOL_ADMIN
+  SUPER_ADMIN
+}
+
+enum SubscriptionStatus {
+  FREE
+  PAID
+  TRIAL
+}
+
+enum AssessmentStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+
+enum UserStatus {
+  FREE
+  INVITED
+  ACTIVE
+}
+
+enum QuestionType {
+  YES_NO
+  MULTIPLE_CHOICE 
+  SCALE           
+  ESSAY           
+}
+
+enum SubmissionStatus {
+  IN_PROGRESS
+  FINISHED
+}
+
+// ===================================
+// MODELS
+// ===================================
+
+model User {
+  id            String     @id @default(uuid())
+  name          String
+  password_hash String?    // Nullable (aman untuk Google Auth)
+  email         String     @unique
+  role          UserRole
+  status        UserStatus @default(FREE)
+  google_id     String?    @unique
+
+  school_id     String?
+  school        School?    @relation(fields: [school_id], references: [id])
+
+  assessment    Assessment[]
+}
+
+model School {
+  id           String             @id @default(uuid())
+  name         String
+  subscription SubscriptionStatus @default(FREE)
+
+  User         User[]
+  assessment   Assessment[]
+  class        Class[]
+}
+
+model Class {
+  id        String @id @default(uuid())
+  level     String
+  name      String
+
+  school_id String
+  school    School @relation(fields: [school_id], references: [id], onDelete: Cascade)
+
+  student   Student[]
+
+  @@unique([level, name, school_id])
+}
+
+model Student {
+  id       String @id @default(uuid())
+  name     String
+  gender   Gender
+  
+  class_id String
+  class    Class  @relation(fields: [class_id], references: [id])
+
+  // submission Submission[]
+
+  @@index([class_id])
+}
+
+model Assessment {
+  id                String           @id @default(uuid())
+  title             String
+  assessment_status AssessmentStatus @default(DRAFT)
+  description       String?          @db.Text
+  created_at        DateTime         @default(now())
+  expired_at        DateTime?
+
+  user_id           String
+  user              User             @relation(fields: [user_id], references: [id])
+
+  school_id         String
+  school            School           @relation(fields: [school_id], references: [id], onDelete: Cascade)
+
+  questions         Question[]
+  submissions       Submission[]
+}
+
+model Question {
+  id            String       @id @default(uuid())
+  text          String       @db.Text
+  category      String
+  order         Int          @default(1)
+  type          QuestionType @default(MULTIPLE_CHOICE)
+
+  assessment_id String
+  assessment    Assessment   @relation(fields: [assessment_id], references: [id], onDelete: Cascade)
+
+  // FIX: Uncomment ini (Wajib ada karena QuestionOption merujuk kesini)
+  options       QuestionOption[]
+  
+  answer        Answer[]
+}
+
+model QuestionOption {
+  id          String   @id @default(uuid())
+  label       String   @db.Text 
+  score       Int      
+  order       Int      @default(1)
+
+  question_id String
+  question    Question @relation(fields: [question_id], references: [id], onDelete: Cascade)
+
+  // FIX: Tambahkan relasi balik ini agar 'Answer' bisa merujuk ke 'option_id'
+  answers     Answer[] 
+}
+
+model QuestionBank {
+  id          String         @id @default(uuid())
+  title       String         
+  description String?
+  shared      Boolean       @default(false)
+
+  questions   BankQuestion[]
+}
+
+model BankQuestion {
+  id               String       @id @default(uuid())
+  text             String
+  category         String
+  type             QuestionType @default(MULTIPLE_CHOICE)
+  order            Int @default(1)
+
+  question_bank_id String
+  question_bank    QuestionBank @relation(fields: [question_bank_id], references: [id])
+
+  options          BankQuestionOption[]
+}
+
+model BankQuestionOption {
+  id               String       @id @default(uuid())
+  label            String       @db.Text 
+  score            Int      
+
+  bank_question_id String
+  bank_question    BankQuestion @relation(fields: [bank_question_id], references: [id], onDelete: Cascade)
+}
+
+model Answer {
+  id            String   @id @default(uuid())
+  numeric_value Int?
+  text_value    String?  @db.Text
+
+  question_id   String
+  question      Question @relation(fields: [question_id], references: [id], onDelete: Cascade)
+  
+  submission_id String
+  submission    Submission @relation(fields: [submission_id], references: [id], onDelete: Cascade)
+
+  // Opsi yang dipilih (khusus Pilihan Ganda/Skala)
+  option_id     String?    
+  option        QuestionOption? @relation(fields: [option_id], references: [id])
+
+  @@index([question_id])
+  @@index([submission_id])
+}
+
+model Submission {
+  id             String   @id @default(uuid())
+  score          Int      @default(0)
+  status         SubmissionStatus @default(IN_PROGRESS)
+  submitted_at   DateTime?
+
+  //Snashot student data
+  student_name      String
+  class_name        String
+  gender            String
+
+  assessment_id  String
+  assessment     Assessment @relation(fields: [assessment_id], references: [id], onDelete: Cascade)
+
+  // student_id     String?
+  // student        Student? @relation(fields: [student_id], references: [id], onDelete: Cascade)
+
+  answer         Answer[]
+
+  @@index([assessment_id, submitted_at])
+  // @@index([student_id])
+}
+
+// model QuestionOption {
+//     id      String  @id @default(uuid())
+//     label   String  @db.Text
+//     score   Int     
+//     order   Int     @default(1)
+
+//     //child ke Question
+//     question_id     String
+//     question        Question @relation(fields: [question_id], references: [id], onDelete: Cascade)
+// }

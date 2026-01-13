@@ -30,7 +30,7 @@ export default function LoginPage() {
             color="primary" 
             size="lg" 
             variant="shadow"
-            onClick={handleGoogleLogin}
+            onPress={handleGoogleLogin}
             className="w-full font-semibold"
           >
             {/* Kita pakai icon Google sederhana */}

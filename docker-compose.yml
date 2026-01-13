@@ -7,7 +7,7 @@ services:
     container_name: bk-assessment-db
 
     env_file:
-      - ./backend/.env
+      - ./apps/api/.env
     
     restart: always
 

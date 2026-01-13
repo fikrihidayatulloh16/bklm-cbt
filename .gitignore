@@ -1,0 +1,19 @@
+# --- DATABASE & DOCKER ---
+pgdata/
+pgdata_clean/
+postgres_data/
+.env
+
+# --- NODE JS ---
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# --- NESTJS (Backend) ---
+dist/
+
+# --- NEXTJS (Frontend) ---
+.next/
+out/
+build/
+.DS_Store

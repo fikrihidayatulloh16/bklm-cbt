@@ -30,7 +30,7 @@ export default function AssessmentPage() {
   const fetchData = async () => {
     try {
       setIsLoading(true);
-      const response = await api.get('/assessments'); 
+      const response = await api.get('/question-bank'); 
       setAssessments(response.data);
     } catch (error) {
       console.error("Gagal ambil data:", error);

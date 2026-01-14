@@ -50,7 +50,7 @@ export default function CreateQuestionBankPage() {
       
       // 2. Redirect atau Beri Notifikasi
       alert("Bank Soal berhasil dibuat!"); // Nanti ganti Toast
-      router.push('/dashboard/assessments'); // Kembali ke list
+      router.push('/dashboard/question-bank'); // Kembali ke list
       router.refresh();
 
     } catch (error: any) {

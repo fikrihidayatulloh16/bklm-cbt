@@ -20,10 +20,10 @@ export class QuestionBankController {
     };
   }
 
-  // @Get()
-  // findAll() {
-  //   return this.questionBankService.findAll();
-  // }
+  @Get()
+  findAll() {
+    return this.questionBankService.findAll();
+  }
 
   // @Get(':id')
   // findOne(@Param('id') id: string) {

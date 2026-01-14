@@ -42,6 +42,10 @@ export class QuestionBankService {
     }
   }
 
+  async findAll() {
+    return await this.prisma.questionBank.findMany()
+  }
+
   /**
    * if (type == 'MULTIPLE_CHOICE') {
    *  

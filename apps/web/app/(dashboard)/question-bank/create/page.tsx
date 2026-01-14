@@ -47,8 +47,6 @@ export default function CreateQuestionBankPage() {
       // Catatan: Cek lagi di NestJS controller, endpoint-nya '/assessments' atau '/question-banks'? 
       // Jika Anda belum buat endpoint khusus QuestionBank, kita bisa pakai struktur yang ada dulu.
       
-      console.log("Berhasil disimpan:", response.data);
-      
       // 2. Redirect atau Beri Notifikasi
       alert("Bank Soal berhasil dibuat!"); // Nanti ganti Toast
       router.push('/question-bank'); // Kembali ke list

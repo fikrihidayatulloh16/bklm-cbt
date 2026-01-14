@@ -14,7 +14,6 @@ export default function AssessmentCard({ id, title, createdAt }: AssessmentCardP
 
   // Fungsi pindah halaman
   const handlePress = () => {
-    console.log("Navigating to:", `/dashboard/question-bank/${id}`); // Debug log
     router.push(`question-bank/${id}`);
   };
 

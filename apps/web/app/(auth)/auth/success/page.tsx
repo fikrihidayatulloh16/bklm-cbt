@@ -17,7 +17,6 @@ function AuthSuccessContent() {
       // 2. Simpan ke Cookie (PENTING!)
       // Token ini yang nanti dicek oleh Checkpoint 1 & 2
       Cookies.set('token', token, { expires: 1, path: '/' });
-      console.log("Token berhasil ditangkap dan disimpan!");
 
       // 3. Redirect ke Dashboard setelah token aman
       router.push('/dashboard');

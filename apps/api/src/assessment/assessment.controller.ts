@@ -6,7 +6,7 @@ import { CreateAssessmentFromBankDto } from './dto/create/create-assessment-from
 import { AuthGuard } from '@nestjs/passport';
 
 @UseGuards(AuthGuard('jwt'))
-@Controller('assessment')
+@Controller('assessments')
 export class AssessmentController {
   constructor(private readonly assessmentService: AssessmentService) {}
 

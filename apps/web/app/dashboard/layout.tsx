@@ -1,4 +1,5 @@
 import Sidebar from "@/components/layout/Sidebar";
+import TopNavbar from "@/components/layout/TopNavbar"; // Import Navbar Baru
 
 export default function DashboardLayout({
   children,
@@ -6,16 +7,24 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      {/* Sidebar Statis - Dipanggil sekali disini */}
-      <Sidebar />
+    <div className="min-h-screen bg-gray-100">
       
-      {/* Konten Dinamis (Berubah-ubah sesuai Page) */}
-      <main className="ml-64 flex-1 p-8">
-        <div className="bg-white rounded-lg shadow p-6 min-h-full">
+      {/* 1. Sidebar (Hanya muncul di Desktop) */}
+      <Sidebar />
+
+      {/* 2. Wrapper Konten Utama */}
+      {/* md:ml-64 artinya: Di HP margin kiri 0, di Laptop margin kiri 64 (sebesar sidebar) */}
+      <main className="md:ml-64 min-h-screen flex flex-col">
+        
+        {/* 3. Navbar (Selalu muncul di atas) */}
+        <TopNavbar />
+        
+        {/* 4. Konten Halaman (Dashboard/Assessment) */}
+        <div className="p-4 md:p-8">
             {children}
         </div>
       </main>
+
     </div>
   );
 }

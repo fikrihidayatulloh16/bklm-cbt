@@ -13,10 +13,13 @@ export default function Sidebar() {
         <Link href="/dashboard" className="p-3 hover:bg-gray-800 rounded-lg flex gap-3 items-center transition-colors">
             <span>📊</span> Dashboard
         </Link>
-        <Link href="/dashboard/question-bank" className="p-3 hover:bg-gray-800 rounded-lg flex gap-3 items-center transition-colors">
+        <Link href="/assessments" className="p-3 hover:bg-gray-800 rounded-lg flex gap-3 items-center transition-colors">
+            <span>📝</span> Assessment
+        </Link>
+        <Link href="/dquestion-bank" className="p-3 hover:bg-gray-800 rounded-lg flex gap-3 items-center transition-colors">
             <span>📝</span> Bank Soal
         </Link>
-        <Link href="/dashboard/students" className="p-3 hover:bg-gray-800 rounded-lg flex gap-3 items-center transition-colors">
+        <Link href="/students" className="p-3 hover:bg-gray-800 rounded-lg flex gap-3 items-center transition-colors">
             <span>👥</span> Data Siswa
         </Link>
         <Link href="#" className="p-3 hover:bg-gray-800 rounded-lg flex gap-3 items-center transition-colors mt-auto text-red-400">

@@ -17,9 +17,10 @@ export default function TopNavbar() {
   // Menu items untuk tampilan Mobile
   const menuItems = [
     { name: "Dashboard", href: "/dashboard" },
-    { name: "Bank Soal", href: "/dashboard/question-bank" },
-    { name: "Data Siswa", href: "/dashboard/students" },
-    { name: "Nilai & Laporan", href: "/dashboard/reports" },
+    { name: "Assessment", href: "/assessments" },
+    { name: "Bank Soal", href: "/question-bank" },
+    { name: "Data Siswa", href: "/students" },
+    { name: "Nilai & Laporan", href: "/reports" },
   ];
 
   const handleLogout = () => {

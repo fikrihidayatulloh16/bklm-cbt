@@ -79,7 +79,7 @@ export default function AssessmentPage() {
             {/* BUTTON TRIGGERS MODAL */}
             <Button 
               as={NextLink} // Trik NextUI: Rendernya Button, tapi fungsinya Link
-              href="/dashboard/question-bank/create" // Arahkan ke rute baru
+              href="/question-bank/create" // Arahkan ke rute baru
               color="primary" 
               className="font-semibold shadow-md"
               startContent={<Plus size={20} />}

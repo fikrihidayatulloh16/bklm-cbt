@@ -125,9 +125,10 @@ export default function CreateQuestionBankPage() {
                 key={field.id} 
                 index={index} 
                 register={register as any} 
-                control={control} // <--- TAMBAHKAN INI
+                control={control} 
                 errors={errors as any} 
-                remove={remove} 
+                remove={remove}
+                setValue={setValue as any}
               />
             ))}
           </div>

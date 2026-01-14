@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, UseGuards, Req } from '@nestjs/common';
 import { QuestionBankService } from './question-bank.service';
 import { CreateQuestionBankDto } from './dto/create/create-question-bank.dto';
 import { UpdateQuestionBankDto } from './dto/update-question-bank.dto';
@@ -11,8 +11,9 @@ export class QuestionBankController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() createQuestionBankDto: CreateQuestionBankDto) {
-    const result = await this.questionBankService.create(createQuestionBankDto)
+  async create(@Body() dto: CreateQuestionBankDto, @Req() req) {
+    const userId = req.user.id;
+    const result = await this.questionBankService.create(dto, userId)
     return {
       statuscode: HttpStatus.CREATED,
       message: 'QuestionBank Successfully Created',
@@ -21,8 +22,8 @@ export class QuestionBankController {
   }
 
   @Get()
-  findAll() {
-    return this.questionBankService.findAll();
+  findAll(@Req() req) {
+    return this.questionBankService.findAllByAuthor(req.user.id);
   }
 
   // @Get(':id')

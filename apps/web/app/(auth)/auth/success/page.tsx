@@ -1,38 +1,47 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Cookies from 'js-cookie';
 import { Spinner } from "@nextui-org/react";
 
-export default function AuthSuccessPage() {
+function AuthSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    // 1. Ambil token dari URL (?token=...)
+    // 1. Tangkap token dari URL
     const token = searchParams.get('token');
 
     if (token) {
-      // 2. Simpan ke Cookie Browser
-      // Token berlaku 1 hari, path '/' artinya bisa dibaca di semua halaman
+      // 2. Simpan ke Cookie (PENTING!)
+      // Token ini yang nanti dicek oleh Checkpoint 1 & 2
       Cookies.set('token', token, { expires: 1, path: '/' });
+      console.log("Token berhasil ditangkap dan disimpan!");
 
-      // 3. Redirect ke Dashboard (Ganti URL jadi bersih)
-      // Gunakan window.location agar halaman refresh penuh & state terupdate
-      window.location.href = '/dashboard';
+      // 3. Redirect ke Dashboard setelah token aman
+      router.push('/dashboard');
+      router.refresh(); // Pastikan state auth ter-refresh
     } else {
-      // Kalau iseng buka halaman ini tanpa token, balikin ke login
-      router.push('/login');
+      console.error("Token tidak ditemukan di URL");
+      // Opsional: Redirect ke login jika gagal
+      setTimeout(() => router.push('/login'), 2000);
     }
   }, [router, searchParams]);
 
   return (
-    <div className="flex flex-col items-center justify-center h-[300px] gap-4">
+    <div className="flex flex-col items-center justify-center min-h-screen gap-4">
       <Spinner size="lg" color="primary" />
-      <p className="text-gray-600 font-medium animate-pulse">
-        Sedang memverifikasi data login...
-      </p>
+      <p className="text-default-500 font-medium">Sedang memproses login...</p>
     </div>
+  );
+}
+
+// Wajib dibungkus Suspense di Next.js App Router saat pakai useSearchParams
+export default function AuthSuccessPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AuthSuccessContent />
+    </Suspense>
   );
 }

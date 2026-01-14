@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from "react";
+import NextLink from "next/link";
 import {
   Button, Input, Spinner, useDisclosure 
 } from "@nextui-org/react";
@@ -77,7 +78,8 @@ export default function AssessmentPage() {
             />
             {/* BUTTON TRIGGERS MODAL */}
             <Button 
-              onPress={onOpen} 
+              as={NextLink} // Trik NextUI: Rendernya Button, tapi fungsinya Link
+              href="/dashboard/question-bank/create" // Arahkan ke rute baru
               color="primary" 
               className="font-semibold shadow-md"
               startContent={<Plus size={20} />}

@@ -16,4 +16,11 @@ export class QuestionBankRepository {
       },
     });
   }
+
+  async findAllQuestionBankById(id:string) {
+    return await this.prisma.questionBank.findMany({
+      where: { author_id: id },
+      orderBy: { created_at: 'desc' },
+    })
+  }
 }

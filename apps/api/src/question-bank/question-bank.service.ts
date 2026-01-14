@@ -3,19 +3,24 @@ import { CreateQuestionBankDto } from './dto/create/create-question-bank.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateBankQuestionDto } from './dto/create/create-bankquestion.dto';
 import { QuestionBankMapper } from './mapper/question-bank.mapper';
+import { QuestionBankRepository } from './repository/question-bank.repository.ts';
 // import { UpdateQuestionBankDto } from './dto/update-question-bank.dto';
 
 @Injectable()
 export class QuestionBankService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private repo: QuestionBankRepository
+  ) {}
 
-  async create(dto: CreateQuestionBankDto) {
+  async create(dto: CreateQuestionBankDto, userId: string) {
     this.ValidateQuestionLogic(dto.questions);
 
     return await this.prisma.questionBank.create({
       data: {
         title: dto.title,
         description: dto.description,
+        author_id: userId,
         questions: {
           create: QuestionBankMapper.toPrismaCreate(dto.questions),
         },
@@ -42,8 +47,10 @@ export class QuestionBankService {
     }
   }
 
-  async findAll() {
-    return await this.prisma.questionBank.findMany()
+  async findAllByAuthor(author_id) {
+    const questionBanks = await this.repo.findAllQuestionBankById(author_id)
+    
+    return questionBanks
   }
 
   /**

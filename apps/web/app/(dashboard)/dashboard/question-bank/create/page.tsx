@@ -17,6 +17,7 @@ export default function CreateQuestionBankPage() {
   const { 
     control, 
     register, 
+    setValue,
     handleSubmit, 
     formState: { errors } 
   } = useForm({

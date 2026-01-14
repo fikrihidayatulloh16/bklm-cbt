@@ -17,17 +17,22 @@ export default function TopNavbar() {
   // Menu items untuk tampilan Mobile
   const menuItems = [
     { name: "Dashboard", href: "/dashboard" },
-    { name: "Bank Soal", href: "/dashboard/assessments" },
+    { name: "Bank Soal", href: "/dashboard/question-bank" },
     { name: "Data Siswa", href: "/dashboard/students" },
     { name: "Nilai & Laporan", href: "/dashboard/reports" },
   ];
 
   const handleLogout = () => {
-    // 1. Hapus Cookie
-    Cookies.remove("token");
-    // 2. Lempar ke Login
-    router.replace("/login");
-  };
+    // 1. Hapus Cookie dengan opsi yang SAMA persis saat membuatnya
+    // Tanpa { path: '/' }, cookie seringkali gagal dihapus
+    Cookies.remove("token", { path: '/' }); 
+    
+    // 2. Paksa refresh router agar cache Next.js bersih
+    router.refresh(); 
+
+    // 3. Lempar ke Login
+    router.replace("/login");
+  };
 
   return (
     <Navbar 

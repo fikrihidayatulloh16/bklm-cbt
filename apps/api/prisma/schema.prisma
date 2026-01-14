@@ -72,6 +72,7 @@ model User {
   school        School?    @relation(fields: [school_id], references: [id])
 
   assessment    Assessment[]
+  questionBanks QuestionBank[]
 }
 
 model School {
@@ -162,6 +163,12 @@ model QuestionBank {
   title       String         
   description String?
   shared      Boolean       @default(false)
+
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  
+  author_id   String
+  author      User     @relation(fields: [author_id], references: [id])
 
   questions   BankQuestion[]
 }

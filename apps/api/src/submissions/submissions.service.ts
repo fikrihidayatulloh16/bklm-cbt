@@ -10,40 +10,32 @@ import { SubmissionRepository } from './repository/submissions.repositoy';
 export class SubmissionsService {
   constructor(private prisma: PrismaService) {}
 
+  // Pastikan DTO Anda menerima 'class_name' (String), bukan 'class_id'
   async startSubmission(dto: StartSubmissionDTO) {
-  // 1. Cari Nama Kelas dulu (Berdasarkan ID yang dipilih siswa)
-  // Ini satu-satunya koneksi ke "Master Data" sekolah
-  const classData = await this.prisma.class.findUnique({
-    where: { id: dto.class_id }
-  });
+    
+    // TIDAK PERLU: const classData = await this.prisma.class.findUnique... 
+    // Kita percaya data teks yang dikirim dari Frontend
 
-  if (!classData) {
-    throw new Error("Kelas tidak ditemukan"); // Atau NotFoundException
+    const newSubmission = await this.prisma.submission.create({
+      data: {
+        assessment_id: dto.assessment_id,
+        
+        student_name: dto.student_name,
+        gender: dto.gender,
+        
+        // PERUBAHAN DISINI: Ambil langsung dari DTO
+        class_name: dto.class_name, 
+        
+        score: 0
+      }
+    });
+
+    return {
+      submission_id: newSubmission.id,
+      student_name: newSubmission.student_name,
+      class_name: newSubmission.class_name
+    };
   }
-
-  // 2. Langsung Create Submission (Tanpa buat Student dulu)
-  const newSubmission = await this.prisma.submission.create({
-    data: {
-      assessment_id: dto.assessment_id,
-      
-      // Simpan Data Siswa LANGSUNG di sini
-      student_name: dto.student_name,
-      gender: dto.gender,
-      
-      // Simpan Snapshot Nama Kelas
-      class_name: classData.name, 
-      
-      score: 0
-    }
-  });
-
-  // Return data untuk Frontend
-  return {
-    submission_id: newSubmission.id,
-    student_name: newSubmission.student_name,
-    class_name: newSubmission.class_name
-  };
-}
 
   async saveAnswer(submissionId,dto: SaveAnswerDTO) {
       const existing = await this.prisma.answer.findFirst({

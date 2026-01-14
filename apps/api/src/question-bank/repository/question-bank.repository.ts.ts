@@ -16,6 +16,18 @@ export class QuestionBankRepository {
       },
     });
   }
+  
+  async findUniqueQuestionBank(id: string) {
+    return await this.prisma.questionBank.findUnique({
+      where: { id },
+      include: { 
+        questions: { 
+          orderBy: { order: 'desc' },
+          include: { options: true }
+        }
+      }
+    })
+  }
 
   async findAllQuestionBankById(id:string) {
     return await this.prisma.questionBank.findMany({

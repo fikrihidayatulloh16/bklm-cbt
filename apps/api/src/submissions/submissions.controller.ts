@@ -33,14 +33,17 @@ export class SubmissionsController {
   }
 
   @Put(':id/finish')
-  @HttpCode(HttpStatus.CREATED)
+  @HttpCode(HttpStatus.OK) // Ubah jadi OK (200)
   async finish(
-    @Param('id') id: string,
-    @Body() saveAnswer: SaveAnswerDTO) {
-    const result = await this.submissionsService.saveAnswer(id, saveAnswer)
+    @Param('id') id: string
+    // @Body() saveAnswer: SaveAnswerDTO <-- HAPUS INI, finish tidak butuh body
+  ) {
+    // PANGGIL SERVICE FINISH, BUKAN SAVE ANSWER
+    const result = await this.submissionsService.finish(id); 
+    
      return {
-      statuscode: HttpStatus.CREATED,
-      message: 'Answer updated Successfully',
+      statuscode: HttpStatus.OK,
+      message: 'Exam finished successfully',
       data: result
      }
   }

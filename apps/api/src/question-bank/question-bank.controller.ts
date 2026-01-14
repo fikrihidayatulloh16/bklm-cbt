@@ -26,6 +26,11 @@ export class QuestionBankController {
     return this.questionBankService.findAllByAuthor(req.user.id);
   }
 
+ @Get(':id') // Endpoint: /question-banks/123-abc
+    findOne(@Param('id') id: string) {
+  return this.questionBankService.findOne(id);
+}
+
   // @Get(':id')
   // findOne(@Param('id') id: string) {
   //   return this.questionBankService.findOne(+id);

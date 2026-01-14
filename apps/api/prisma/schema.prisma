@@ -122,8 +122,8 @@ model Assessment {
   user_id           String
   user              User             @relation(fields: [user_id], references: [id])
 
-  school_id         String
-  school            School           @relation(fields: [school_id], references: [id], onDelete: Cascade)
+  school_id         String?
+  school            School?           @relation(fields: [school_id], references: [id], onDelete: Cascade)
 
   questions         Question[]
   submissions       Submission[]

@@ -25,8 +25,9 @@ export class AssessmentController {
 
   @Post('from-bank') // URL: POST /assessment/from-bank
   @HttpCode(HttpStatus.CREATED)
-  async createFromBank (@Body() createAssessmentFromBankDto: CreateAssessmentFromBankDto) {
-    return await this.assessmentService.createFromBank(createAssessmentFromBankDto)
+  async createFromBank (@Body() createAssessmentFromBankDto: CreateAssessmentFromBankDto, @Req() req) {
+    const userId = req.user.id;
+    return await this.assessmentService.createFromBank(createAssessmentFromBankDto, userId)
   }
 
   @Get(':id/results') // URL: /assessment/123-abc/results
@@ -37,6 +38,11 @@ export class AssessmentController {
   @Get()
   findAll() {
     return this.assessmentService.findAll();
+  }
+
+  @Get(':id') // Endpoint: GET /assessments/uuid-disini
+  async findOne(@Param('id') id: string) {
+    return this.assessmentService.findOne(id);
   }
 
   // @Get()

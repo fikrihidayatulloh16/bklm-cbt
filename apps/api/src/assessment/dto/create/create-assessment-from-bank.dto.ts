@@ -20,11 +20,6 @@ export class CreateAssessmentFromBankDto {
 
     @IsString()
     @IsUUID()
-    @IsNotEmpty()
-    user_id: string;
-
-    @IsString()
-    @IsUUID()
-    @IsNotEmpty()
+    @IsOptional()
     school_id: string;
 }

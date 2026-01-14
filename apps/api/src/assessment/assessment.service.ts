@@ -27,7 +27,7 @@ export class AssessmentService {
     });
   }
 
-  async createFromBank(dto: CreateAssessmentFromBankDto) {
+  async createFromBank(dto: CreateAssessmentFromBankDto, user_id) {
     const sourceBank = await this.questionBankRepo.findCompleteBank(dto.question_bank_id);
 
     if (!sourceBank) {
@@ -41,7 +41,7 @@ export class AssessmentService {
         title: dto.title,
         description: dto.description,
         school_id: dto.school_id,
-        user_id: dto.user_id,
+        user_id: user_id,
         questions: {
           create: questionForNewAssessment
         }
@@ -82,6 +82,55 @@ export class AssessmentService {
       }
     })
   }
+
+  async findOne(id: string) {
+    const assessment = await this.prisma.assessment.findUnique({
+      where: { id },
+      include: {
+        // Kita include _count untuk mendapatkan jumlah relasi tanpa mengambil datanya
+        _count: {
+          select: {
+            questions: true,   // Menghitung jumlah soal
+            submissions: true  // Menghitung jumlah siswa yang sudah submit
+          }
+        }
+      }
+    });
+
+    if (!assessment) {
+      // Opsional: Throw error di sini atau di controller jika tidak ketemu
+      // return null; 
+      throw new NotFoundException(`Assessment dengan ID ${id} tidak ditemukan`);
+    }
+
+    return assessment;
+  }
+
+  async findForExam(id: string) {
+    const assessment = await this.prisma.assessment.findUnique({
+      where: { id },
+      include: {
+        // PERBAIKAN: Ganti 'question_bank' menjadi 'questionBank'
+
+            questions: {
+              orderBy: { order: 'asc' },
+              include: {
+                options: {
+                  select: {
+                    id: true,
+                    label: true
+                    // score: false (Jangan diambil)
+                  }
+                }
+              }
+            }
+      }
+    })
+
+      if (!assessment) throw new NotFoundException(`Ujian tidak ditemukan`);
+      return assessment;
+
+    }
 
   // findAll() {
   //   return `This action returns all assessment`;

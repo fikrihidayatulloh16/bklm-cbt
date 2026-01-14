@@ -53,6 +53,12 @@ export class QuestionBankService {
     return questionBanks
   }
 
+  findOne(questionBank_id) {
+    const bankquestion = this.repo.findUniqueQuestionBank(questionBank_id)
+
+    return bankquestion
+  }
+
   /**
    * if (type == 'MULTIPLE_CHOICE') {
    *  

@@ -16,7 +16,7 @@ export default function Sidebar() {
         <Link href="/assessments" className="p-3 hover:bg-gray-800 rounded-lg flex gap-3 items-center transition-colors">
             <span>📝</span> Assessment
         </Link>
-        <Link href="/dquestion-bank" className="p-3 hover:bg-gray-800 rounded-lg flex gap-3 items-center transition-colors">
+        <Link href="/question-bank" className="p-3 hover:bg-gray-800 rounded-lg flex gap-3 items-center transition-colors">
             <span>📝</span> Bank Soal
         </Link>
         <Link href="/students" className="p-3 hover:bg-gray-800 rounded-lg flex gap-3 items-center transition-colors">

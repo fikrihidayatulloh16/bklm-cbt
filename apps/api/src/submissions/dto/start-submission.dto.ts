@@ -8,16 +8,12 @@ export class StartSubmissionDTO {
     assessment_id: string;
 
     @IsString()
-    @IsUUID()
-    class_id: string;
+    @IsNotEmpty()
+    class_name: string;
 
     @IsNotEmpty()
     @IsString()
     student_name: string;
-
-    @IsNotEmpty()
-    @IsString()
-    class_name: String;
 
     @IsEnum(Gender)
     gender: Gender;

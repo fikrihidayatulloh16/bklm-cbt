@@ -23,13 +23,15 @@ export class AuthController {
   async googleAuthRedirect(@Req() req, @Res() res: Response) {
     const jwtData = await this.authService.validateOAuthLogin(req.user);
 
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+
     // DULU: return res.json(...) -> Cuma tampil teks di layar hitam
     
     // SEKARANG: Redirect ke Frontend membawa Token
     // Kita arahkan ke halaman khusus di frontend untuk menangkap token
     // Frontend URL = http://localhost:3001
     return res.redirect(
-      `http://localhost:3001/auth/success?token=${jwtData.access_token}`
+      `${frontendUrl}/auth/success?token=${jwtData.access_token}`
     );
   }
 }

@@ -5,7 +5,11 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.enableCors({
-    origin: 'http://localhost:3001', // Hanya izinkan Frontend kita
+    origin: [
+      'http://localhost:3001', 
+      process.env.FRONTEND_URL, // Ini akan baca dari .env server (https://app1.mfh.web.id)
+      'https://app1.mfh.web.id'
+    ], // Hanya izinkan Frontend kita
     credentials: true, // Izinkan kirim cookie/header auth
   });
 

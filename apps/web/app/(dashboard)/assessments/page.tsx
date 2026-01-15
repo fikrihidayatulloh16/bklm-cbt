@@ -62,7 +62,7 @@ export default function AssessmentPage() {
   // Fetch Bank Options
   const fetchBankOptions = async () => {
     try {
-      const res = await api.get('/question-banks');
+      const res = await api.get('/question-bank');
       // Defensive check
       const bankArray = Array.isArray(res.data) ? res.data : (res.data.data || []);
       setBankOptions(bankArray);

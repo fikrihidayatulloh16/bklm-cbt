@@ -3,7 +3,7 @@ import Cookies from 'js-cookie';
 
 // 1. Buat Instance Axios
 const api = axios.create({
-  baseURL: 'http://localhost:3000', // Alamat Backend
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000', // Alamat Backend
   headers: {
     'Content-Type': 'application/json',
   },

@@ -7,9 +7,12 @@ export default function LoginPage() {
   
   // Fungsi untuk memanggil endpoint Login Google di Backend
   const handleGoogleLogin = () => {
-    // Arahkan browser langsung ke URL Backend NestJS
-    // Pastikan port 3000 (Backend) bukan 3001 (Frontend)
-    window.location.href = "http://localhost:3000/auth/google";
+    // GUNAKAN process.env.NEXT_PUBLIC_API_URL
+    // Ini akan otomatis berubah jadi https://api-app1... saat di server
+    // dan tetap localhost saat di laptop.
+    
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+    window.location.href = `${apiUrl}/auth/google`;
   };
 
   return (

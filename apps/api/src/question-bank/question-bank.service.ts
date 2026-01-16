@@ -9,23 +9,13 @@ import { QuestionBankRepository } from './repository/question-bank.repository.ts
 @Injectable()
 export class QuestionBankService {
   constructor(
-    private prisma: PrismaService,
     private repo: QuestionBankRepository
   ) {}
 
-  async create(dto: CreateQuestionBankDto, userId: string) {
+  async createQuestionBank(dto: CreateQuestionBankDto, userId: string) {
     this.ValidateQuestionLogic(dto.questions);
 
-    return await this.prisma.questionBank.create({
-      data: {
-        title: dto.title,
-        description: dto.description,
-        author_id: userId,
-        questions: {
-          create: QuestionBankMapper.toPrismaCreate(dto.questions),
-        },
-      },
-    });
+    return await this.repo.createQuestionBank(dto, userId)
   }
 
   private ValidateQuestionLogic(questions: CreateBankQuestionDto[]) {

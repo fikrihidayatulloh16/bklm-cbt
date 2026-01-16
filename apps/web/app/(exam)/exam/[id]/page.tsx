@@ -114,7 +114,7 @@ export default function ExamPage() {
 
     setIsStarting(true);
     try {
-        const res = await api.post('/submissions/start', {
+        const res = await api.post(`/submissions/${params.id}/start`, {
             assessment_id: params.id,
             student_name: studentName,
             gender: gender,

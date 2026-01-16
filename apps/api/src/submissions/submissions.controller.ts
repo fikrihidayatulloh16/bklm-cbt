@@ -3,15 +3,19 @@ import { SubmissionsService } from './submissions.service';
 // import { CreateSubmissionDto } from './dto/create-submission.dto';
 import { SaveAnswerDTO } from './dto/save-answers,dto';
 import { StartSubmissionDTO } from './dto/start-submission.dto';
+import { Assessment } from 'src/common/decorators/assessment.decorator'
 
 @Controller('submissions')
 export class SubmissionsController {
   constructor(private readonly submissionsService: SubmissionsService) {}
 
-  @Post('start')
+  @Post(':assessment_id/start')
   @HttpCode(HttpStatus.CREATED)
-  async startSubmission(@Body() startSubmission: StartSubmissionDTO) {
-    const result = await this.submissionsService.startSubmission(startSubmission)
+  async startSubmission(
+    @Body() startSubmission: StartSubmissionDTO,
+    @Param('assessment_id') assessment_id: string,
+  ) {    
+    const result = await this.submissionsService.startSubmission(startSubmission, assessment_id)
      return {
       statuscode: HttpStatus.CREATED,
       message: 'Submission successfully initiated',

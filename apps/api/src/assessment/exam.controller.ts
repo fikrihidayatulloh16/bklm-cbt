@@ -7,7 +7,7 @@ export class ExamController {
 
   @Get(':id') // GET /exam/uuid-ujian
   async getExamQuestions(@Param('id') id: string) {
-    return this.assessmentsService.findForExam(id);
+    return this.assessmentsService.findOneAssessmentForExam(id);
   }
   
   // Nanti kita tambah endpoint submit di sini juga

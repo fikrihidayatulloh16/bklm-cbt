@@ -3,6 +3,7 @@ import { AssessmentService } from './assessment.service';
 import { CreateAssessmentDto } from './dto/create/create-assessment.dto';
 import { UpdateAssessmentDto } from './dto/update-assessment.dto';
 import { CreateAssessmentFromBankDto } from './dto/create/create-assessment-from-bank.dto';
+import { User } from 'src/common/decorators/user.decorator';
 import { AuthGuard } from '@nestjs/passport';
 
 @UseGuards(AuthGuard('jwt'))
@@ -12,9 +13,12 @@ export class AssessmentController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() createAssessmentDto: CreateAssessmentDto, @Req() req) {
-    console.log('User yang login:', req.user);
-    const result = await this.assessmentService.create(createAssessmentDto);
+  async create(
+    @Body() createAssessmentDto: CreateAssessmentDto,
+    @User('id') user_id: string
+  ) {
+    
+    const result = await this.assessmentService.create(createAssessmentDto, user_id);
 
     return {
       statusCode: HttpStatus.CREATED,
@@ -25,9 +29,11 @@ export class AssessmentController {
 
   @Post('from-bank') // URL: POST /assessment/from-bank
   @HttpCode(HttpStatus.CREATED)
-  async createFromBank (@Body() createAssessmentFromBankDto: CreateAssessmentFromBankDto, @Req() req) {
-    const userId = req.user.id;
-    return await this.assessmentService.createFromBank(createAssessmentFromBankDto, userId)
+  async createFromBank (
+    @Body() createAssessmentFromBankDto: CreateAssessmentFromBankDto, 
+    @User('id') user_id: string
+  ) {
+    return await this.assessmentService.createFromBank(createAssessmentFromBankDto, user_id)
   }
 
   @Get(':id/results') // URL: /assessment/123-abc/results
@@ -42,7 +48,7 @@ export class AssessmentController {
 
   @Get(':id') // Endpoint: GET /assessments/uuid-disini
   async findOne(@Param('id') id: string) {
-    return this.assessmentService.findOne(id);
+    return this.assessmentService.findOneAssessmentWithDetail(id);
   }
 
   // @Get()

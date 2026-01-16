@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus
 import { QuestionBankService } from './question-bank.service';
 import { CreateQuestionBankDto } from './dto/create/create-question-bank.dto';
 import { UpdateQuestionBankDto } from './dto/update-question-bank.dto';
+import { User } from 'src/common/decorators/user.decorator';
 import { AuthGuard } from '@nestjs/passport';
 
 @UseGuards(AuthGuard('jwt'))
@@ -11,9 +12,11 @@ export class QuestionBankController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() dto: CreateQuestionBankDto, @Req() req) {
-    const userId = req.user.id;
-    const result = await this.questionBankService.create(dto, userId)
+  async create(
+    @Body() dto: CreateQuestionBankDto,
+    @User('id') user_id: string
+) {
+    const result = await this.questionBankService.createQuestionBank(dto, user_id)
     return {
       statuscode: HttpStatus.CREATED,
       message: 'QuestionBank Successfully Created',
@@ -22,8 +25,8 @@ export class QuestionBankController {
   }
 
   @Get()
-  findAll(@Req() req) {
-    return this.questionBankService.findAllByAuthor(req.user.id);
+  findAll(@User('id') user_id: string) {
+    return this.questionBankService.findAllByAuthor(user_id);
   }
 
  @Get(':id') // Endpoint: /question-banks/123-abc

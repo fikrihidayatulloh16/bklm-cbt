@@ -2,10 +2,10 @@ import { Gender } from "@prisma/client";
 import { IsEnum, IsNotEmpty, IsString, IsUUID } from "class-validator"
 
 export class StartSubmissionDTO {
-    @IsNotEmpty()
-    @IsString()
-    @IsUUID()
-    assessment_id: string;
+    // @IsNotEmpty()
+    // @IsString()
+    // @IsUUID()
+    // assessment_id: string;
 
     @IsString()
     @IsNotEmpty()

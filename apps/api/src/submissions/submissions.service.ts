@@ -12,6 +12,7 @@ import { QuestionRepository } from './repository/question.repository';
 @Injectable()
 export class SubmissionsService {
   constructor(
+    private prisma: PrismaService,
     private submissionRepo: SubmissionRepository,
     private assessmentrepo: AssessmentRepository,
     private answerRepo: AnswerRepository,
@@ -37,20 +38,13 @@ export class SubmissionsService {
   }
 
   async saveAnswer(submissionId: string, dto: SaveAnswerDTO) {
-      // const existing = await this.answerRepo.findAnswerBySubmissionIdNQuestionId(submissionId, dto.question_id);
+      const existing = await this.answerRepo.findAnswerBySubmissionIdNQuestionId(submissionId, dto.question_id);
 
-      // if (existing) {
-      //   return await this.answerRepo.updateAnswer(existing.id, dto.option_id, dto.text_value)
-      // } else  {
-      //   return await this.prisma.answer.create({
-      //     data: {
-      //       submission_id: submissionId,
-      //       question_id: dto.question_id,
-      //       option_id: dto.option_id,
-      //       text_value: dto.text_value,
-      //     }
-      //   })
-      // }
+      if (existing) {
+        return await this.answerRepo.updateAnswer(existing.id, dto.option_id, dto.text_value)
+      } else  {
+        return await this.answerRepo.createAnswer(submissionId, dto.question_id, dto.option_id, dto.text_value)
+      }
     }
 
     async finish(submissionId: string) {

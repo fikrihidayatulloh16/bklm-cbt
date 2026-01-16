@@ -16,7 +16,16 @@ export class AnswerRepository {
         })
     }
 
-    async createAnswer() {}
+    async createAnswer(submissionId, question_id, option_id, text_value) {
+        return await this.prisma.answer.create({
+          data: {
+            submission_id: submissionId,
+            question_id: question_id,
+            option_id: option_id,
+            text_value: text_value,
+          }
+        })
+    }
 
     async updateAnswer(existing_id, option_id, text_value) {
         return await this.prisma.answer.update({

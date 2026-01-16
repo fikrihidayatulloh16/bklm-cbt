@@ -43,7 +43,7 @@ export class SubmissionsController {
     // @Body() saveAnswer: SaveAnswerDTO <-- HAPUS INI, finish tidak butuh body
   ) {
     // PANGGIL SERVICE FINISH, BUKAN SAVE ANSWER
-    const result = await this.submissionsService.finish(id); 
+    const result = await this.submissionsService.finish(id);
     
      return {
       statuscode: HttpStatus.OK,

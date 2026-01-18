@@ -117,7 +117,8 @@ model Assessment {
   assessment_status AssessmentStatus @default(DRAFT)
   description       String?          @db.Text
   created_at        DateTime         @default(now())
-  expired_at        DateTime?
+  expired_at        DateTime?        
+  duration          Int              @default(0)
 
   user_id           String
   user              User             @relation(fields: [user_id], references: [id])
@@ -218,6 +219,7 @@ model Submission {
   id             String   @id @default(uuid())
   score          Int      @default(0)
   status         SubmissionStatus @default(IN_PROGRESS)
+  started_at     DateTime @default(now())
   submitted_at   DateTime?
 
   //Snashot student data

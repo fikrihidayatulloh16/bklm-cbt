@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateAssessmentDto } from './dto/create/create-assessment.dto';
 import { CreateAssessmentFromBankDto } from './dto/create/create-assessment-from-bank.dto';
 import { QuestionBankRepository } from 'src/question-bank/repository/question-bank.repository.ts';
@@ -12,10 +12,10 @@ export class AssessmentService {
     private assessmentRepo: AssessmentRepository,
   ) {}
 
-  async create(dto: CreateAssessmentDto, user_id) {
-    // Simpan data Assessment beserta relasi Question & Option secara bersamaan
-    return await this.assessmentRepo.createOneAssessment(dto, user_id);
-  }
+  // async create(dto: CreateAssessmentDto, user_id) {
+  //   // Simpan data Assessment beserta relasi Question & Option secara bersamaan
+  //   return await this.assessmentRepo.createOneAssessment(dto, user_id);
+  // }
 
   async createFromBank(dto: CreateAssessmentFromBankDto, user_id) {
     const sourceBank = await this.questionBankRepo.findCompleteBank(dto.question_bank_id);
@@ -26,8 +26,22 @@ export class AssessmentService {
 
     const questionForNewAssessment = AssessmentMapper.mapFromBankQuestions(sourceBank.questions)
 
+    dto.duration = dto.duration * 60000
+
     return await this.assessmentRepo.createAssessmentFromBank(dto, questionForNewAssessment, user_id);
   }
+
+  async publishAssessment(assessment_id: string) {
+      const assessment = await this.assessmentRepo.findOneAssessmentForExam(assessment_id)
+  
+      if (!assessment) throw new NotFoundException("Ujian tidak ditemukan");
+      if (!assessment.duration) throw new BadRequestException("Durasi ujian belum diatur");
+  
+      const now = new Date();
+      const globalDeadLine = new Date(now.getTime() + assessment.duration)
+  
+      return this.assessmentRepo.updateDeadlineAssessment(assessment_id, globalDeadLine)
+    }
 
   async findAssessmentResults(assessmentId: string) {
     return await this.assessmentRepo.findAssessmentResults(assessmentId);

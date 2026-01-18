@@ -9,21 +9,31 @@ import { connect } from "http2";
 export class AssessmentRepository {
     constructor(private prisma: PrismaService) {}
 
-    async createOneAssessment(dto: CreateAssessmentDto, user_id) {
-        return await this.prisma.assessment.create({
+    async updateDeadlineAssessment(assessment_id: string, globalDeadLine) {
+        return await this.prisma.assessment.update({
+            where: { id: assessment_id },
             data: {
-                title: dto.title,
-                description: dto.description,
-                expired_at: dto.expired_at,
-
-                // Relasi ke User (Penulis Soal)
-                school: { connect: {id: dto.school_id}},
-
-                // Relasi ke User (Penulis Soal)
-                user: { connect: {id: user_id} },
-            },
-        });
+                assessment_status: 'PUBLISHED',
+                expired_at: globalDeadLine
+            }
+        })
     }
+
+    // async createOneAssessment(dto: CreateAssessmentDto, user_id) {
+    //     return await this.prisma.assessment.create({
+    //         data: {
+    //             title: dto.title,
+    //             description: dto.description,
+    //             duration: dto.duration,
+
+    //             // Relasi ke User (Penulis Soal)
+    //             school: { connect: {id: dto.school_id}},
+
+    //             // Relasi ke User (Penulis Soal)
+    //             user: { connect: {id: user_id} },
+    //         },
+    //     });
+    // }
 
     async createAssessmentFromBank(
         dto: CreateAssessmentFromBankDto,
@@ -35,6 +45,7 @@ export class AssessmentRepository {
         data: {
             title: dto.title,
             description: dto.description,
+            duration: dto.duration,
             
             // Relasi ke User (Penulis Soal)
             user: {
@@ -107,7 +118,7 @@ export class AssessmentRepository {
 
     async findOneAssessmentById(id: string) {
         return await this.prisma.assessment.findUnique({
-            where: { id },
+            where: { id }
         });
     }
 

@@ -7,7 +7,7 @@ import {
   Tabs, Tab, Table, TableHeader, TableColumn, TableBody, TableRow, TableCell,
   Snippet, User
 } from "@nextui-org/react";
-import { ArrowLeft, Clock, Users, BarChart3 } from "lucide-react";
+import { ArrowLeft, Clock, Users, BarChart3, Plus } from "lucide-react";
 import api from "@/lib/api";
 
 // --- 1. UPDATE INTERFACE (Sesuai Backend Service Anda) ---
@@ -104,11 +104,20 @@ export default function AssessmentDetailPage() {
             </div>
             
             {/* LINK SHARE SECTION */}
-            <div className="hidden md:block">
+            <div className="=md:block md:items-center gap-4">
                  <Snippet symbol="#" color="primary" variant="flat" codeString={examLink}>
                     Link Ujian
                  </Snippet>
             </div>
+
+            <Button 
+          //onPress={handleOpenModal}
+          color="primary" 
+          className="font-semibold shadow-md"
+          startContent={<Plus size={20} />}
+        >
+          Publish Assessment
+        </Button>
         </div>
       </div>
 
@@ -121,7 +130,7 @@ export default function AssessmentDetailPage() {
                 <div className="p-3 bg-primary-100 text-primary rounded-lg"><Clock size={24} /></div>
                 <div>
                     <p className="text-tiny text-default-500 uppercase font-bold">Durasi</p>
-                    <h4 className="font-bold text-large">{data.duration || 60} Menit</h4>
+                    <h4 className="font-bold text-large">{data.duration / 60000} Menit</h4>
                 </div>
             </CardBody>
         </Card>

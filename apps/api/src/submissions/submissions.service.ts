@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateSubmissionDto } from './dto/create-submission.dto';
 import { UpdateSubmissionDto } from './dto/update-submission.dto';
 import { StartSubmissionDTO } from './dto/start-submission.dto';
@@ -22,10 +22,23 @@ export class SubmissionsService {
   // Pastikan DTO Anda menerima 'class_name' (String), bukan 'class_id'
   async startSubmission(dto: StartSubmissionDTO, assessment_id: string) {
     
-    const findAssessmentById = this.assessmentrepo.findOneAssessmentById(assessment_id)
+    const assessment = await this.assessmentrepo.findOneAssessmentById(assessment_id)
     
-    if(!findAssessmentById) {
+    // Memeriksa apakah assessment ada
+    if(!assessment) {
       throw new NotFoundException('Assessment not found!')
+    }
+
+    //Memastikan Bahwa Assessment dibuka atau belum kadaluwarsa
+    if (!assessment.expired_at) {
+      throw new ForbiddenException('Assessment ini Tidak Dibuka, silahkan hubungi Guru yang bersangkutan')
+    }
+
+    const deadLine = assessment.expired_at.getTime()
+    const now = new Date().getTime()
+    
+    if (deadLine < now) {
+       throw new ForbiddenException('Waktu ujian sudah habis! Anda terlambat.');
     }
 
     const newSubmission = await this.submissionRepo.createSubmission(dto, assessment_id);

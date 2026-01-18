@@ -1,4 +1,4 @@
-import { IsDate, IsNotEmpty, IsOptional, IsString, IsUUID } from "class-validator";
+import { IsDate, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID } from "class-validator";
 
 export class CreateAssessmentFromBankDto {
     @IsString()
@@ -9,9 +9,9 @@ export class CreateAssessmentFromBankDto {
     @IsOptional()
     description?: string;
 
-    @IsOptional()
-    @IsDate()
-    expired_at: Date
+    @IsNotEmpty()
+    @IsNumber()
+    duration: number
 
     @IsString()
     @IsNotEmpty()

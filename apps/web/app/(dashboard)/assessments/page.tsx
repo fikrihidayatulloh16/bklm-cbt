@@ -89,12 +89,14 @@ export default function AssessmentPage() {
     setIsSubmitting(true);
     try {
       // Logika Expired/Duration (Sesuai diskusi sebelumnya)
-      const expiredDate = new Date(Date.now() + parseInt(formData.duration) * 60000);
+      const expiredDate = parseInt(formData.duration);
+      console.log('duration=', expiredDate);
+      
 
       await api.post('/assessments/from-bank', {
         title: formData.title,
         description: formData.description,
-        expired_at: expiredDate,
+        duration: expiredDate,
         question_bank_id: formData.bankId 
       });
 

@@ -11,21 +11,21 @@ import { AuthGuard } from '@nestjs/passport';
 export class AssessmentController {
   constructor(private readonly assessmentService: AssessmentService) {}
 
-  @Post()
-  @HttpCode(HttpStatus.CREATED)
-  async create(
-    @Body() createAssessmentDto: CreateAssessmentDto,
-    @User('id') user_id: string
-  ) {
+  // @Post()
+  // @HttpCode(HttpStatus.CREATED)
+  // async create(
+  //   @Body() createAssessmentDto: CreateAssessmentDto,
+  //   @User('id') user_id: string
+  // ) {
     
-    const result = await this.assessmentService.create(createAssessmentDto, user_id);
+  //   const result = await this.assessmentService.create(createAssessmentDto, user_id);
 
-    return {
-      statusCode: HttpStatus.CREATED,
-      message: 'Assessment Created Successfully',
-      data: result,
-    };
-  }
+  //   return {
+  //     statusCode: HttpStatus.CREATED,
+  //     message: 'Assessment Created Successfully',
+  //     data: result,
+  //   };
+  // }
 
   @Post('from-bank') // URL: POST /assessment/from-bank
   @HttpCode(HttpStatus.CREATED)

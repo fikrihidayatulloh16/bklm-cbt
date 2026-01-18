@@ -18,7 +18,7 @@ export default function PublishModal({
   isLoading 
 }: PublishModalProps) {
   return (
-    <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+    <Modal isOpen={isOpen} onOpenChange={onOpenChange} placement="top-center">
       <ModalContent>
         {(onClose) => (
           <>

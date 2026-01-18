@@ -1,9 +1,10 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateAssessmentDto } from './dto/create/create-assessment.dto';
 import { CreateAssessmentFromBankDto } from './dto/create/create-assessment-from-bank.dto';
 import { QuestionBankRepository } from 'src/question-bank/repository/question-bank.repository.ts';
 import { AssessmentMapper } from './mapper/assessment.mapper';
 import { AssessmentRepository } from './repository/assessment.repository';
+import { error } from 'console';
 
 @Injectable()
 export class AssessmentService {
@@ -34,9 +35,16 @@ export class AssessmentService {
   async publishAssessment(assessment_id: string) {
       const assessment = await this.assessmentRepo.findOneAssessmentForExam(assessment_id)
   
+      //validasi keberadaaan ujian
       if (!assessment) throw new NotFoundException("Ujian tidak ditemukan");
+
+      //validai durasi ujian
       if (!assessment.duration) throw new BadRequestException("Durasi ujian belum diatur");
+
+      //validasi publikasi ujian
+      if ( assessment.assessment_status === 'PUBLISHED' ) {throw new ForbiddenException('Assessment sudaah di publish, silahkan tunggu hingga selesai')}
   
+      //Pembuatan created darui durasi
       const now = new Date();
       const globalDeadLine = new Date(now.getTime() + assessment.duration)
   
@@ -48,8 +56,8 @@ export class AssessmentService {
   }
 
   // mengambil semua assessment untuk dashboard
-  async findAll() {
-    return await this.assessmentRepo.findAllAssessment();
+  async findAllAssessmentByIdUser(user_id) {
+    return await this.assessmentRepo.findAllAssessment(user_id);
   }
 
   //mengambil assesment unik dan menghitung jumlah soal dan siswa submit
@@ -71,20 +79,4 @@ export class AssessmentService {
 
       return assessment;
   }
-
-  // findAll() {
-  //   return `This action returns all assessment`;
-  // }
-
-  // findOne(id: number) {
-  //   return `This action returns a #${id} assessment`;
-  // }
-
-  // update(id: number, updateAssessmentDto: UpdateAssessmentDto) {
-  //   return `This action updates a #${id} assessment`;
-  // }
-
-  // remove(id: number) {
-  //   return `This action removes a #${id} assessment`;
-  // }
 }

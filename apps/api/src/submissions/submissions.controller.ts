@@ -23,6 +23,11 @@ export class SubmissionsController {
      }
   }
 
+  @Get(':assessment_id/timeleft')
+  async getTimeLeft(@Param('id') assessment_id: string) {
+    return await this.submissionsService.getTimer(assessment_id)
+  }
+
   @Put(':id/answer')
   @HttpCode(HttpStatus.CREATED)
   async saveAnswer(

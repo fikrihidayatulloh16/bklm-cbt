@@ -70,11 +70,12 @@ export class AssessmentRepository {
         });
     }
 
-    async findAllAssessment() {
+    async findAllAssessment(user_id) {
     return await this.prisma.assessment.findMany({
-      orderBy: {
+        where: {user_id: user_id},
+        orderBy: {
         created_at: 'desc'
-      }
+        }
     })
   }
 

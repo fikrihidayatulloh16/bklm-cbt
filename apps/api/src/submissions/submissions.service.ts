@@ -46,9 +46,43 @@ export class SubmissionsService {
     return {
       submission_id: newSubmission.id,
       student_name: newSubmission.student_name,
-      class_name: newSubmission.class_name
+      class_name: newSubmission.class_name,
+
+      // Kirim 'expired_at' milik Assessment sebagai deadline siswa
+        deadline: assessment.expired_at
     };
   }
+
+  async getTimer(assessmentId: string) {
+    const assessment = await this.assessmentrepo.findOneAssessmentById(assessmentId);
+
+    if (!assessment) {
+      throw new NotFoundException('Assessment tidak ditemukan');
+    }
+
+    // Pastikan ujian sudah di-publish
+    if (!assessment.expired_at) {
+      throw new ForbiddenException('Assessment belum dibuka (DRAFT)');
+    }
+    
+    const now = new Date();
+    const deadline = assessment.expired_at; // Deadline adalah Jam 11:00 (Fixed)
+
+    // RUMUS BENAR: Deadline - Sekarang = Sisa Waktu
+    // Contoh: 11:00 - 10:55 = 5 Menit (300.000 ms)
+    let remainingMs = deadline.getTime() - now.getTime();
+
+    // Jika waktu minus (sudah lewat deadline), set jadi 0
+    if (remainingMs < 0) remainingMs = 0;
+
+    return {
+        // Kirim deadline absolut (Jam 11:00) untuk react-countdown
+        deadline_date: assessment.expired_at, 
+        
+        // Kirim sisa milidetik (opsional, untuk validasi logic)
+        remaining_ms: remainingMs 
+    };
+}
 
   async saveAnswer(submissionId: string, dto: SaveAnswerDTO) {
       const existing = await this.answerRepo.findAnswerBySubmissionIdNQuestionId(submissionId, dto.question_id);

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, UseGuards, Req, Put } from '@nestjs/common';
 import { AssessmentService } from './assessment.service';
 import { CreateAssessmentDto } from './dto/create/create-assessment.dto';
 import { UpdateAssessmentDto } from './dto/update-assessment.dto';
@@ -42,13 +42,20 @@ export class AssessmentController {
   }
 
   @Get()
-  findAll() {
-    return this.assessmentService.findAll();
+  findAll(
+    @User('id') userID: string,
+  ) {
+    return this.assessmentService.findAllAssessmentByIdUser(userID);
   }
 
   @Get(':id') // Endpoint: GET /assessments/uuid-disini
   async findOne(@Param('id') id: string) {
     return this.assessmentService.findOneAssessmentWithDetail(id);
+  }
+
+  @Patch(':id/publish')
+  async publishAssessment(@Param('id') assessmentId: string) {
+    return await this.assessmentService.publishAssessment(assessmentId)
   }
 
   // @Get()

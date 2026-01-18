@@ -1,0 +1,60 @@
+'use client';
+
+import React, { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { 
+  Button, Card, CardBody, Chip, Divider, Spinner, 
+  Tabs, Tab, Table, TableHeader, TableColumn, TableBody, TableRow, TableCell,
+  Snippet, User
+} from "@nextui-org/react";
+import { ArrowLeft, Clock, Users, BarChart3, Plus } from "lucide-react";
+import api from "@/lib/api";
+import { Submission } from "./assessmentDetailTabs";
+import { div } from "framer-motion/client";
+
+interface AssessmentCardContentProps {
+  submissionsLength: number; // Menerima ARRAY submission
+  assessmentDuration: number;      // Menerima ID Assessment (jika butuh)
+}
+
+export default function AssessmentCardContent({submissionsLength, assessmentDuration}: AssessmentCardContentProps) {
+
+    return (
+
+        <div>
+        <Divider className="my-2"/>
+
+      {/* --- STATISTIK RINGKAS (Layout Cards) --- */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card shadow="sm">
+            <CardBody className="flex flex-row items-center gap-4">
+                <div className="p-3 bg-primary-100 text-primary rounded-lg"><Clock size={24} /></div>
+                <div>
+                    <p className="text-tiny text-default-500 uppercase font-bold">Durasi</p>
+                    <h4 className="font-bold text-large">{assessmentDuration / 60000} Menit</h4>
+                </div>
+            </CardBody>
+        </Card>
+        <Card shadow="sm">
+            <CardBody className="flex flex-row items-center gap-4">
+                <div className="p-3 bg-secondary-100 text-secondary rounded-lg"><Users size={24} /></div>
+                <div>
+                    <p className="text-tiny text-default-500 uppercase font-bold">Partisipan</p>
+                    {/* Menggunakan panjang array submissions yang valid */}
+                    <h4 className="font-bold text-large">{submissionsLength} Siswa</h4>
+                </div>
+            </CardBody>
+        </Card>
+        <Card shadow="sm">
+            <CardBody className="flex flex-row items-center gap-4">
+                <div className="p-3 bg-danger-100 text-primary rounded-lg"><Clock size={24} /></div>
+                <div>
+                    <p className="text-tiny text-default-500 uppercase font-bold">Waktu Tersisa</p>
+                    <h4 className="font-bold text-large">{assessmentDuration / 60000} Menit</h4>
+                </div>
+            </CardBody>
+        </Card>
+      </div>
+        </div>
+    )
+}

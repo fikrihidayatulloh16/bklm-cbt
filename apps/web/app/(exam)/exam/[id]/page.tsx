@@ -9,6 +9,8 @@ import {
 } from "@nextui-org/react";
 import { Clock, ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle, User, School } from "lucide-react";
 import api from "@/lib/api";
+import Countdown from 'react-countdown';
+import { countdownRenderer } from '@/components/helper/countDownRenderer'; // Sesuaikan path import
 
 // --- TIPE DATA ---
 interface Option {
@@ -64,6 +66,7 @@ export default function ExamPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({}); // local state untuk UI
   const [timeLeft, setTimeLeft] = useState<number>(0);
+  const [deadLine, setDeadLine] = useState<Date | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   // 1. FETCH DATA UJIAN (Load di awal)
@@ -123,7 +126,16 @@ export default function ExamPage() {
             class_name: className 
         });
 
+        const resultData = res.data.data;
+
+        const deadlineDate = new Date(resultData.deadline);
+
+        console.log('deadline= ', deadlineDate);
+        
+
+
         setSubmissionId(res.data.data.submission_id);
+        setDeadLine(deadlineDate)
         setStep('EXAM');
     } catch (error) {
         // ... error handling
@@ -265,6 +277,7 @@ export default function ExamPage() {
   const currentQuestion = questions[currentStep];
   const progress = (Object.keys(answers).length / questions.length) * 100;
   const isLastQuestion = currentStep === questions.length - 1;
+  console.log("RENDER ULANG - Nilai State deadLine saat ini:", deadLine);
 
   return (
     <div className="max-w-4xl mx-auto w-full p-4 md:p-6 flex flex-col h-screen">
@@ -278,10 +291,26 @@ export default function ExamPage() {
             </div>
         </div>
 
-        <div className={`flex items-center gap-2 px-3 py-2 rounded-lg font-mono font-bold text-lg md:text-xl ${timeLeft < 300 ? "bg-danger-50 text-danger" : "bg-primary-50 text-primary"}`}>
+        <div className="ml-auto"> 
+            
+        {deadLine ? (
+        <Countdown 
+            date={deadLine} 
+            renderer={countdownRenderer} // Panggil helper yang sudah kita buat
+            onComplete={() => {
+                // Logic ketika waktu habis
+                alert("Waktu Habis! Mengirim jawaban...");
+                // handleSubmit(); 
+            }} 
+        />
+        ) : (
+        // Tampilan Loading (Skeleton) saat menunggu API response
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 text-gray-400 font-mono font-bold text-lg md:text-xl animate-pulse">
             <Clock size={20} />
-            {formatTime(timeLeft)}
+            --:--:--
         </div>
+        )}
+    </div>
       </div>
 
       {/* SOAL CARD */}

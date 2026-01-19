@@ -15,7 +15,7 @@ interface Assessment {
   id: string;
   title: string;
   duration: number;
-  status: string;
+  assessment_status: string;
   description?: string;
   _count?: { questions: number };
 }
@@ -49,8 +49,13 @@ export default function AssessmentPage() {
     try {
       setIsLoading(true);
       const res = await api.get('/assessments');
+      console.log(res.data.data);
+      
+      
+      
       // Defensive check: pastikan array
       const dataArray = Array.isArray(res.data) ? res.data : (res.data.data || []);
+      console.log('data array', dataArray);
       setAssessments(dataArray);
     } catch (error) {
       console.error("Gagal load assessment", error);
@@ -92,7 +97,6 @@ export default function AssessmentPage() {
       const expiredDate = parseInt(formData.duration);
       console.log('duration=', expiredDate);
       
-
       await api.post('/assessments/from-bank', {
         title: formData.title,
         description: formData.description,
@@ -169,17 +173,17 @@ export default function AssessmentPage() {
                             {/* Status Chip */}
                             <Chip 
                                 size="sm" 
-                                color={!item.status || item.status === 'DRAFT' ? "warning" : "success"} 
+                                color={!item.assessment_status || item.assessment_status === 'DRAFT' ? "warning" : "success"} 
                                 variant="flat"
                                 startContent={<CheckCircle2 size={12} />}
                             >
-                                {item.status || "ACTIVE"}
+                                {item.assessment_status || "ACTIVE"}
                             </Chip>
                             
                             {/* Duration Badge */}
                             <div className="flex items-center text-xs font-medium text-default-500 bg-default-100 px-2 py-1 rounded-full">
                                 <Clock size={12} className="mr-1" />
-                                <span>{item.duration || 60} Menit</span>
+                                <span>{item.duration /60000 || 60} Menit</span>
                             </div>
                         </div>
                         
@@ -195,6 +199,7 @@ export default function AssessmentPage() {
                             <span className="flex items-center gap-1">
                                 <FileText size={14} />
                                 {item._count?.questions || 0} Soal
+                                
                             </span>
                             <span className="text-primary cursor-pointer hover:underline font-medium">Detail &rarr;</span>
                         </div>

@@ -7,13 +7,13 @@ import { useRouter } from "next/navigation";
 interface AssessmentHeaderProps {
   title: string;
   description: string;
-  status: string;
+  assessment_status: string;
   id: string;
   onPublishClick: () => void; // Fungsi yang dipanggil saat tombol diklik
 }
 
 export default function AssessmentHeader({ 
-  title, description, status, id, onPublishClick 
+  title, description, assessment_status, id, onPublishClick 
 }: AssessmentHeaderProps) {
   const router = useRouter();
   
@@ -21,6 +21,7 @@ export default function AssessmentHeader({
   const examLink = typeof window !== 'undefined' 
     ? `${window.location.origin}/exam/${id}` 
     : '';
+    
 
   return (
     <div className="flex flex-col gap-4 border-b pb-6 border-gray-200">
@@ -40,11 +41,11 @@ export default function AssessmentHeader({
           <h1 className="text-2xl font-bold flex items-center gap-3 text-gray-800">
             {title}
             <Chip 
-              color={status === 'PUBLISHED' ? "success" : "warning"} 
+              color={assessment_status === 'PUBLISHED' ? "success" : "warning"} 
               variant="flat" 
               size="sm"
             >
-              {status || "DRAFT"}
+              {assessment_status || "DRAFT"}
             </Chip>
           </h1>
           <p className="text-gray-500 mt-1">{description}</p>

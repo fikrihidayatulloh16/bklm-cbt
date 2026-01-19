@@ -16,9 +16,10 @@ interface AssessmentDetail {
   id: string;
   title: string;
   description: string;
-  status: string; // pastikan backend kirim 'status' atau 'assessment_status'
-  created_at: string;
-  duration: number
+  assessment_status: string; // pastikan backend kirim 'status' atau 'assessment_status'
+  created_at: Date;
+  expired_at: Date;
+  duration: number;
   submissions: any[];
 }
 
@@ -31,6 +32,7 @@ export default function AssessmentDetailPage() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [deadLine, setDeadLine] = useState<Date | null>(null);
 
   // Hook Modal bawaan NextUI (Sangat praktis!)
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
@@ -40,6 +42,7 @@ export default function AssessmentDetailPage() {
     try {
       const response = await api.get(`/assessments/${id}`);
       setAssessment(response.data);
+      setDeadLine(response.data)
 
       // Backend mengembalikan Object { submissions: [...] }, bukan langsung Array [...]
         const resSubs = await api.get(`/assessments/${id}/results`);
@@ -82,6 +85,9 @@ export default function AssessmentDetailPage() {
   if (isLoading) return <div className="flex h-[50vh] items-center justify-center"><Spinner size="lg" label="Memuat data..." /></div>;
   if (!assessment) return <div className="text-center py-10">Data tidak ditemukan</div>;
 
+  console.log(assessment.assessment_status);
+  
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
 
@@ -90,7 +96,7 @@ export default function AssessmentDetailPage() {
         id={assessment.id}
         title={assessment.title}
         description={assessment.description}
-        status={assessment.status} // Sesuaikan field backend (status / assessment_status)
+        assessment_status={assessment.assessment_status} // Sesuaikan field backend (status / assessment_status)
         onPublishClick={onOpen}    // Trigger buka modal
       />
 
@@ -98,6 +104,7 @@ export default function AssessmentDetailPage() {
       <AssessmentCardContent
         submissionsLength={submissions.length}
         assessmentDuration={assessment.duration}
+        assessmentDeadLine={assessment.expired_at}
       />
       
       {/* table cotnent COMPONENT (Bersih kan?) */}

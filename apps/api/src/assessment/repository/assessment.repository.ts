@@ -73,6 +73,7 @@ export class AssessmentRepository {
     async findAllAssessment(user_id) {
     return await this.prisma.assessment.findMany({
         where: {user_id: user_id},
+        include: { questions: true },
         orderBy: {
         created_at: 'desc'
         }
@@ -105,6 +106,21 @@ export class AssessmentRepository {
     async findOneAssessmentWithDetail(id: string) {
         return await this.prisma.assessment.findUnique({
             where: { id },
+            include: {
+                // Kita include _count untuk mendapatkan jumlah relasi tanpa mengambil datanya
+                _count: {
+                    select: {
+                        questions: true,   // Menghitung jumlah soal
+                        submissions: true  // Menghitung jumlah siswa yang sudah submit
+                    }
+                }
+            }
+        });
+    }
+
+    async countAllAssessmentQuestionsByUserId(user_id: string) {
+        return await this.prisma.assessment.findMany({
+            where: { user_id: user_id },
             include: {
                 // Kita include _count untuk mendapatkan jumlah relasi tanpa mengambil datanya
                 _count: {

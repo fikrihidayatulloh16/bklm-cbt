@@ -11,13 +11,16 @@ import { ArrowLeft, Clock, Users, BarChart3, Plus } from "lucide-react";
 import api from "@/lib/api";
 import { Submission } from "./assessmentDetailTabs";
 import { div } from "framer-motion/client";
+import Countdown from "react-countdown";
+import { countdownRenderer } from "@/components/helper/countDownRenderer";
 
 interface AssessmentCardContentProps {
   submissionsLength: number; // Menerima ARRAY submission
   assessmentDuration: number;      // Menerima ID Assessment (jika butuh)
+  assessmentDeadLine: Date;      // Menerima ID Assessment (jika butuh)
 }
 
-export default function AssessmentCardContent({submissionsLength, assessmentDuration}: AssessmentCardContentProps) {
+export default function AssessmentCardContent({submissionsLength, assessmentDuration, assessmentDeadLine}: AssessmentCardContentProps) {
 
     return (
 
@@ -50,7 +53,18 @@ export default function AssessmentCardContent({submissionsLength, assessmentDura
                 <div className="p-3 bg-danger-100 text-primary rounded-lg"><Clock size={24} /></div>
                 <div>
                     <p className="text-tiny text-default-500 uppercase font-bold">Waktu Tersisa</p>
-                    <h4 className="font-bold text-large">{assessmentDuration / 60000} Menit</h4>
+                    {assessmentDeadLine ? (
+                            <Countdown 
+                                date={assessmentDeadLine} 
+                                renderer={countdownRenderer} // Panggil helper yang sudah kita buat
+                            />
+                            ) : (
+                            // Tampilan Loading (Skeleton) saat menunggu API response
+                            <div className="flex items-center gap-2 px-1 py-2 rounded-lg bg-gray-100 text-dark-400 font-mono font-bold text-lg md:text-md">
+                                
+                                Assessment Tidak di Buka
+                            </div>
+                            )}
                 </div>
             </CardBody>
         </Card>

@@ -73,8 +73,6 @@ export default function ExamPage() {
     try {
         // Panggil API untuk ambil detail submission
         // Pastikan Anda punya endpoint GET /submissions/:id di backend
-        console.log('session', savedId);
-        
         const res = await api.get(`/exam/${savedId}`);
         const data = res.data; // Sesuaikan struktur response backend Anda
 
@@ -164,8 +162,6 @@ export default function ExamPage() {
         alert("Mohon lengkapi Nama dan Kelas!");
         return;
     }
-
-    
 
     setIsStarting(true);
     try {
@@ -333,7 +329,6 @@ export default function ExamPage() {
   const currentQuestion = questions[currentStep];
   const progress = (Object.keys(answers).length / questions.length) * 100;
   const isLastQuestion = currentStep === questions.length - 1;
-  console.log("RENDER ULANG - Nilai State deadLine saat ini:", deadLine);
 
   return (
     <div className="max-w-4xl mx-auto w-full p-4 md:p-6 flex flex-col h-screen">

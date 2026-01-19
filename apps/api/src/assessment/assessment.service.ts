@@ -57,7 +57,7 @@ export class AssessmentService {
 
   // mengambil semua assessment untuk dashboard
   async findAllAssessmentByIdUser(user_id) {
-    return await this.assessmentRepo.findAllAssessment(user_id);
+    return await this.assessmentRepo.countAllAssessmentQuestionsByUserId(user_id);
   }
 
   //mengambil assesment unik dan menghitung jumlah soal dan siswa submit

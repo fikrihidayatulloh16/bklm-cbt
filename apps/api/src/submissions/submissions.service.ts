@@ -44,7 +44,6 @@ export class SubmissionsService {
       }
     }
 
-    
     // Memeriksa apakah assessment ada
     if(!assessment) {
       throw new NotFoundException('Assessment not found!')
@@ -61,10 +60,6 @@ export class SubmissionsService {
     if (deadLine < now) {
        throw new ForbiddenException('Waktu ujian sudah habis! Anda terlambat.');
     }
-
-    
-
-    
 
     const newSubmission = await this.submissionRepo.createSubmission(dto, assessment_id);
 
@@ -117,8 +112,7 @@ export class SubmissionsService {
       const submission = await this.submissionRepo.findSubmissionById(submissionId);
       if (!submission) throw new NotFoundException("Submission tidak ditemukan");
 
-      // VALIDASI WAKTU (PENTING!)
-      // Jika ujian sudah selesai/expired, tolak simpan jawaban
+      //Validasi status submission
       if (submission.status === 'FINISHED') {
           throw new ForbiddenException("Ujian sudah ditutup.");
       }

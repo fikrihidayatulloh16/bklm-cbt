@@ -5,10 +5,14 @@ import { QuestionBankRepository } from 'src/question-bank/repository/question-ba
 import { AssessmentMapper } from './mapper/assessment.mapper';
 import { AssessmentRepository } from './repository/assessment.repository';
 import { error } from 'console';
+import { AnswerRepository } from 'src/submissions/repository/answer.repository';
+import { QuestionRepository } from 'src/submissions/repository/question.repository';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class AssessmentService {
   constructor(
+    private prisma: PrismaService,
     private questionBankRepo: QuestionBankRepository,
     private assessmentRepo: AssessmentRepository,
   ) {}
@@ -50,6 +54,61 @@ export class AssessmentService {
   
       return this.assessmentRepo.updateDeadlineAssessment(assessment_id, globalDeadLine, assessment.assessment_status = 'PUBLISHED')
     }
+
+  async getAnalytics(assessmentId: string) {
+    // menghitung score siswa dari yang tertinggi
+    const studentRanks = await this.assessmentRepo.getStudentRanks(assessmentId);
+
+    // A. HITUNG STATISTIK (Query GroupBy)
+    // Query ini murni matematika, sangat cepat
+    const stats = await this.prisma.answer.groupBy({
+        by: ['question_id'],
+        where: {
+            submission: { assessment_id: assessmentId } // Filter per Ujian
+        },
+        _sum: {
+            numeric_value: true // Ini sekarang sudah AMAN karena sudah kita isi di Langkah 1
+        },
+        _count: {
+            numeric_value: true // Jumlah penjawab
+        },
+        orderBy: {
+            _sum: { numeric_value: 'desc' } // Urutkan dari masalah terbesar
+        }
+    });
+
+    // B. AMBIL TEKS SOAL (Query Tambahan)
+    // Karena groupBy cuma menghasilkan ID, kita perlu ambil detail soalnya
+    
+    // 1. Kumpulkan semua question_id dari hasil stats
+    const questionIds = stats.map(s => s.question_id);
+
+    // 2. Ambil detail soal dari database
+    const questions = await this.prisma.question.findMany({
+        where: { id: { in: questionIds } },
+        select: { id: true, text: true, category: true }
+    });
+
+    // C. GABUNGKAN DATA (Merge)
+    const finalReport = stats.map(stat => {
+        // Cari teks soal yang cocok dengan ID
+        const qDetail = questions.find(q => q.id === stat.question_id);
+
+        return {
+            question_id: stat.question_id,
+            question_text: qDetail?.text || "Soal dihapus",
+            category: qDetail?.category,
+            total_risk_score: stat._sum.numeric_value || 0,
+            respondents: stat._count.numeric_value || 0,
+            average: (stat._sum.numeric_value || 0) / (stat._count.numeric_value || 1)
+        };
+    });
+
+    return {
+        question_analysis: finalReport,
+        studentRanks
+    };
+}
 
   async findAssessmentResults(assessmentId: string) {
     return await this.assessmentRepo.findAssessmentResults(assessmentId);

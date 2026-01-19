@@ -10,6 +10,7 @@ import PublishModal from "@/components/fragments/assessment-id/publishModal";
 import AssessmentHeader from "@/components/fragments/assessment-id/assessment-id-header";
 import AssessmentDetailTabs, { Submission } from "@/components/fragments/assessment-id/assessmentDetailTabs";
 import AssessmentCardContent from "@/components/fragments/assessment-id/assessmentCardContent";
+import AssessmentAnalytics from "@/components/fragments/assessment-id/AssessmentAnalytics";
 
 // ... (Interface Submission dll tetap sama, boleh dipisah ke file types.ts kalau mau lebih rapi) ...
 interface AssessmentDetail {
@@ -71,7 +72,10 @@ export default function AssessmentDetailPage() {
       await api.patch(`/assessments/${id}/publish`); 
       
       // Refresh data agar status berubah jadi PUBLISHED di layar
-      await fetchDetail(); 
+      
+      
+      fetchDetail(); 
+      console.log('sudah direfresh');
       
       onClose(); // Tutup modal
     } catch (error) {
@@ -112,6 +116,20 @@ export default function AssessmentDetailPage() {
         assessmentId={id}
         submissions={submissions}
       />
+
+      <div className="p-6">
+        {/* Header & Detail Ujian yang sudah ada ... */}
+        <div className="mb-8">
+            <h1>{assessment.title}</h1>
+            {/* ... */}
+        </div>
+
+        <hr className="my-8" />
+
+        {/* PANGGIL KOMPONEN ANALYTICS DI SINI */}
+        <AssessmentAnalytics assessmentId={id} />
+        
+      </div>
 
       {/* ISI KONTEN LAIN (Statistik, Tabel, dll - Kode lama Anda) */}
       {/* Card Content */}

@@ -65,7 +65,7 @@ export default function AssessmentHeader({
           </Snippet>
 
           {/* Tombol Publish (Hanya muncul jika masih DRAFT) */}
-          {status !== 'PUBLISHED' && (
+          {assessment_status !== 'PUBLISHED' && (
             <Button 
               onPress={onPublishClick}
               color="primary" 

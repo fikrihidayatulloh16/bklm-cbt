@@ -53,10 +53,16 @@ export class AssessmentController {
     return this.assessmentService.findOneAssessmentWithDetail(id);
   }
 
+  @Get(':id/analytics')
+  async getAnalytics(@Param('id') assessment_id: string) {
+    return this.assessmentService.getAnalytics(assessment_id)
+  }
+
   @Patch(':id/publish')
   async publishAssessment(@Param('id') assessmentId: string) {
     return await this.assessmentService.publishAssessment(assessmentId)
   }
+  
 
   // @Get()
   // findAll() {

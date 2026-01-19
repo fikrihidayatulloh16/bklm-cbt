@@ -118,6 +118,22 @@ export class AssessmentRepository {
         });
     }
 
+    async getStudentRanks(assessment_id: string) {
+        return this.prisma.submission.findMany({
+            where: {
+                assessment_id: assessment_id,
+                status: "FINISHED"
+            },
+            select: {
+                id: true,
+                student_name: true,
+                class_name: true,
+                score: true
+            },
+            orderBy: { score: 'desc' }
+        })
+    }
+
     async countAllAssessmentQuestionsByUserId(user_id: string) {
         return await this.prisma.assessment.findMany({
             where: { user_id: user_id },

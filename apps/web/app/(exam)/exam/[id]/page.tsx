@@ -16,7 +16,7 @@ import { countdownRenderer } from '@/components/helper/countDownRenderer'; // Se
 interface Option {
   id: string;
   label: string;
-  score?: number;
+  numeric_value: number;
 }
 
 interface Question {
@@ -233,6 +233,10 @@ export default function ExamPage() {
         setLoading(false);
     }
   };
+
+
+  console.log(exam);
+  
 
   // FORMAT TIME
   const formatTime = (seconds: number) => {

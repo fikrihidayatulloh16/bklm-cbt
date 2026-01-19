@@ -13,6 +13,7 @@ import { Submission } from "./assessmentDetailTabs";
 import { div } from "framer-motion/client";
 import Countdown from "react-countdown";
 import { countdownRenderer } from "@/components/helper/countDownRenderer";
+import { refresh } from "next/cache";
 
 interface AssessmentCardContentProps {
   submissionsLength: number; // Menerima ARRAY submission
@@ -57,6 +58,10 @@ export default function AssessmentCardContent({submissionsLength, assessmentDura
                             <Countdown 
                                 date={assessmentDeadLine} 
                                 renderer={countdownRenderer} // Panggil helper yang sudah kita buat
+                                // onComplete={() => {
+                                //     // Logic ketika waktu habis
+                                //     window.location.reload(); 
+                                // }} 
                             />
                             ) : (
                             // Tampilan Loading (Skeleton) saat menunggu API response

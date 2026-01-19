@@ -139,6 +139,18 @@ export class SubmissionsService {
           }
       }
 
+      // 2. AMBIL DATA OPSI UNTUK MENDAPATKAN SCORE
+      let scoreToSave = 0; // Default 0 jika essay atau error
+
+      if (dto.option_id) {
+          const selectedOption = await this.questionRepo.findquestionOptionById(dto.option_id, dto.question_id)          
+          
+          // PENTING: Ambil skor dari opsi, simpan ke variabel
+          if (selectedOption) {
+              scoreToSave = selectedOption.score; // Pastikan nama kolom di DB Option 'score' atau 'numeric_value'
+          }
+      }
+
       // 4. SIMPAN JAWABAN (Upsert: Update jika ada, Create jika belum)
       // Cek dulu di DB apakah sudah pernah jawab nomor ini?
       const existingAnswer = await this.answerRepo.findAnswerBySubmissionIdNQuestionId(submissionId, dto.question_id);
@@ -148,7 +160,9 @@ export class SubmissionsService {
           return await this.answerRepo.updateAnswer(
               existingAnswer.id, 
               dto.option_id, 
-              dto.text_value // Kosongkan jika pilgan, isi jika essay
+              dto.text_value,
+              scoreToSave
+               // Kosongkan jika pilgan, isi jika essay
           );
       } else {
           // Buat jawaban baru
@@ -156,7 +170,8 @@ export class SubmissionsService {
               submissionId, 
               dto.question_id, 
               dto.option_id, 
-              dto.text_value
+              dto.text_value,
+              scoreToSave
           );
       }
   }

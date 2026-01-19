@@ -69,6 +69,56 @@ export default function ExamPage() {
   const [deadLine, setDeadLine] = useState<Date | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
+  const checkStatus = async (savedId: string) => {
+    try {
+        // Panggil API untuk ambil detail submission
+        // Pastikan Anda punya endpoint GET /submissions/:id di backend
+        console.log('session', savedId);
+        
+        const res = await api.get(`/exam/${savedId}`);
+        const data = res.data; // Sesuaikan struktur response backend Anda
+
+        // Cek Status
+        if (data.status === 'FINISHED') {
+            // Kalau sudah selesai, hapus dari storage biar tidak nyangkut
+            localStorage.removeItem('active_submission_id');
+            alert("Ujian ini sudah diselesaikan.");
+            return;
+        }
+
+        // Kalau masih IN_PROGRESS, Restore State!
+        setSubmissionId(savedId);
+        
+        // Restore Identitas (jika perlu)
+        setStudentName(data.student_name);
+        setclassName(data.class_name);
+
+        // Restore Timer (PENTING)
+        // Ambil deadline dari assessment terkait
+        if (data.assessment && data.assessment.expired_at) {
+             setDeadLine(new Date(data.assessment.expired_at));
+        }
+
+        // Langsung lompat ke halaman soal
+        setStep('EXAM'); 
+        
+    } catch (error) {
+        console.error("Gagal restore sesi:", error);
+        // Jika error (misal 404), hapus storage agar user bisa login ulang
+        localStorage.removeItem('active_submission_id');
+    }
+};
+
+  // Saat Halaman di-Refresh (useEffect)
+    useEffect(() => {
+    // Cek apakah ada ujian nyangkut?
+    const savedId = localStorage.getItem('active_submission_id');
+    if (savedId) {
+        // Panggil API untuk cek status, kalau masih IN_PROGRESS, langsung masuk mode ujian
+        checkStatus(savedId);
+    }
+    }, [])
+
   // 1. FETCH DATA UJIAN (Load di awal)
   useEffect(() => {
     const fetchExam = async () => {
@@ -115,6 +165,8 @@ export default function ExamPage() {
         return;
     }
 
+    
+
     setIsStarting(true);
     try {
         const res = await api.post(`/submissions/${params.id}/start`, {
@@ -125,6 +177,10 @@ export default function ExamPage() {
             // PERUBAHAN: Kirim string class_name
             class_name: className 
         });
+
+        const subId = res.data.submission_id;
+        localStorage.setItem('active_submission_id', subId);
+        setSubmissionId(subId);
 
         const resultData = res.data.data;
 
@@ -300,7 +356,7 @@ export default function ExamPage() {
             onComplete={() => {
                 // Logic ketika waktu habis
                 alert("Waktu Habis! Mengirim jawaban...");
-                // handleSubmit(); 
+                handleSubmitExam(); 
             }} 
         />
         ) : (

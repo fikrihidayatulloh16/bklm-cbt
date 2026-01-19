@@ -42,13 +42,15 @@ export class SubmissionRepository {
       })
     }
 
-    async findOneSubmissionWithAnswer(submissionId) {
+    async findOneIdSubmissionWithAnswer(submissionId) {
             return await this.prisma.submission.findUnique({
             where: { id: submissionId },
+            
             include: { 
             answer:  {
                 include: { option: true }
-            }
+            },
+            
             }
       })}
 

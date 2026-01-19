@@ -9,11 +9,11 @@ import { connect } from "http2";
 export class AssessmentRepository {
     constructor(private prisma: PrismaService) {}
 
-    async updateDeadlineAssessment(assessment_id: string, globalDeadLine) {
+    async updateDeadlineAssessment(assessment_id: string, globalDeadLine, assessment_status) {
         return await this.prisma.assessment.update({
             where: { id: assessment_id },
             data: {
-                assessment_status: 'PUBLISHED',
+                assessment_status: assessment_status,
                 expired_at: globalDeadLine
             }
         })

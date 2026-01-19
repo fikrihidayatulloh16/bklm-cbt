@@ -10,4 +10,19 @@ export class QuestionRepository {
             where: { assessment_id: assessment_id }
         }) 
     }
+
+    async findUniqueQuestion(question_id) {
+        return await this.prisma.question.findUnique({
+          where: { id: question_id }
+      });
+    }
+
+    async findquestionOptionById(option_id: string, question_id: string) {
+        return await this.prisma.questionOption.findFirst({
+              where: {
+                  id: option_id,
+                  question_id: question_id // Pastikan opsi milik pertanyaan itu
+              }
+          });
+    }
 }

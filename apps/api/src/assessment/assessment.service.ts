@@ -48,7 +48,7 @@ export class AssessmentService {
       const now = new Date();
       const globalDeadLine = new Date(now.getTime() + assessment.duration)
   
-      return this.assessmentRepo.updateDeadlineAssessment(assessment_id, globalDeadLine)
+      return this.assessmentRepo.updateDeadlineAssessment(assessment_id, globalDeadLine, assessment.assessment_status = 'PUBLISHED')
     }
 
   async findAssessmentResults(assessmentId: string) {
@@ -67,6 +67,15 @@ export class AssessmentService {
     if (!assessment) {
       // Opsional: Throw error di sini atau di controller jika tidak ketemu return null;
       throw new NotFoundException(`Assessment dengan ID ${id} tidak ditemukan`);
+    }
+
+    const now = new Date(); // membuat waktu saat ini
+
+    if ( !assessment.expired_at ) { return 'deadline belum dibuat'  }
+
+    // jika hari ini melebih waktu deadline ubah status jadi closed
+    if ( now.getTime() >= assessment.expired_at.getTime() ) {
+        this.assessmentRepo.updateDeadlineAssessment(assessment.id, assessment.expired_at, assessment.assessment_status = 'CLOSED')
     }
 
     return assessment;

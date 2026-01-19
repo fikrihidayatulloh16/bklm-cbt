@@ -115,6 +115,12 @@ export default function AssessmentDetailTabs({ submissions, assessmentId }: Asse
                     <p>Daftar soal akan ditampilkan di sini.</p>
                  </div>
             </Tab>
+
+            <Tab key="download" title="Unduh">
+                 <div className="mt-4 p-8 border border-dashed rounded-lg bg-default-50 text-center text-default-500">
+                    <p>unduh laporan akan di sini.</p>
+                 </div>
+            </Tab>
         </Tabs>
       </div>
 

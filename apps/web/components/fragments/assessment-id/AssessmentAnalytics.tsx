@@ -47,43 +47,6 @@ export default function AssessmentAnalytics({ assessmentId }: { assessmentId: st
 
   return (
     <div className="space-y-8 mt-6">
-      
-      {/* BAGIAN 1: RANKING SISWA (PETA KERAWANAN) */}
-      <div className="bg-white p-6 rounded-lg border shadow-sm">
-        <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-          🚨 Siswa Butuh Perhatian (Top 10)
-        </h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="text-xs text-gray-700 uppercase bg-gray-50">
-              <tr>
-                <th className="px-4 py-3">Rank</th>
-                <th className="px-4 py-3">Nama Siswa</th>
-                <th className="px-4 py-3">Kelas</th>
-                <th className="px-4 py-3 text-right">Skor Kerawanan</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.studentRanks.length > 0 ? (
-                data.studentRanks.map((student, index) => (
-                  <tr key={student.id} className="border-b hover:bg-gray-50">
-                    <td className="px-4 py-3 font-bold text-gray-500">#{index + 1}</td>
-                    <td className="px-4 py-3 font-medium text-gray-900">{student.student_name}</td>
-                    <td className="px-4 py-3 text-gray-600">{student.class_name}</td>
-                    <td className="px-4 py-3 text-right font-bold text-red-600">
-                      {student.score}
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={4} className="text-center py-4 text-gray-400">Belum ada data siswa selesai.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
 
       {/* BAGIAN 2: ANALISIS SOAL (MASALAH UMUM) */}
       <div className="bg-white p-6 rounded-lg border shadow-sm">

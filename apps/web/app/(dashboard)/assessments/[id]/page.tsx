@@ -117,19 +117,9 @@ export default function AssessmentDetailPage() {
         submissions={submissions}
       />
 
-      <div className="p-6">
-        {/* Header & Detail Ujian yang sudah ada ... */}
-        <div className="mb-8">
-            <h1>{assessment.title}</h1>
-            {/* ... */}
-        </div>
-
-        <hr className="my-8" />
-
         {/* PANGGIL KOMPONEN ANALYTICS DI SINI */}
         <AssessmentAnalytics assessmentId={id} />
-        
-      </div>
+
 
       {/* ISI KONTEN LAIN (Statistik, Tabel, dll - Kode lama Anda) */}
       {/* Card Content */}

@@ -1,31 +1,16 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, UseGuards, Req, Put } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, UseGuards, Req, Put, Res } from '@nestjs/common';
 import { AssessmentService } from './assessment.service';
 import { CreateAssessmentDto } from './dto/create/create-assessment.dto';
 import { UpdateAssessmentDto } from './dto/update-assessment.dto';
 import { CreateAssessmentFromBankDto } from './dto/create/create-assessment-from-bank.dto';
 import { User } from 'src/common/decorators/user.decorator';
 import { AuthGuard } from '@nestjs/passport';
+import { Response } from 'express';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('assessments')
 export class AssessmentController {
   constructor(private readonly assessmentService: AssessmentService) {}
-
-  // @Post()
-  // @HttpCode(HttpStatus.CREATED)
-  // async create(
-  //   @Body() createAssessmentDto: CreateAssessmentDto,
-  //   @User('id') user_id: string
-  // ) {
-    
-  //   const result = await this.assessmentService.create(createAssessmentDto, user_id);
-
-  //   return {
-  //     statusCode: HttpStatus.CREATED,
-  //     message: 'Assessment Created Successfully',
-  //     data: result,
-  //   };
-  // }
 
   @Post('from-bank') // URL: POST /assessment/from-bank
   @HttpCode(HttpStatus.CREATED)
@@ -63,24 +48,21 @@ export class AssessmentController {
     return await this.assessmentService.publishAssessment(assessmentId)
   }
   
+  @Get(':id/export-excel')
+  async exportExcel(
+      @Param('id') id: string, 
+      @Res() res: Response
+  ) {
+      const buffer = await this.assessmentService.generateExcel(id);
 
-  // @Get()
-  // findAll() {
-  //   return this.assessmentService.findAll();
-  // }
+      // 1. Set Header agar browser tahu ini file Excel
+      res.set({
+          'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'Content-Disposition': `attachment; filename="Laporan_Analisis_${id}.xlsx"`,
+          'Content-Length': buffer.length,
+      });
 
-  // @Get(':id')
-  // findOne(@Param('id') id: string) {
-  //   return this.assessmentService.findOne(+id);
-  // }
-
-  // @Patch(':id')
-  // update(@Param('id') id: string, @Body() updateAssessmentDto: UpdateAssessmentDto) {
-  //   return this.assessmentService.update(+id, updateAssessmentDto);
-  // }
-
-  // @Delete(':id')
-  // remove(@Param('id') id: string) {
-  //   return this.assessmentService.remove(+id);
-  // }
+      // 2. Kirim Buffer langsung
+      res.end(buffer);
+  }
 }

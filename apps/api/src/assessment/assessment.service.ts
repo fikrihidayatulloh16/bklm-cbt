@@ -1,13 +1,10 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { CreateAssessmentDto } from './dto/create/create-assessment.dto';
 import { CreateAssessmentFromBankDto } from './dto/create/create-assessment-from-bank.dto';
 import { QuestionBankRepository } from 'src/question-bank/repository/question-bank.repository.ts';
 import { AssessmentMapper } from './mapper/assessment.mapper';
 import { AssessmentRepository } from './repository/assessment.repository';
-import { error } from 'console';
-import { AnswerRepository } from 'src/submissions/repository/answer.repository';
-import { QuestionRepository } from 'src/submissions/repository/question.repository';
 import { PrismaService } from 'src/prisma/prisma.service';
+import * as ExcelJS from 'exceljs';
 
 @Injectable()
 export class AssessmentService {
@@ -109,6 +106,47 @@ export class AssessmentService {
         studentRanks
     };
 }
+
+  async generateExcel(assessmentId: string): Promise<Buffer> {
+    // 1. AMBIL DATA (Reuse fungsi analytics yang sudah ada biar hemat koding)
+    const data = await this.getAnalytics(assessmentId);
+
+    // 2. SIAPKAN WORKBOOK (Buku Kerja Excel)
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Analisis Soal');
+
+    // 3. BIKIN HEADER KOLOM
+    // key: harus sama dengan field data nanti
+    // width: lebar kolom di excel
+    worksheet.columns = [
+        { header: 'No', key: 'no', width: 5 },
+        { header: 'Pertanyaan', key: 'question', width: 50 },
+        { header: 'Kategori', key: 'category', width: 20 },
+        { header: 'Total Poin', key: 'score', width: 15 },
+        { header: 'Responden', key: 'count', width: 15 },
+    ];
+
+    // 4. ISI BARIS (Looping data)
+    data.question_analysis.forEach((q, index) => {
+        worksheet.addRow({
+            no: index + 1,
+            question: q.question_text,
+            category: q.category || '-',
+            score: q.total_risk_score,
+            count: q.respondents,
+        });
+    });
+
+    // 5. STYLING SEDERHANA (Opsional: Bold Header)
+    worksheet.getRow(1).font = { bold: true };
+
+    // 6. RETURN SEBAGAI BUFFER (Data Mentah)
+    // Kita convert workbook jadi Buffer (urutan byte) agar bisa dikirim lewat HTTP
+    const buffer = await workbook.xlsx.writeBuffer();
+    
+    // Casting ke Buffer bawaan Node.js agar Controller tidak bingung
+    return buffer as unknown as Buffer;
+  }
 
   async findAssessmentResults(assessmentId: string) {
     return await this.assessmentRepo.findAssessmentResults(assessmentId);

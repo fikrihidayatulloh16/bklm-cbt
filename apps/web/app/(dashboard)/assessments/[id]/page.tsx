@@ -8,7 +8,9 @@ import api from "@/lib/api";
 // Import Komponen Pecahan Tadi
 import PublishModal from "@/components/fragments/assessment-id/publishModal";
 import AssessmentHeader from "@/components/fragments/assessment-id/assessment-id-header";
-import AssessmentDetailTabs, { Submission } from "@/components/fragments/assessment-id/assessmentDetailTabs";
+import { Submission } from "@/components/fragments/assessment-id/table-content/tabStudent";
+import { QuestionsAnalytic } from "@/components/fragments/assessment-id/table-content/tabQuestion";
+import AssessmentDetailTabs from "@/components/fragments/assessment-id/assessmentDetailTabs";
 import AssessmentCardContent from "@/components/fragments/assessment-id/assessmentCardContent";
 import AssessmentAnalytics from "@/components/fragments/assessment-id/AssessmentAnalytics";
 
@@ -30,6 +32,7 @@ export default function AssessmentDetailPage() {
   
   // State Data
   const [assessment, setAssessment] = useState<AssessmentDetail | null>(null);
+  const [questionAnalytics, setQuestionAnalytics] = useState<QuestionsAnalytic[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isPublishing, setIsPublishing] = useState(false);
@@ -51,6 +54,9 @@ export default function AssessmentDetailPage() {
       // Kita ambil array yang ada DI DALAM object tersebut
       const subsArray = resSubs.data?.submissions || []; 
       setSubmissions(subsArray);
+
+      const questA = await api.get(`/assessments/${id}/analytics`);
+      setQuestionAnalytics(questA.data.question_analysis); // Sesuaikan jika response dibungkus data.data
 
     } catch (error) {
       console.error("Gagal ambil detail:", error);
@@ -74,7 +80,7 @@ export default function AssessmentDetailPage() {
       // Refresh data agar status berubah jadi PUBLISHED di layar
       
       
-      fetchDetail(); 
+      window.location.reload();
       console.log('sudah direfresh');
       
       onClose(); // Tutup modal
@@ -89,7 +95,7 @@ export default function AssessmentDetailPage() {
   if (isLoading) return <div className="flex h-[50vh] items-center justify-center"><Spinner size="lg" label="Memuat data..." /></div>;
   if (!assessment) return <div className="text-center py-10">Data tidak ditemukan</div>;
 
-  console.log(assessment.assessment_status);
+  // console.log('questionAnalytics= ',questionAnalytics);
   
 
   return (
@@ -115,6 +121,7 @@ export default function AssessmentDetailPage() {
       <AssessmentDetailTabs 
         assessmentId={id}
         submissions={submissions}
+        question_analytics={questionAnalytics}
       />
 
         {/* PANGGIL KOMPONEN ANALYTICS DI SINI */}

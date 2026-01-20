@@ -1,19 +1,10 @@
 'use client';
 
-import React, { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { 
-  Button, Card, CardBody, Chip, Divider, Spinner, 
-  Tabs, Tab, Table, TableHeader, TableColumn, TableBody, TableRow, TableCell,
-  Snippet, User
-} from "@nextui-org/react";
-import { ArrowLeft, Clock, Users, BarChart3, Plus } from "lucide-react";
-import api from "@/lib/api";
-import { Submission } from "./assessmentDetailTabs";
-import { div } from "framer-motion/client";
+import { Card, CardBody, Divider } from "@nextui-org/react";
+import { Clock, Users } from "lucide-react";
 import Countdown from "react-countdown";
 import { countdownRenderer } from "@/components/helper/countDownRenderer";
-import { refresh } from "next/cache";
+
 
 interface AssessmentCardContentProps {
   submissionsLength: number; // Menerima ARRAY submission
@@ -23,6 +14,7 @@ interface AssessmentCardContentProps {
 
 export default function AssessmentCardContent({submissionsLength, assessmentDuration, assessmentDeadLine}: AssessmentCardContentProps) {
 
+    
     return (
 
         <div>

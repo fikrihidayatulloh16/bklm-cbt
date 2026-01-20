@@ -44,6 +44,8 @@ export default function AssessmentAnalytics({ assessmentId }: { assessmentId: st
 
   if (loading) return <div className="p-4 text-gray-500">Sedang memuat analisis...</div>;
   if (!data) return null;
+  console.log('data= ',data);
+  
 
   return (
     <div className="space-y-8 mt-6">
@@ -51,7 +53,7 @@ export default function AssessmentAnalytics({ assessmentId }: { assessmentId: st
       {/* BAGIAN 2: ANALISIS SOAL (MASALAH UMUM) */}
       <div className="bg-white p-6 rounded-lg border shadow-sm">
         <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-          📊 Masalah Paling Umum di Kelas Ini
+          📊 Masalah Paling Umum di Assessment Ini
         </h3>
         <div className="space-y-5">
           {data.question_analysis.map((q) => {

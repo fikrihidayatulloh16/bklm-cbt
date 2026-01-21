@@ -1,19 +1,23 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
 
-// 1. Buat Instance Axios
+// 1. Tentukan URL String-nya dulu (STRING, bukan Object)
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+
+// 2. Buat Instance Axios (Cukup Satu Kali)
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000', // Alamat Backend
+  baseURL: API_URL, // <--- Di sini sekarang isinya String URL yang benar
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// 2. Interceptor (Satpam Otomatis)
-// Sebelum request terbang, selipkan Token dari Cookie ke Header
+// 3. Interceptor Request (Satpam Otomatis)
+// (Kode ini persis sama dengan punya Anda, tidak saya ubah karena sudah benar)
 api.interceptors.request.use(
   (config) => {
-    const token = Cookies.get('token'); // Ambil token yg kita simpan pas login
+    const token = Cookies.get('token'); 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -22,16 +26,19 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// 3. Interceptor Response (Penanganan Error Global)
-// Kalau token kadaluarsa (401), tendang ke login
+// 4. Interceptor Response (Penanganan Error Global)
+// (Kode ini juga sama, logika logout otomatisnya sudah oke)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
       Cookies.remove('token');
-      // Redirect manual ke login (karena ini bukan komponen React)
+      // Redirect manual ke login
       if (typeof window !== 'undefined') {
-        window.location.href = '/login';
+        // Cek agar tidak looping redirect jika sudah di login page
+        if (!window.location.pathname.includes('/login')) {
+            window.location.href = '/login';
+        }
       }
     }
     return Promise.reject(error);

@@ -1,251 +1,71 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
+import React from "react";
+// 1. Import Logic Hook
+import { useExamLogic, CLASS_OPTIONS } from "@/hooks/exam/useExamLogic"; 
+
 import { 
   Button, Card, CardBody, Progress, RadioGroup, Radio, 
-  Spinner, Chip, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure,
+  Spinner, Chip, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter,
   Input, Select, SelectItem
 } from "@nextui-org/react";
-import { Clock, ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle, User, School } from "lucide-react";
-import api from "@/lib/api";
+import { Clock, ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle, School } from "lucide-react";
 import Countdown from 'react-countdown';
-import { countdownRenderer } from '@/components/helper/countDownRenderer'; // Sesuaikan path import
+import { countdownRenderer } from '@/components/helper/countDownRenderer'; 
 
-// --- TIPE DATA ---
-interface Option {
-  id: string;
-  label: string;
-  numeric_value: number;
-}
-
-interface Question {
-  id: string;
-  text: string;
-  type: string;
-  options: Option[];
-}
-
-interface ExamData {
-  id: string;
-  title: string;
-  duration: number; 
-questions: Question[];
-}
-
-// Data Dummy Kelas (Nanti bisa fetch dari API /classes jika ada)
-// OPSI KELAS (Value-nya sekarang Nama Kelas langsung, bukan ID aneh)
-const CLASS_OPTIONS = [
-    "X - IPA 1",
-    "X - IPA 2",
-    "X - IPS 1",
-    "X - IPS 2",
-    "XI - IPA 1",
-];
-
-type ExamStep = 'IDENTITY' | 'EXAM' | 'FINISHED';
-
+// --- PAGE COMPONENT ---
 export default function ExamPage() {
-  const params = useParams();
-  const router = useRouter();
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
-
-  // STATE UTAMA
-  const [step, setStep] = useState<ExamStep>('IDENTITY');
-  const [exam, setExam] = useState<ExamData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [submissionId, setSubmissionId] = useState<string | null>(null);
-
-  // STATE FORM IDENTITAS
-  const [studentName, setStudentName] = useState("");
-  const [gender, setGender] = useState("L");
-  const [className, setclassName] = useState("");
-  const [isStarting, setIsStarting] = useState(false);
-
-  // STATE INTERAKSI UJIAN
-  const [currentStep, setCurrentStep] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string>>({}); // local state untuk UI
-  const [timeLeft, setTimeLeft] = useState<number>(0);
-  const [deadLine, setDeadLine] = useState<Date | null>(null);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-
-  const checkStatus = async (savedId: string) => {
-    try {
-        // Panggil API untuk ambil detail submission
-        // Pastikan Anda punya endpoint GET /submissions/:id di backend
-        const res = await api.get(`/exam/${savedId}`);
-        const data = res.data; // Sesuaikan struktur response backend Anda
-
-        // Cek Status
-        if (data.status === 'FINISHED') {
-            // Kalau sudah selesai, hapus dari storage biar tidak nyangkut
-            localStorage.removeItem('active_submission_id');
-            alert("Ujian ini sudah diselesaikan.");
-            return;
-        }
-
-        // Kalau masih IN_PROGRESS, Restore State!
-        setSubmissionId(savedId);
-        
-        // Restore Identitas (jika perlu)
-        setStudentName(data.student_name);
-        setclassName(data.class_name);
-
-        // Restore Timer (PENTING)
-        // Ambil deadline dari assessment terkait
-        if (data.assessment && data.assessment.expired_at) {
-             setDeadLine(new Date(data.assessment.expired_at));
-        }
-
-        // Langsung lompat ke halaman soal
-        setStep('EXAM'); 
-        
-    } catch (error) {
-        console.error("Gagal restore sesi:", error);
-        // Jika error (misal 404), hapus storage agar user bisa login ulang
-        localStorage.removeItem('active_submission_id');
-    }
-};
-
-  // Saat Halaman di-Refresh (useEffect)
-    useEffect(() => {
-    // Cek apakah ada ujian nyangkut?
-    const savedId = localStorage.getItem('active_submission_id');
-    if (savedId) {
-        // Panggil API untuk cek status, kalau masih IN_PROGRESS, langsung masuk mode ujian
-        checkStatus(savedId);
-    }
-    }, [])
-
-  // 1. FETCH DATA UJIAN (Load di awal)
-  useEffect(() => {
-    const fetchExam = async () => {
-      try {
-        const res = await api.get(`/exam/${params.id}`);
-        const data = res.data;
-        setExam(data);
-        setTimeLeft(data.duration * 60);
-      } catch (error) {
-        console.error(error);
-        alert("Gagal memuat ujian. Pastikan Link benar.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (params.id) fetchExam();
-  }, [params.id]);
-
-  // 2. LOGIKA TIMER (Hanya jalan saat step == 'EXAM')
-  useEffect(() => {
-    if (step !== 'EXAM') return;
-
-    timerRef.current = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timerRef.current!);
-          handleSubmitExam(); // Auto submit
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timerRef.current!);
-  }, [step]); // Dependency ganti ke 'step'
-
-  // --- ACTIONS ---
-
-  // A. MULAI UJIAN (POST /start)
-  const handleStartExam = async () => {
-    // Validasi pakai className
-    if (!studentName || !className) {
-        alert("Mohon lengkapi Nama dan Kelas!");
-        return;
-    }
-
-    setIsStarting(true);
-    try {
-        const res = await api.post(`/submissions/${params.id}/start`, {
-            assessment_id: params.id,
-            student_name: studentName,
-            gender: gender,
-            
-            // PERUBAHAN: Kirim string class_name
-            class_name: className 
-        });
-
-        const subId = res.data.submission_id;
-        localStorage.setItem('active_submission_id', subId);
-        setSubmissionId(subId);
-
-        const resultData = res.data.data;
-
-        const deadlineDate = new Date(resultData.deadline);
-
-        console.log('deadline= ', deadlineDate);
-        
-
-
-        setSubmissionId(res.data.data.submission_id);
-        setDeadLine(deadlineDate)
-        setStep('EXAM');
-    } catch (error) {
-        // ... error handling
-    } finally {
-        setIsStarting(false);
-    }
-  };
-
-  // B. SIMPAN JAWABAN (PUT /answer)
-  const handleAnswer = async (questionId: string, optionId: string) => {
-    // 1. Update UI dulu biar cepat (Optimistic UI)
-    setAnswers(prev => ({ ...prev, [questionId]: optionId }));
-
-    // 2. Kirim ke Backend (Silent Request)
-    if (submissionId) {
-        try {
-            await api.put(`/submissions/${submissionId}/answer`, {
-                question_id: questionId,
-                option_id: optionId,
-                text_value: "" // Kosongkan jika multiple choice
-            });
-        } catch (error) {
-            console.error("Gagal menyimpan jawaban ke server", error);
-            // Opsional: Kasih indikator error kecil
-        }
-    }
-  };
-
-  // C. SELESAI UJIAN (PUT /finish)
-  const handleSubmitExam = async () => {
-    if (!submissionId) return;
-
-    try {
-        setLoading(true);
-        // Panggil Endpoint Finish
-        await api.put(`/submissions/${submissionId}/finish`);
-        
-        setStep('FINISHED');
-        onOpenChange(); // Tutup modal jika terbuka
-    } catch (error: any) {
-        alert(error.response?.data?.message || "Gagal mengumpulkan ujian.");
-    } finally {
-        setLoading(false);
-    }
-  };
-
-
-  console.log(exam);
   
+  // 2. PANGGIL LOGIC (Destructuring)
+  const { 
+    // State
+    step, 
+    exam, 
+    studentIdentity, 
+    answers, 
+    currentStep, 
+    activeQuestion,
+    deadLine, // Pastikan ini direturn di useExamLogic
+    
+    // Actions
+    setStudentIdentity,
+    setCurrentStep,
+    handleStartExam,
+    handleAnswer,
+    handleSubmitExam,
+    
+    // Modal
+    isConfirmOpen,
+    openConfirmModal,
+    closeConfirmModal,
+  } = useExamLogic();
 
-  // FORMAT TIME
-  const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-  };
 
-  // --- RENDERERS ---
+  // --- 3. JEMBATAN VARIABLE (ADAPTER) ---
+  // Kita buat variable/fungsi "Palsu" agar cocok dengan UI lama Anda
+  // Tanpa perlu ubah kodingan JSX di bawah.
+
+  const loading = step === 'LOADING';
+  const isStarting = step === 'LOADING'; // Reuse loading state
+  
+  // Mapping State Identitas (Object -> Single Variable)
+  const studentName = studentIdentity.name;
+  const className = studentIdentity.className;
+  const gender = studentIdentity.gender;
+
+  // Mapping Fungsi Setter (Single Variable -> Object Update)
+  const setStudentName = (val: string) => setStudentIdentity(prev => ({ ...prev, name: val }));
+  const setclassName = (val: string) => setStudentIdentity(prev => ({ ...prev, className: val }));
+  const setGender = (val: string) => setStudentIdentity(prev => ({ ...prev, gender: val }));
+
+  // Mapping Modal
+  const isOpen = isConfirmOpen;
+  const onOpen = openConfirmModal;
+  const onOpenChange = closeConfirmModal;
+
+
+  // --- RENDERERS (UI ASLI ANDA) ---
+  // Tidak ada perubahan struktur di bawah ini, hanya paste kode Anda
 
   if (loading || !exam) return <div className="h-screen flex items-center justify-center"><Spinner size="lg" label="Memuat..." /></div>;
 
@@ -263,8 +83,9 @@ export default function ExamPage() {
                     <div className="space-y-4">
                         <Input 
                             label="Nama Lengkap" 
-                            // ...
-                            onValueChange={setStudentName}
+                            placeholder="Masukkan Nama Anda"
+                            value={studentName} // Sudah dimapping
+                            onValueChange={setStudentName} // Sudah dimapping
                         />
                         
                         {/* UPDATE SELECT KELAS */}
@@ -273,12 +94,10 @@ export default function ExamPage() {
                             placeholder="Pilih Kelas" 
                             variant="bordered"
                             startContent={<School size={18} className="text-default-400" />}
-                            
-                            // Bind ke state className
                             selectedKeys={className ? [className] : []}
                             onChange={(e) => setclassName(e.target.value)}
                         >
-                            {/* Map String Array Sederhana */}
+                            {/* Menggunakan CLASS_OPTIONS dari Hook atau konstanta file ini */}
                             {CLASS_OPTIONS.map((name) => (
                                 <SelectItem key={name} value={name}>
                                     {name}
@@ -328,9 +147,12 @@ export default function ExamPage() {
       );
   }
 
-  // LAYAR 2: UJIAN (Logic Lama Anda, sudah diintegrasikan)
+  // LAYAR 2: UJIAN 
   const questions = exam.questions;
-  const currentQuestion = questions[currentStep];
+  // Gunakan activeQuestion dari hook atau fallback ke manual
+  console.log('activeQuestion=', activeQuestion, 'questions= ', questions);
+  
+  const currentQuestion = activeQuestion || questions[currentStep]; 
   const progress = (Object.keys(answers).length / questions.length) * 100;
   const isLastQuestion = currentStep === questions.length - 1;
 
@@ -344,22 +166,23 @@ export default function ExamPage() {
                 <span className="hidden md:inline">Soal {currentStep + 1} / {questions.length}</span>
                 <Progress size="sm" value={progress} color="success" className="w-24 md:w-32" aria-label="Exam Progress" />
             </div>
+            <br />
+            <h2 className="font-semibold  md:text-xl truncate max-w-[200px] md:max-w-md">Nama Peserta: {studentIdentity.name}</h2>
+            <h2 className=" md:text-xl truncate max-w-[200px] md:max-w-md">Kelas: {studentIdentity.className}</h2>
         </div>
 
         <div className="ml-auto"> 
-            
+        {/* Menggunakan deadLine dari Hook */}
         {deadLine ? (
         <Countdown 
             date={deadLine} 
-            renderer={countdownRenderer} // Panggil helper yang sudah kita buat
+            renderer={countdownRenderer} 
             onComplete={() => {
-                // Logic ketika waktu habis
                 alert("Waktu Habis! Mengirim jawaban...");
                 handleSubmitExam(); 
             }} 
         />
         ) : (
-        // Tampilan Loading (Skeleton) saat menunggu API response
         <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 text-gray-400 font-mono font-bold text-lg md:text-xl animate-pulse">
             <Clock size={20} />
             --:--:--
@@ -379,11 +202,11 @@ export default function ExamPage() {
             </div>
 
             <RadioGroup 
-                value={answers[currentQuestion.id] || ""} 
-                onValueChange={(val) => handleAnswer(currentQuestion.id, val)} // Panggil Handle Answer Baru
+                value={answers[currentQuestion?.id] || ""} 
+                onValueChange={(val) => handleAnswer(currentQuestion.id, val)}
                 className="gap-3"
             >
-                {currentQuestion.options.map((opt) => (
+                {currentQuestion?.options.map((opt: any) => (
                     <Radio 
                         key={opt.id} 
                         value={opt.id}

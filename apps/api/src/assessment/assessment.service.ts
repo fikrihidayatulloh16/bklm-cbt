@@ -61,7 +61,7 @@ export class AssessmentService {
     const stats = await this.prisma.answer.groupBy({
         by: ['question_id'],
         where: {
-            submission: { assessment_id: assessmentId } // Filter per Ujian
+            submission: { assessment_id: assessmentId, } // Filter per Ujian
         },
         _sum: {
             numeric_value: true // Ini sekarang sudah AMAN karena sudah kita isi di Langkah 1

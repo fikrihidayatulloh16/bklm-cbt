@@ -15,7 +15,7 @@ interface QuestionAnalysis {
   category: string;
   total_risk_score: number;
   respondents: number;
-  risk_percentage: string; // "80.0%"
+  average: string; // "80.0%"
 }
 
 interface AnalyticsData {
@@ -58,7 +58,7 @@ export default function AssessmentAnalytics({ assessmentId }: { assessmentId: st
         <div className="space-y-5">
           {data.question_analysis.map((q) => {
             // Kita ubah string "80.0%" jadi angka 80 untuk width CSS
-            const percentage = parseFloat(q.risk_percentage);
+            const percentage = parseFloat(q.average);
             
             return (
               <div key={q.question_id}>
@@ -66,7 +66,7 @@ export default function AssessmentAnalytics({ assessmentId }: { assessmentId: st
                   <span className="text-sm font-medium text-gray-700 w-3/4 truncate">
                     {q.question_text}
                   </span>
-                  <span className="text-sm font-bold text-red-600">{q.risk_percentage}</span>
+                  <span className="text-sm font-bold text-red-600">{q.average}</span>
                 </div>
                 
                 {/* Visualisasi Bar Chart Sederhana */}

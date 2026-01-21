@@ -23,6 +23,11 @@ export class SubmissionsController {
      }
   }
 
+  @Get(':id')
+  async getUniqueSubmissionWithQuestions(@Param('id') subMissionId: string) {
+    return await this.submissionsService.getUniqueSubmissionWithQuestions(subMissionId);
+  }
+
   @Get(':assessment_id/timeleft')
   async getTimeLeft(@Param('id') assessment_id: string) {
     return await this.submissionsService.getTimer(assessment_id)

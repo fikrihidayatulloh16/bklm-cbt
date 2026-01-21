@@ -52,16 +52,16 @@ export default function AssessmentHeader({
         </div>
 
         {/* Bagian Kanan: Actions */}
-        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+        <div className="flex md:flex-row gap-3 md:w-auto">
           {/* Link Ujian (Selalu Muncul) */}
           <Snippet 
             symbol="#" 
             color="primary" 
             variant="flat" 
             codeString={examLink}
-            className="w-full md:w-auto"
+            className=" "
           >
-            Link Ujian
+            Link
           </Snippet>
 
           {/* Tombol Publish (Hanya muncul jika masih DRAFT) */}
@@ -69,10 +69,10 @@ export default function AssessmentHeader({
             <Button 
               onPress={onPublishClick}
               color="primary" 
-              className="font-semibold shadow-md w-full md:w-auto"
+              className=""
               startContent={<Play size={18} />}
             >
-              Publish Assessment
+              Publish
             </Button>
           )}
         </div>

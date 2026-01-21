@@ -241,19 +241,7 @@ export class SubmissionsService {
       return await this.submissionRepo.updateStatusFinishSubmission(submissionId, totalScore)
     }
 
-  // findAll() {
-  //   return `This action returns all submissions`;
-  // }
-
-  // findOne(id: number) {
-  //   return `This action returns a #${id} submission`;
-  // }
-
-  // update(id: number, updateSubmissionDto: UpdateSubmissionDto) {
-  //   return `This action updates a #${id} submission`;
-  // }
-
-  // remove(id: number) {
-  //   return `This action removes a #${id} submission`;
-  // }
+  async getUniqueSubmissionWithQuestions(submissionId: string) {
+    return await this.submissionRepo.findOneSubmissionWithQuestion(submissionId);
+  }
 }

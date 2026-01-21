@@ -58,7 +58,6 @@ export default function AssessmentCardContent({submissionsLength, assessmentDura
                             ) : (
                             // Tampilan Loading (Skeleton) saat menunggu API response
                             <div className="flex items-center gap-2 px-1 py-2 rounded-lg bg-gray-100 text-dark-400 font-mono font-bold text-lg md:text-md">
-                                
                                 Assessment Tidak di Buka
                             </div>
                             )}

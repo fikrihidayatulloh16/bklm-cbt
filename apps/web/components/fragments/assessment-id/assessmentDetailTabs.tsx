@@ -74,7 +74,7 @@ export default function AssessmentDetailTabs({ submissions, assessmentId, questi
             
             {/* TAB 1: HASIL SISWA */}
             <Tab key="results" title={
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 text-dark">
                     <BarChart3 size={18} />
                     <span>Hasil & Nilai</span>
                 </div>

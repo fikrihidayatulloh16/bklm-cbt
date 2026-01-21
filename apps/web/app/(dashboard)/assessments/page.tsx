@@ -118,6 +118,9 @@ export default function AssessmentPage() {
     }
   };
 
+  console.log('bankOptions', assessments);
+  
+
   // ----------------------------------------------------------------------
   // PERBAIKAN LAYOUT DISINI (WRAPPER UTAMA)
   // ----------------------------------------------------------------------
@@ -235,9 +238,11 @@ export default function AssessmentPage() {
                         }));
                     }}
                 >
-                    {(Array.isArray(bankOptions) ? bankOptions : []).map((bank) => (
+                    {(Array.isArray(assessments) ? assessments : []).map((bank) => (
                         <SelectItem key={bank.id} textValue={bank.title}>
                             {bank.title} ({bank._count?.questions || 0} Soal)
+                            
+                            
                         </SelectItem>
                     ))}
                 </Select>

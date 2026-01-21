@@ -1,75 +1,42 @@
-import React, { useEffect, useState, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { 
-  Button, Card, CardBody, Progress, RadioGroup, Radio, 
-  Spinner, Chip, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure,
-  Input, Select, SelectItem
-} from "@nextui-org/react";
-import { Clock, ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle, User, School } from "lucide-react";
+import { useDisclosure } from "@nextui-org/react"; // Hanya hook ini yang butuh diimport dari UI lib
 import api from "@/lib/api";
-import Countdown from 'react-countdown';
-import { countdownRenderer } from '@/components/helper/countDownRenderer'; // Sesuaikan path import
 
-// --- TIPE DATA ---
-interface Option {
+// --- 1. DEFINISI TIPE DATA (Export agar bisa dipakai di Page) ---
+
+export interface Option {
   id: string;
   label: string;
-  score?: number;
+  numeric_value: number;
 }
 
-interface Question {
+export interface Question {
   id: string;
   text: string;
   type: string;
   options: Option[];
 }
 
-interface ExamData {
+export interface ExamData {
   id: string;
   title: string;
-  duration: number; 
-    questions: Question[];
+  description?: string; // Opsional: Tambahan deskripsi
+  duration: number;
+  questions: Question[];
+  // Tambahan field server (opsional)
+  expired_at?: string; 
 }
 
- interface UseExamLogicReturn {
-    // Data State
-    step: 'IDENTITY' | 'EXAM';
-    deadline: Date | null;
-    submissionId: string;
-    answers: Record<string, string>;
-    isLoading: boolean;
-    isStarting: boolean;
-    
-    // Fungsi / Action
-    handleStartExam: (studentName: string, className: string, gender: string) => Promise<void>;
-    handleAnswer: (questionId: string, optionId: string | null, text: string) => void;
-    handleSubmitExam: () => void;
-    // params,
-    // router: any, 
-    // isOpen: boolean, 
-    // step: string, 
-    // exam, 
-    // loading,
-    // submissionId: string, 
-    // studentName: string, 
-    // gender: string, 
-    // className: string, 
-    // isStarting: boolean, 
-    // currentStep,
-    // answers, 
-    // timeLeft, 
-    // deadLine: Date, 
-    // timerRef,
-    // checkStatus, 
-    // handleStartExam: (student_name: string, class_name: string), 
-    // handleAnswer: (questionId: string, optionId: string), 
-    // handleSubmitExam: any, 
-    // formatTime: Date,
+// Interface yang TADI HILANG (Penyebab Error Utama)
+export interface StudentIdentity {
+  name: string;
+  className: string;
+  gender: string;
 }
 
-// Data Dummy Kelas (Nanti bisa fetch dari API /classes jika ada)
-// OPSI KELAS (Value-nya sekarang Nama Kelas langsung, bukan ID aneh)
-const CLASS_OPTIONS = [
+// Opsi Kelas (Export agar bisa dipakai di Dropdown UI)
+export const CLASS_OPTIONS = [
     "X - IPA 1",
     "X - IPA 2",
     "X - IPS 1",
@@ -77,233 +44,296 @@ const CLASS_OPTIONS = [
     "XI - IPA 1",
 ];
 
-type ExamStep = 'IDENTITY' | 'EXAM' | 'FINISHED';
+export type ExamStep = 'LOADING' | 'IDENTITY' | 'EXAM' | 'FINISHED' | 'ERROR';
 
-export function useExamLogic(examId: string): UseExamLogicReturn {
-    const params = useParams();
-  const router = useRouter();
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+// --- 2. LOGIC HOOK ---
 
-  // STATE UTAMA
-  const [step, setStep] = useState<ExamStep>('IDENTITY');
-  const [exam, setExam] = useState<ExamData | null>(null);
-  const [loading, setLoading] = useState(true);
+export const useExamLogic = () => {
+  // --- A. HOOKS UTAMA ---
+  const params = useParams(); 
+  const router = useRouter(); 
+  const { isOpen, onOpen, onOpenChange } = useDisclosure(); 
+
+  // --- B. STATE MANAGEMENT ---
+  const [step, setStep] = useState<ExamStep>('LOADING');
+  
+  // Perbaikan: Gunakan ExamData | null, bukan any
+  const [exam, setExam] = useState<ExamData | null>(null); 
+  
   const [submissionId, setSubmissionId] = useState<string | null>(null);
+  
+  const [studentIdentity, setStudentIdentity] = useState<StudentIdentity>({
+    name: "",
+    className: "",
+    gender: "L",
+  });
 
-  // STATE FORM IDENTITAS
-  const [studentName, setStudentName] = useState("");
-  const [gender, setGender] = useState("L");
-  const [className, setclassName] = useState("");
-  const [isStarting, setIsStarting] = useState(false);
-
-  // STATE INTERAKSI UJIAN
-  const [currentStep, setCurrentStep] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string>>({}); // local state untuk UI
-  const [timeLeft, setTimeLeft] = useState<number>(0);
-  const [deadLine, setDeadLine] = useState<Date | null>(null);
+  const [currentStep, setCurrentStep] = useState(0); 
+  const [answers, setAnswers] = useState<Record<string, string>>({}); 
+  
+  const [timeLeft, setTimeLeft] = useState<number>(0); 
+  const [deadLine, setDeadLine] = useState<Date | null>(null); 
+  
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const checkStatus = async (savedId: string) => {
-    try {
-        // Panggil API untuk ambil detail submission
-        // Pastikan Anda punya endpoint GET /submissions/:id di backend
-        console.log('session', savedId);
-        
-        const res = await api.get(`/exam/${savedId}`);
-        const data = res.data; // Sesuaikan struktur response backend Anda
-
-        // Cek Status
-        if (data.status === 'FINISHED') {
-            // Kalau sudah selesai, hapus dari storage biar tidak nyangkut
-            localStorage.removeItem('active_submission_id');
-            alert("Ujian ini sudah diselesaikan.");
-            return;
-        }
-
-        // Restore Data
-            setSubmissionId(data.id);
-            if (data.assessment?.expired_at) {
-                setDeadLine(new Date(data.assessment.expired_at));
-            }
-
-        // Restore Jawaban (Mapping array ke object)
-        const restoredAnswers: Record<string, string> = {};
-        if (data.answers) {
-            data.answers.forEach((ans: any) => {
-                restoredAnswers[ans.question_id] = ans.option_id || ans.text_value;
-            });
-        }
-        setAnswers(restoredAnswers);
-        
-        setStep('EXAM');
-        // Restore Identitas (jika perlu)
-        setStudentName(data.student_name);
-        setclassName(data.class_name);
-
-        // Restore Timer (PENTING)
-        // Ambil deadline dari assessment terkait
-        if (data.assessment && data.assessment.expired_at) {
-             setDeadLine(new Date(data.assessment.expired_at));
-        }
-
-        // Langsung lompat ke halaman soal
-        setStep('EXAM'); 
-        
-    } catch (error) {
-        console.error("Gagal restore sesi:", error);
-        // Jika error (misal 404), hapus storage agar user bisa login ulang
-        localStorage.removeItem('active_submission_id');
-    } finally {
-        setLoading(false);
-    };
-}
-
-    // Saat Halaman di-Refresh (useEffect)
-    useEffect(() => {
-    // Cek apakah ada ujian nyangkut?
-    const savedId = localStorage.getItem('active_submission_id');
-    if (savedId) {
-        // Panggil API untuk cek status, kalau masih IN_PROGRESS, langsung masuk mode ujian
-        checkStatus(savedId);
-    }
-    }, [])
-
-  // 1. FETCH DATA UJIAN (Load di awal)
+  // --- C. INITIALIZATION ---
   useEffect(() => {
-    const fetchExam = async () => {
+    // Safety check: Pastikan params.id ada dan berbentuk string
+    const examId = Array.isArray(params.id) ? params.id[0] : params.id;
+    if (!examId) return;
+
+    const initExamSession = async () => {
+      setStep('LOADING');
+      const savedSubmissionId = localStorage.getItem('active_submission_id');
+      
+      
+
       try {
-        const res = await api.get(`/exam/${params.id}`);
-        const data = res.data;
-        setExam(data);
-        setTimeLeft(data.duration * 60);
+        if (savedSubmissionId) {
+            // --- SKENARIO RESTORE ---
+            const res = await api.get(`/submissions/${savedSubmissionId}`); 
+            const data = res.data.data || res.data; 
+
+            // --- 🛡️ VALIDASI TAMBAHAN (GUARD CLAUSE) ---
+            // Cek apakah submission ini milik ujian yang ada di URL (params.id)?
+            // Asumsi: Backend mengembalikan assessment_id di dalam data submission
+            const currentExamId = Array.isArray(params.id) ? params.id[0] : params.id;
+
+            if (data.assessment_id !== currentExamId) {
+            console.warn("Submission ID di storage milik ujian lain. Resetting...");
+            localStorage.removeItem('active_submission_id');
+            // Lempar ke skenario B (Fresh Start)
+            throw new Error("Submission ID mismatch"); 
+        }
+
+          if (data.status === 'FINISHED') {
+             localStorage.removeItem('active_submission_id');
+             setStep('FINISHED');
+             return;
+          }
+
+          setSubmissionId(savedSubmissionId);
+          // Pastikan backend mengirim struktur yang sesuai ExamData
+          setExam(data.assessment); 
+          
+          setStudentIdentity({
+             name: data.student_name,
+             className: data.class_name,
+             gender: data.gender || "L"
+          });
+          
+        if (data.answers) {
+            // Cek apakah data dari server berbentuk Array?
+            if (Array.isArray(data.answers)) {
+                // Konversi Array -> Object
+                const mappedAnswers: Record<string, string> = {};
+                data.answers.forEach((ans: any) => {
+                    // Pastikan field-nya sesuai dengan response JSON backend Anda
+                    mappedAnswers[ans.question_id] = ans.option_id; 
+                });
+                setAnswers(mappedAnswers);
+            } else {
+                // Kalau sudah Object, pakai langsung
+                setAnswers(data.answers);
+            }
+        }
+
+          // Logika Deadline
+          if (data.assessment.expired_at || data.deadline) {
+             const deadLine = data.deadline ? new Date(data.deadline) : new Date(data.assessment.expired_at);
+             setDeadLine(deadLine);
+             
+             const now = new Date();
+             const secondsRemaining = Math.floor((deadLine.getTime() - now.getTime()) / 1000);
+             setTimeLeft(secondsRemaining > 0 ? secondsRemaining : 0);
+          } else {
+             setTimeLeft(data.assessment.duration * 60);
+          }
+
+          setStep('EXAM'); 
+
+        } else {
+          // --- SKENARIO BARU ---
+          const res = await api.get(`/exam/${examId}`);
+          const data = res.data.data || res.data;
+
+          console.log(`get exam/${examId},; data= ${data.data}`);
+          
+          
+          setExam(data);
+          setTimeLeft(data.duration * 60); 
+          setStep('IDENTITY'); 
+        }
+
       } catch (error) {
-        console.error(error);
-        alert("Gagal memuat ujian. Pastikan Link benar.");
-      } finally {
-        setLoading(false);
+        console.error("Gagal init ujian:", error);
+        localStorage.removeItem('active_submission_id');
+        setStep('ERROR');
       }
     };
-    if (params.id) fetchExam();
+
+    initExamSession();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.id]);
 
-  // 2. LOGIKA TIMER (Hanya jalan saat step == 'EXAM')
+
+  // --- D. TIMER LOGIC ---
   useEffect(() => {
-    if (step !== 'EXAM') return;
+    if (step !== 'EXAM' || !deadLine) return;
 
-    timerRef.current = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timerRef.current!);
-          handleSubmitExam(); // Auto submit
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    const tick = () => {
+      const now = new Date();
+      const diff = Math.floor((deadLine.getTime() - now.getTime()) / 1000);
 
-    return () => clearInterval(timerRef.current!);
-  }, [step]); // Dependency ganti ke 'step'
+      if (diff <= 0) {
+        setTimeLeft(0);
+        if (timerRef.current) clearInterval(timerRef.current);
+      } else {
+        setTimeLeft(diff);
+      }
+    };
 
-  // --- ACTIONS ---
+    tick(); 
+    timerRef.current = setInterval(tick, 1000); 
 
-  // A. MULAI UJIAN (POST /start)
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current); 
+    };
+  }, [step, deadLine]);
+
+
+  // --- E. ACTIONS ---
+
   const handleStartExam = async () => {
-    // Validasi pakai className
-    if (!studentName || !className) {
-        alert("Mohon lengkapi Nama dan Kelas!");
+    if (!studentIdentity.name || !studentIdentity.className) {
+        alert("Nama dan Kelas wajib diisi!");
         return;
     }
 
-    setIsStarting(true);
+    // Safety check exam ID
+    const examId = Array.isArray(params.id) ? params.id[0] : params.id;
+
     try {
-        const res = await api.post(`/submissions/${params.id}/start`, {
-            assessment_id: params.id,
-            student_name: studentName,
-            gender: gender,
-            
-            // PERUBAHAN: Kirim string class_name
-            class_name: className 
+        setStep('LOADING'); 
+        
+        const res = await api.post(`/submissions/${examId}/start`, {
+            assessment_id: examId,
+            student_name: studentIdentity.name,
+            gender: studentIdentity.gender,
+            class_name: studentIdentity.className 
         });
 
-        const subId = res.data.submission_id;
+        // 🔍 DEBUGGING DI SINI
+        console.log("Response Full:", res.data); // Cek struktur utuh
+        console.log("Coba ambil ID (cara 1):", res.data.submission_id);
+        console.log("Coba ambil ID (cara 2):", res.data.data?.submission_id); // NestJS biasanya membungkus di 'data'
+
+        const data = res.data.data;
+        // Pastikan path-nya benar sesuai log di atas
+        const subId = res.data.data?.submission_id || res.data.submission_id;
+ 
+        if (!subId) {
+            console.error("GAWAT! Submission ID tidak ditemukan di response!");
+            return; 
+        }
+
+        // SIMPAN
         localStorage.setItem('active_submission_id', subId);
+        console.log("Berhasil simpan ke LocalStorage:", subId); // Pastikan ini muncul
+
+        const session = localStorage.setItem('active_submission_id', subId);
         setSubmissionId(subId);
 
-        const resultData = res.data.data;
+       
 
-        const deadlineDate = new Date(resultData.deadline);
+        if (data.deadline) {
+            setDeadLine(new Date(data.deadline));
+        } else {
+            const d = new Date();
+            // Pake optional chaining (?) karena exam mungkin null
+            d.setMinutes(d.getMinutes() + (exam?.duration || 60));
+            setDeadLine(d);
+        }
 
-        console.log('deadline= ', deadlineDate);
+        setStep('EXAM'); 
 
-        setSubmissionId(res.data.data.submission_id);
-        setDeadLine(deadlineDate)
-        setStep('EXAM');
-    } catch (error) {
-        // ... error handling
-    } finally {
-        setIsStarting(false);
+    } catch (error: any) {
+        console.error("Start Error:", error);
+        alert(error.response?.data?.message || "Gagal memulai ujian.");
+        setStep('IDENTITY'); 
     }
   };
 
-  // B. SIMPAN JAWABAN (PUT /answer)
   const handleAnswer = async (questionId: string, optionId: string) => {
-    // 1. Update UI dulu biar cepat (Optimistic UI)
     setAnswers(prev => ({ ...prev, [questionId]: optionId }));
 
-    // 2. Kirim ke Backend (Silent Request)
     if (submissionId) {
         try {
             await api.put(`/submissions/${submissionId}/answer`, {
                 question_id: questionId,
                 option_id: optionId,
-                text_value: "" // Kosongkan jika multiple choice
             });
         } catch (error) {
-            console.error("Gagal menyimpan jawaban ke server", error);
-            // Opsional: Kasih indikator error kecil
+            console.error("Gagal simpan jawaban (silent fail)", error);
         }
     }
   };
 
-  // C. SELESAI UJIAN (PUT /finish)
   const handleSubmitExam = async () => {
     if (!submissionId) return;
-
     try {
-        setLoading(true);
-        // Panggil Endpoint Finish
+        setStep('LOADING');
         await api.put(`/submissions/${submissionId}/finish`);
         
+        localStorage.removeItem('active_submission_id');
+        
         setStep('FINISHED');
-        onOpenChange(); // Tutup modal jika terbuka
+        onOpenChange(); 
     } catch (error: any) {
-        alert(error.response?.data?.message || "Gagal mengumpulkan ujian.");
-    } finally {
-        setLoading(false);
+        alert("Gagal submit: " + (error.response?.data?.message || error.message));
+        setStep('EXAM'); 
     }
   };
 
-  // FORMAT TIME
   const formatTime = (seconds: number) => {
+    if (seconds <= 0) return "00:00";
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  // --- RENDERERS ---
+  const activeQuestion = exam?.questions ? exam.questions[currentStep] : null;
 
-//   if (loading || !exam) return <div className="h-screen flex items-center justify-center"><Spinner size="lg" label="Memuat..." /></div>;
+  console.log('test logic');
+  
 
-  // LAYAR 1: FORM IDENTITAS
-  if (step === 'IDENTITY') {
-    return (
-        {params,
-            router, isOpen, step, exam, loading,
-            submissionId, studentName, gender, className, isStarting, currentStep,
-            answers, timeLeft, deadLine, timerRef,
-            checkStatus, handleStartExam, handleAnswer, handleSubmitExam, formatTime,
-        }
-    )
-}
+  // --- F. RETURN ---
+  return {
+    step,
+    exam,
+    studentIdentity,
+    answers,
+    currentStep,
+    totalQuestions: exam?.questions?.length || 0,
+    activeQuestion,
+    deadLine,
+    
+    // Constant Data untuk UI
+    classOptions: CLASS_OPTIONS, // Kembalikan ini agar UI bisa render dropdown
 
-}
+    timeLeftString: formatTime(timeLeft), 
+    isCriticalTime: timeLeft < 60, 
+    
+    isConfirmOpen: isOpen,
+    
+    setStudentIdentity,
+    setCurrentStep,
+    
+    handleStartExam,
+    handleAnswer,
+    handleSubmitExam,
+    
+    openConfirmModal: onOpen,
+    closeConfirmModal: onOpenChange, 
+  };
+};

@@ -54,6 +54,21 @@ export class SubmissionRepository {
             }
       })}
 
+      async findOneSubmissionWithQuestion(submissiondId: string) {
+        return this.prisma.submission.findUnique({
+            where: { id: submissiondId },
+            include: {
+                assessment: {  // <--- WAJIB INCLUDE INI
+                include: {
+                    questions: { // <--- DAN INCLUDE SOALNYA
+                        include: { options: true }
+                    } 
+                }
+                }
+            }
+        })
+      }
+
     // async updateAnswer()
 
     // async findClassById(id: string) {

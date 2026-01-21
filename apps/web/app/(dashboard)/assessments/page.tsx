@@ -49,13 +49,9 @@ export default function AssessmentPage() {
     try {
       setIsLoading(true);
       const res = await api.get('/assessments');
-      console.log(res.data.data);
-      
-      
       
       // Defensive check: pastikan array
       const dataArray = Array.isArray(res.data) ? res.data : (res.data.data || []);
-      console.log('data array', dataArray);
       setAssessments(dataArray);
     } catch (error) {
       console.error("Gagal load assessment", error);
@@ -95,7 +91,6 @@ export default function AssessmentPage() {
     try {
       // Logika Expired/Duration (Sesuai diskusi sebelumnya)
       const expiredDate = parseInt(formData.duration);
-      console.log('duration=', expiredDate);
       
       await api.post('/assessments/from-bank', {
         title: formData.title,
@@ -117,9 +112,6 @@ export default function AssessmentPage() {
       setIsSubmitting(false);
     }
   };
-
-  console.log('bankOptions', assessments);
-  
 
   // ----------------------------------------------------------------------
   // PERBAIKAN LAYOUT DISINI (WRAPPER UTAMA)
@@ -238,11 +230,9 @@ export default function AssessmentPage() {
                         }));
                     }}
                 >
-                    {(Array.isArray(assessments) ? assessments : []).map((bank) => (
+                    {(Array.isArray(bankOptions) ? bankOptions : []).map((bank) => (
                         <SelectItem key={bank.id} textValue={bank.title}>
                             {bank.title} ({bank._count?.questions || 0} Soal)
-                            
-                            
                         </SelectItem>
                     ))}
                 </Select>

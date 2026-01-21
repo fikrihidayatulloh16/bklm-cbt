@@ -58,14 +58,20 @@ export class SubmissionRepository {
         return this.prisma.submission.findUnique({
             where: { id: submissiondId },
             include: {
-                assessment: {  // <--- WAJIB INCLUDE INI
+            // 👇 WAJIB ADA: Agar jawaban siswa ikut terambil
+            answer: true, 
+
+            // Ini yang sudah ada sebelumnya (Soal ujian)
+            assessment: {
                 include: {
-                    questions: { // <--- DAN INCLUDE SOALNYA
-                        include: { options: true }
-                    } 
-                }
+                    questions: {
+                        include: {
+                            options: true
+                        }
+                    }
                 }
             }
+            },
         })
       }
 

@@ -122,20 +122,66 @@ export const useExamLogic = () => {
              gender: data.gender || "L"
           });
           
-        if (data.answers) {
-            // Cek apakah data dari server berbentuk Array?
-            if (Array.isArray(data.answers)) {
-                // Konversi Array -> Object
-                const mappedAnswers: Record<string, string> = {};
-                data.answers.forEach((ans: any) => {
-                    // Pastikan field-nya sesuai dengan response JSON backend Anda
-                    mappedAnswers[ans.question_id] = ans.option_id; 
+        // --- PERBAIKAN 1: RESTORE JAWABAN (Mapper) ---
+        let restoredAnswers: Record<string, string> = {};
+
+        if (data.answer) {
+            if (Array.isArray(data.answer)) {
+                // KASUS 1: Backend kirim Array (Paling umum di Prisma)
+                // Contoh: [{ question_id: "uuid-1", option_id: "uuid-a" }, ...]
+                data.answer.forEach((ans: any) => {
+                    // Kita coba ambil ID, jaga-jaga backend pake snake_case atau camelCase
+                    const qId = ans.question_id || ans.questionId || ans.question?.id;
+                    const oId = ans.option_id || ans.optionId || ans.option?.id;
+                    
+                    // PENTING: Pastikan jadi String biar cocok sama UI
+                    if (qId && oId) {
+                        restoredAnswers[String(qId)] = String(oId);
+                    }
                 });
-                setAnswers(mappedAnswers);
-            } else {
-                // Kalau sudah Object, pakai langsung
-                setAnswers(data.answers);
+            } else if (typeof data.answer === 'object') {
+                // KASUS 2: Backend sudah kirim Object (Key-Value)
+                // Contoh: { "uuid-1": "uuid-a" }
+                restoredAnswers = data.answer;
             }
+        }
+
+        // Masukkan ke State agar UI Radio Button menyala
+        setAnswers(restoredAnswers);
+
+
+        // --- PERBAIKAN 2: AUTO-JUMP KE SOAL TERAKHIR ---
+        // Logika: Cari soal pertama yang BELUM dijawab
+        if (data.assessment && data.assessment.questions) {
+            const questions = data.assessment.questions;
+            let jumpToIndex = 0;
+
+            for (let i = 0; i < questions.length; i++) {
+                const qId = String(questions[i].id);
+                
+                // Jika ID soal ini TIDAK ADA di jawaban yang kita restore tadi...
+                if (!restoredAnswers[qId]) {
+                    jumpToIndex = i; // ... berarti ini soal terakhir yang belum dijawab
+                    break; // Stop looping, kita ketemu posisi terakhir siswa
+                }
+                
+                // Jika ini soal terakhir dan sudah dijawab juga, tetap stay di situ
+                if (i === questions.length - 1) jumpToIndex = i;
+            }
+            
+            setCurrentStep(jumpToIndex);
+        }
+
+
+        // 3. Restore Timer (Sama seperti sebelumnya)
+        if (data.assessment.expired_at || data.deadline) {
+            const targetTime = data.deadline ? new Date(data.deadline) : new Date(data.assessment.expired_at);
+            setDeadLine(targetTime);
+            const now = new Date();
+            const secondsRemaining = Math.floor((targetTime.getTime() - now.getTime()) / 1000);
+            setTimeLeft(secondsRemaining > 0 ? secondsRemaining : 0);
+        } else {
+            setTimeLeft(data.assessment.duration * 60);
         }
 
           // Logika Deadline
@@ -156,9 +202,6 @@ export const useExamLogic = () => {
           // --- SKENARIO BARU ---
           const res = await api.get(`/exam/${examId}`);
           const data = res.data.data || res.data;
-
-          console.log(`get exam/${examId},; data= ${data.data}`);
-          
           
           setExam(data);
           setTimeLeft(data.duration * 60); 
@@ -223,11 +266,6 @@ export const useExamLogic = () => {
             class_name: studentIdentity.className 
         });
 
-        // 🔍 DEBUGGING DI SINI
-        console.log("Response Full:", res.data); // Cek struktur utuh
-        console.log("Coba ambil ID (cara 1):", res.data.submission_id);
-        console.log("Coba ambil ID (cara 2):", res.data.data?.submission_id); // NestJS biasanya membungkus di 'data'
-
         const data = res.data.data;
         // Pastikan path-nya benar sesuai log di atas
         const subId = res.data.data?.submission_id || res.data.submission_id;
@@ -239,7 +277,6 @@ export const useExamLogic = () => {
 
         // SIMPAN
         localStorage.setItem('active_submission_id', subId);
-        console.log("Berhasil simpan ke LocalStorage:", subId); // Pastikan ini muncul
 
         const session = localStorage.setItem('active_submission_id', subId);
         setSubmissionId(subId);
@@ -303,9 +340,6 @@ export const useExamLogic = () => {
   };
 
   const activeQuestion = exam?.questions ? exam.questions[currentStep] : null;
-
-  console.log('test logic');
-  
 
   // --- F. RETURN ---
   return {

@@ -150,7 +150,6 @@ export default function ExamPage() {
   // LAYAR 2: UJIAN 
   const questions = exam.questions;
   // Gunakan activeQuestion dari hook atau fallback ke manual
-  console.log('activeQuestion=', activeQuestion, 'questions= ', questions);
   
   const currentQuestion = activeQuestion || questions[currentStep]; 
   const progress = (Object.keys(answers).length / questions.length) * 100;
@@ -202,18 +201,15 @@ export default function ExamPage() {
             </div>
 
             <RadioGroup 
+                // Pastikan ini mengambil dari object answers menggunakan ID soal aktif
                 value={answers[currentQuestion?.id] || ""} 
+
                 onValueChange={(val) => handleAnswer(currentQuestion.id, val)}
-                className="gap-3"
             >
-                {currentQuestion?.options.map((opt: any) => (
+                {currentQuestion?.options.map((opt) => (
                     <Radio 
                         key={opt.id} 
-                        value={opt.id}
-                        classNames={{
-                            base: "max-w-full cursor-pointer rounded-lg gap-4 p-4 border-2 border-transparent data-[selected=true]:border-primary bg-default-50 m-0",
-                            label: "text-default-700 font-medium"
-                        }}
+                        value={opt.id} // Pastikan value ini adalah ID opsi (UUID)
                     >
                         {opt.label}
                     </Radio>

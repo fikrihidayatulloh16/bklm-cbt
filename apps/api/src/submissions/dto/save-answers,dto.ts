@@ -1,4 +1,4 @@
-import { IsBoolean, IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
 
 export class SaveAnswerDTO {
     @IsNotEmpty()
@@ -8,6 +8,10 @@ export class SaveAnswerDTO {
     @IsOptional()
     @IsString()
     option_id?: string;
+
+    @IsOptional()
+    @IsNumber()
+    numeric_value?: number;
 
     @IsOptional()
     @IsString()

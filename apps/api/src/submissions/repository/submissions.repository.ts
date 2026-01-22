@@ -38,19 +38,18 @@ export class SubmissionRepository {
     async findSubmissionById(submissionId) {
         return await this.prisma.submission.findUnique({
         where: { id: submissionId },
-        select : { assessment_id: true, status: true }
+        select : { assessment_id: true, status: true },
       })
     }
 
     async findOneIdSubmissionWithAnswer(submissionId) {
             return await this.prisma.submission.findUnique({
             where: { id: submissionId },
-            
             include: { 
-            answer:  {
-                include: { option: true }
-            },
-            
+                answer:  {
+                    include: { option: true }
+                },
+                
             }
       })}
 
@@ -74,6 +73,21 @@ export class SubmissionRepository {
             },
         })
       }
+
+    // submission.repository.ts
+    async findSubmissionNAssessmentDeadline(id: string) {
+    return this.prisma.submission.findUnique({
+        where: { id },
+        include: {
+        assessment: { // <--- WAJIB INCLUDE INI
+            select: {
+                id: true,
+                expired_at: true // Ambil deadline-nya sekalian
+            }
+        }
+        }
+    });
+    }
 
     // async updateAnswer()
 

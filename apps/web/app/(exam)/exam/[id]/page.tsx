@@ -202,7 +202,8 @@ export default function ExamPage() {
 
             <RadioGroup 
                 // Pastikan ini mengambil dari object answers menggunakan ID soal aktif
-                value={answers[currentQuestion?.id] || ""} 
+                value={answers[currentQuestion?.id] || ""}
+                
 
                 onValueChange={(val) => handleAnswer(currentQuestion.id, val)}
             >
@@ -210,6 +211,10 @@ export default function ExamPage() {
                     <Radio 
                         key={opt.id} 
                         value={opt.id} // Pastikan value ini adalah ID opsi (UUID)
+                        classNames={{
+                            base: "max-w-full cursor-pointer rounded-lg gap-4 p-4 border-2 border-transparent data-[selected=true]:border-primary bg-default-50 m-0",
+                            label: "text-default-700 font-medium"
+                        }}
                     >
                         {opt.label}
                     </Radio>

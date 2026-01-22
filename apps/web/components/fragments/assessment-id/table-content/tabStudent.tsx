@@ -1,4 +1,4 @@
-import { Card, CardBody, Chip, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, User } from "@nextui-org/react";
+import { Button, Card, CardBody, CardHeader, Chip, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, User } from "@nextui-org/react";
 import React from "react";
 
 // --- 1. UPDATE INTERFACE (Sesuai Backend Service Anda) ---
@@ -26,6 +26,30 @@ const statusColorMap: Record<string, "success" | "warning" | "default"> = {
 export default function TabStudentRank({ submissions, assessmentId }: StudentProps) {
     return (
         <Card className="mt-4 shadow-sm border border-default-200">
+            <CardHeader className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <h2>Tabel Siswa</h2>
+                <div>
+                    <Button 
+                    color="warning" 
+                    className="mx-1"
+                    // variant="ghost"
+                    // onPress={handleSyncStatus}
+                    // isLoading={isSyncing}
+                    >
+                    Sinkron Status
+                </Button>
+
+                <Button 
+                    color="secondary" 
+                    // variant="ghost"
+                    // onPress={handleSyncStatus}
+                    // isLoading={isSyncing}
+                    >
+                    Filter
+                </Button>
+                </div>
+                
+            </CardHeader>
             <CardBody className="p-0">
                 {submissions.length > 0 ? (
                     <Table aria-label="Tabel Nilai Siswa" removeWrapper shadow="none">

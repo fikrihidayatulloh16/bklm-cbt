@@ -53,59 +53,86 @@ export class AssessmentService {
     }
 
   async getAnalytics(assessmentId: string) {
-    // menghitung score siswa dari yang tertinggi
+    // 1. Ambil Ranking Siswa (Code lama, tetap dipakai)
     const studentRanks = await this.assessmentRepo.getStudentRanks(assessmentId);
 
-    // A. HITUNG STATISTIK (Query GroupBy)
-    // Query ini murni matematika, sangat cepat
-    const stats = await this.prisma.answer.groupBy({
-        by: ['question_id'],
+    // 2. AMBIL RAW DATA (Pengganti GroupBy)
+    // Kita ambil semua jawaban untuk ujian ini, BESERTA nilai aslinya dari tabel Option
+    const rawAnswers = await this.prisma.answer.findMany({
         where: {
-            submission: { assessment_id: assessmentId, } // Filter per Ujian
+            submission: { 
+                assessment_id: assessmentId,
+                // Opsional: Jika mau menghitung hanya yang sudah finish
+                // status: 'FINISHED' 
+            }
         },
-        _sum: {
-            numeric_value: true // Ini sekarang sudah AMAN karena sudah kita isi di Langkah 1
-        },
-        _count: {
-            numeric_value: true // Jumlah penjawab
-        },
-        orderBy: {
-            _sum: { numeric_value: 'desc' } // Urutkan dari masalah terbesar
+        include: {
+            // JOIN ke tabel Option untuk ambil 'numeric_value' yang asli & aman
+            option: {
+                select: { score: true } 
+            },
+            // JOIN ke tabel Question sekalian biar tidak perlu query ulang
+            question: {
+                select: { id: true, text: true, category: true }
+            }
         }
     });
 
-    // B. AMBIL TEKS SOAL (Query Tambahan)
-    // Karena groupBy cuma menghasilkan ID, kita perlu ambil detail soalnya
-    
-    // 1. Kumpulkan semua question_id dari hasil stats
-    const questionIds = stats.map(s => s.question_id);
+    // 3. AGGREGATE DATA (Hitung Manual via Map)
+    // Kita buat Dictionary/Map untuk mengelompokkan data berdasarkan Question ID
+    const statsMap = new Map<string, {
+        question_id: string;
+        question_text: string;
+        category: string;
+        total_risk_score: number;
+        respondents: number;
+    }>();
 
-    // 2. Ambil detail soal dari database
-    const questions = await this.prisma.question.findMany({
-        where: { id: { in: questionIds } },
-        select: { id: true, text: true, category: true }
-    });
+    for (const ans of rawAnswers) {
+        const qId = ans.question_id;
+        
+        // AMBIL NILAI DARI OPTION (Single Source of Truth)
+        // Jika option null (essay) atau tidak ada nilai, default 0
+        const score = ans.option?.score ?? 0;
 
-    // C. GABUNGKAN DATA (Merge)
-    const finalReport = stats.map(stat => {
-        // Cari teks soal yang cocok dengan ID
-        const qDetail = questions.find(q => q.id === stat.question_id);
+        // Jika soal ini belum ada di Map, inisialisasi dulu
+        if (!statsMap.has(qId)) {
+            statsMap.set(qId, {
+                question_id: qId,
+                question_text: ans.question?.text || "Soal tidak ditemukan",
+                category: ans.question?.category || "-",
+                total_risk_score: 0,
+                respondents: 0
+            });
+        }
 
+        // Akumulasi Score dan Responden
+        const entry = statsMap.get(qId);
+        if (!entry) { throw new BadRequestException("question_id tidak ada") }
+        entry.total_risk_score += score;
+        entry.respondents += 1;
+    }
+
+    // 4. FINAL FORMATTING & SORTING
+    // Ubah Map kembali menjadi Array dan hitung rata-rata
+    const finalReport = Array.from(statsMap.values()).map(item => {
         return {
-            question_id: stat.question_id,
-            question_text: qDetail?.text || "Soal dihapus",
-            category: qDetail?.category,
-            total_risk_score: stat._sum.numeric_value || 0,
-            respondents: stat._count.numeric_value || 0,
-            average: (stat._sum.numeric_value || 0) / (stat._count.numeric_value || 1)
+            ...item,
+            // Hindari pembagian dengan nol
+            average: item.respondents > 0 
+                ? (item.total_risk_score / item.respondents) 
+                : 0
         };
     });
+
+    // Urutkan dari Total Score Tertinggi (Risk Score Terbesar)
+    finalReport.sort((a, b) => b.total_risk_score - a.total_risk_score);
 
     return {
         question_analysis: finalReport,
         studentRanks
     };
-}
+  }
 
   async generateExcel(assessmentId: string): Promise<Buffer> {
     // 1. AMBIL DATA (Reuse fungsi analytics yang sudah ada biar hemat koding)

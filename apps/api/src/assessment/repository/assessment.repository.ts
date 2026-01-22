@@ -70,6 +70,13 @@ export class AssessmentRepository {
         });
     }
 
+    async findDeadlineAssessment(assessmentId: string) {
+        return await this.prisma.assessment.findFirst({
+            where: { id: assessmentId },
+            select: { expired_at: true, }
+        })
+    }
+
     async findAllAssessment(user_id) {
     return await this.prisma.assessment.findMany({
         where: {user_id: user_id},

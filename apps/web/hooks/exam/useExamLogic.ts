@@ -8,7 +8,7 @@ import api from "@/lib/api";
 export interface Option {
   id: string;
   label: string;
-  numeric_value: number;
+  score: number;
 }
 
 export interface Question {
@@ -93,6 +93,9 @@ export const useExamLogic = () => {
             // --- SKENARIO RESTORE ---
             const res = await api.get(`/submissions/${savedSubmissionId}`); 
             const data = res.data.data || res.data; 
+
+            console.log('awal',data);
+            
 
             // --- 🛡️ VALIDASI TAMBAHAN (GUARD CLAUSE) ---
             // Cek apakah submission ini milik ujian yang ada di URL (params.id)?
@@ -202,6 +205,9 @@ export const useExamLogic = () => {
           // --- SKENARIO BARU ---
           const res = await api.get(`/exam/${examId}`);
           const data = res.data.data || res.data;
+
+          console.log('get exam=', data);
+          
           
           setExam(data);
           setTimeLeft(data.duration * 60); 
@@ -301,8 +307,9 @@ export const useExamLogic = () => {
     }
   };
 
-  const handleAnswer = async (questionId: string, optionId: string) => {
+  const handleAnswer = async (questionId: string, optionId: string, numeric_value?: number) => {
     setAnswers(prev => ({ ...prev, [questionId]: optionId }));
+    console.log(numeric_value);
 
     if (submissionId) {
         try {
@@ -310,9 +317,13 @@ export const useExamLogic = () => {
                 question_id: questionId,
                 option_id: optionId,
             });
-        } catch (error) {
-            console.error("Gagal simpan jawaban (silent fail)", error);
-        }
+        } 
+        catch (error) {
+            alert("Gagal simpan jawaban (silent fail)");
+
+            window.location.reload();
+
+        } 
     }
   };
 

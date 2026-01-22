@@ -213,6 +213,7 @@ model Answer {
 
   @@index([question_id])
   @@index([submission_id])
+  @@unique([submission_id, question_id])
 }
 
 model Submission {

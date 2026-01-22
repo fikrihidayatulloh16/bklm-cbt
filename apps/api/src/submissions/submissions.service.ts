@@ -107,139 +107,109 @@ export class SubmissionsService {
   // submissions.service.ts
 
   async saveAnswer(submissionId: string, dto: SaveAnswerDTO) {
-      
-      // 1. Ambil Data Submission (Untuk tahu dia sedang mengerjakan ujian apa)
-      const submission = await this.submissionRepo.findSubmissionById(submissionId);
-      if (!submission) throw new NotFoundException("Submission tidak ditemukan");
+    // [OPTIMASI QUERY 1 & 3] 
+    // Ambil Submission SEKALIGUS Deadline Assessment-nya
+    // Pastikan repo Anda support include/select assessment
+    const submission = await this.submissionRepo.findSubmissionNAssessmentDeadline(submissionId); 
+    
+    // Validasi dasar
+    if (!submission) throw new NotFoundException("Submission tidak ditemukan");
+    if (submission.status === 'FINISHED') throw new ForbiddenException("Ujian sudah ditutup.");
 
-      //Validasi status submission
-      if (submission.status === 'FINISHED') {
-          throw new ForbiddenException("Ujian sudah ditutup.");
-      }
-
-      // 2. VALIDASI PERTANYAAN (Wrong Room Attack Prevention)
-      // Ambil detail pertanyaan berdasarkan ID yang dikirim siswa
-      const question = await this.questionRepo.findUniqueQuestion(dto.question_id);
-
-      if (!question) throw new NotFoundException("Pertanyaan tidak valid");
-
-      // Cek: Apakah pertanyaan ini BENAR milik Assessment yang sedang dikerjakan?
-      // Jangan sampai siswa mengerjakan soal Fisika di ujian Biologi.
-      if (question.assessment_id !== submission.assessment_id) {
-          throw new BadRequestException("Pertanyaan ini bukan bagian dari ujian ini!");
-      }
-
-      // 3. VALIDASI OPSI (Hanya untuk Pilihan Ganda)
-      // Jika bukan essay (misal TYPE 'MULTIPLE_CHOICE'), pastikan option_id valid
-      if (question.type !== 'ESSAY' && dto.option_id) {
-          const isValidOption = await this.questionRepo.findquestionOptionById(dto.option_id, dto.question_id);
-          
-          if (!isValidOption) {
-              throw new BadRequestException("Pilihan jawaban tidak ditemukan/dimanipulasi.");
-          }
-      }
-
-      // 2. AMBIL DATA OPSI UNTUK MENDAPATKAN SCORE
-      let scoreToSave = 0; // Default 0 jika essay atau error
-
-      if (dto.option_id) {
-          const selectedOption = await this.questionRepo.findquestionOptionById(dto.option_id, dto.question_id)          
-          
-          // PENTING: Ambil skor dari opsi, simpan ke variabel
-          if (selectedOption) {
-              scoreToSave = selectedOption.score; // Pastikan nama kolom di DB Option 'score' atau 'numeric_value'
-          }
-      }
-
-      // 4. SIMPAN JAWABAN (Upsert: Update jika ada, Create jika belum)
-      // Cek dulu di DB apakah sudah pernah jawab nomor ini?
-      const existingAnswer = await this.answerRepo.findAnswerBySubmissionIdNQuestionId(submissionId, dto.question_id);
-
-      if (existingAnswer) {
-          // Update jawaban lama
-          return await this.answerRepo.updateAnswer(
-              existingAnswer.id, 
-              dto.option_id, 
-              dto.text_value,
-              scoreToSave
-               // Kosongkan jika pilgan, isi jika essay
-          );
-      } else {
-          // Buat jawaban baru
-          return await this.answerRepo.createAnswer(
-              submissionId, 
-              dto.question_id, 
-              dto.option_id, 
-              dto.text_value,
-              scoreToSave
-          );
-      }
-  }
-
-    async finish(submissionId: string) {
-
-      //Mencari dulu apakah responded sudah submission
-      const submission = await this.submissionRepo.findSubmissionById(submissionId)
-      if (!submission) {
-        throw new ForbiddenException('submission tidak ditemukan')
-      }
-
-      if (submission.status === 'FINISHED') {
-        throw new BadRequestException(`Submission sudah selesai dilakukan`)
-      }
-
-      const totalAnswered = await this.answerRepo.totalAnswered(submissionId)
-
-      const totalQuestion = await this.questionRepo.totalAnswered(submission?.assessment_id)
-
-      // mendapatkan deadline
-      const deadLine = await this.assessmentrepo.findOneAssessmentById(submission.assessment_id)
-        if (!deadLine?.expired_at) { throw new ForbiddenException('Deadline belum dibuat') }
-
-      const now = new Date()
-
-
-      if (now.getTime() == deadLine.expired_at.getTime()) {
-        const submissionWithAnswer = await this.submissionRepo.findOneIdSubmissionWithAnswer(submissionId)
-
-      let totalScore = 0
-
-      if (!submissionWithAnswer) {
-        throw new NotFoundException('Data submission tidak ditemukan saat mau menghitung nilai.');
-      }
-
-      for (const a of submissionWithAnswer?.answer) {
-        const score = a.option?.score ?? 0
-        
-        totalScore += score
-      }
-
-      return await this.submissionRepo.updateStatusFinishSubmission(submissionId, totalScore)
-      }
-      //siswaa tidak bisa mengumpulkan selama jawaban belum lengkap dan waktu masih ada
-      else if (totalAnswered < totalQuestion && now.getTime() < deadLine.expired_at.getTime()) {
-        const sisa = totalQuestion - totalAnswered;
-        throw new BadRequestException(`Belum selesai dan waktu masih ada! masih ada '${sisa}' soal lagi yang belum terjawab `)
-      }
-      
-      
-
-      const submissionWithAnswer = await this.submissionRepo.findOneIdSubmissionWithAnswer(submissionId)
-
-      let totalScore = 0
-
-      if (!submissionWithAnswer) {
-        throw new NotFoundException('Data submission tidak ditemukan saat mau menghitung nilai.');
-      }
-
-      for (const a of submissionWithAnswer?.answer) {
-        const score = a.option?.score ?? 0
-        
-        totalScore += score
-      }
-
-      return await this.submissionRepo.updateStatusFinishSubmission(submissionId, totalScore)
+    // [QUERY 2] Validasi Soal (Wrong Room Prevention) - Ini Oke dipertahankan demi keamanan
+    const question = await this.questionRepo.findUniqueQuestion(dto.question_id);
+    if (!question) throw new NotFoundException("Pertanyaan tidak valid");
+    if (question.assessment_id !== submission.assessment_id) {
+        throw new BadRequestException("Pertanyaan ini bukan bagian dari ujian ini!");
     }
+
+    // [VALIDASI WAKTU]
+    const now = new Date();
+    // Kita ambil expired_at dari relasi submission -> assessment (hasil optimasi query 1)
+    // Pastikan repository Anda melakukan JOIN/INCLUDE ke tabel assessment
+    const expiredAt = submission.assessment?.expired_at; 
+
+    if (!expiredAt) {
+         // Safety check jika data assessment korup/tidak terload
+         console.error(`Assessment ID ${submission.assessment_id} tidak punya expired_at`);
+         throw new BadRequestException('Konfigurasi waktu ujian invalid');
+    }
+
+    // Grace Period: Toleransi 2 menit untuk latensi internet siswa
+    const GRACE_PERIOD_MS = 2 * 60 * 1000;
+
+    if (now.getTime() > (expiredAt.getTime() + GRACE_PERIOD_MS)) {
+         // 🛑 STOP DISINI!
+         // Jangan panggil this.finish() disini. Itu tugas Frontend atau Lazy Close.
+         // Tugas kita disini hanya MENOLAK jawaban baru.
+         this.finish(submissionId)
+         throw new ForbiddenException("Waktu ujian telah habis! Jawaban tidak tersimpan.");
+    }
+
+    // [QUERY 3 - FINAL] Simpan Jawaban
+    try {
+        return await this.answerRepo.upsertAnswer(
+            submissionId,
+            dto
+        );
+    } catch (error) {
+        // Error handling Foreign Key
+        if (error.code === 'P2003' || error.message?.includes('Foreign key constraint')) {
+             throw new BadRequestException("Pilihan jawaban tidak valid.");
+        }
+        throw error;
+    }
+}
+
+  async finish(submissionId: string) {
+    // 1. Ambil Data Submission
+    const submission = await this.submissionRepo.findSubmissionById(submissionId);
+    if (!submission) throw new ForbiddenException('Submission tidak ditemukan');
+    if (submission.status === 'FINISHED') throw new BadRequestException(`Submission sudah selesai.`);
+
+    // 2. Ambil Deadline Assessment
+    // Pastikan repository ini juga mengambil 'expired_at'
+    const assessment = await this.assessmentrepo.findOneAssessmentById(submission.assessment_id);
+    if (!assessment?.expired_at) throw new ForbiddenException('Deadline ujian belum diatur.');
+
+    // 3. LOGIKA WAKTU & KELENGKAPAN
+    const now = new Date();
+    // Gunakan ">" (Lewat waktu), JANGAN "==" (Sama persis)
+    const isTimeUp = now.getTime() > assessment.expired_at.getTime();
+
+    // HANYA jika waktu BELUM habis, kita cek apakah semua soal sudah dijawab
+    if (!isTimeUp) {
+        const totalAnswered = await this.answerRepo.totalAnswered(submissionId);
+        const totalQuestion = await this.questionRepo.totalAnswered(submission.assessment_id); // Asumsi ini fungsi hitung total soal
+        
+        if (totalAnswered < totalQuestion) {
+            const sisa = totalQuestion - totalAnswered;
+            throw new BadRequestException(`Waktu masih tersedia! Silakan lengkapi ${sisa} soal lagi.`);
+        }
+    }
+
+    // 4. HITUNG SKOR (Logic Utama)
+    // Kita ambil Full Data (Jawaban + Opsi + Score-nya)
+    const submissionWithAnswer = await this.submissionRepo.findOneIdSubmissionWithAnswer(submissionId);
+    
+    if (!submissionWithAnswer) throw new NotFoundException('Gagal memuat data jawaban.');
+
+    let totalScore = 0;
+    
+    // Loop jawaban yang ada
+    for (const ans of submissionWithAnswer.answer || []) { // Pastikan pakai 'answers' (plural/singular sesuaikan backend)
+        // Karena kita sudah tidak simpan score di tabel Answer,
+        // Kita WAJIB ambil score dari relasi Option
+        if (ans.option) {
+             totalScore += ans.option.score; 
+        }
+    }
+
+    console.log(`[Finish] Submission ${submissionId} Finished. Score: ${totalScore}`);
+
+    // 5. UPDATE STATUS & SCORE
+    return await this.submissionRepo.updateStatusFinishSubmission(submissionId, totalScore);
+  }
 
   async getUniqueSubmissionWithQuestions(submissionId: string) {
     return await this.submissionRepo.findOneSubmissionWithQuestion(submissionId);

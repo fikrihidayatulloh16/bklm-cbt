@@ -38,6 +38,8 @@ export class SubmissionsController {
   async saveAnswer(
     @Param('id') id: string,
     @Body() saveAnswer: SaveAnswerDTO) {
+      console.log('id=', id, 'saveaanswer=', saveAnswer);
+      
     const result = await this.submissionsService.saveAnswer(id, saveAnswer)
      return {
       statuscode: HttpStatus.CREATED,

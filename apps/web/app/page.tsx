@@ -1,3 +1,5 @@
+'use client';
+
 import { Link } from "@nextui-org/react";
 
 export default function Home() {

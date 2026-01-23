@@ -6,16 +6,20 @@ import { Plus, Trash2 } from "lucide-react";
 import { QuestionBankFormValues } from "@/lib/schemas/question-bank.schema";
 
 interface OptionListProps {
-  nestIndex: number; // Ini index milik Pertanyaan (Soal ke-0, ke-1, dst)
-  control: Control<any>; // "Otak" form yang kita oper dari atas ------- masih tidak paham fungsi control
+  control: Control<any>;
+  nestIndex: number;
+  basePath: string; // 👈 Tambahkan ini
+  register: any;    // Tambahkan ini biar mudah
+  errors: any;      // Tambahkan ini
+  setValue: any;    // Tambahkan ini
 }
 
-export default function OptionList({ nestIndex, control }: OptionListProps) {
+export default function OptionList({ basePath, control }: OptionListProps) {
   // Kita bikin array dinamis LAGI, tapi kali ini targetnya specific:
   // questions[0].options, questions[1].options, dst...
   const { fields, append, remove } = useFieldArray({ //-------------apakah field  - remove adalah bawaan
     control, 
-    name: `questions.${nestIndex}.options`
+    name: `questions.${basePath}.options`
   });
 
   return (
@@ -30,7 +34,7 @@ export default function OptionList({ nestIndex, control }: OptionListProps) {
           {/* Input Teks Jawaban */}
           <Input
             // Cara register manual tanpa hook 'register' (pake control lebih aman utk nested)
-            {...control.register(`questions.${nestIndex}.options.${k}.label`)}
+            {...control.register(`questions.${basePath}.options.${k}.label`)}
             placeholder={`Pilihan ${String.fromCharCode(65 + k)}`}
             size="sm"
             variant="flat"
@@ -38,7 +42,7 @@ export default function OptionList({ nestIndex, control }: OptionListProps) {
 
           {/* Input Score (Bobot Nilai) */}
           <Input
-            {...control.register(`questions.${nestIndex}.options.${k}.score`)} //------ ada yag pakai control ada yang tidak bedanya apa
+            {...control.register(`questions.${basePath}.options.${k}.score`)} //------ ada yag pakai control ada yang tidak bedanya apa
             type="number"
             placeholder="Skor"
             className="w-20"

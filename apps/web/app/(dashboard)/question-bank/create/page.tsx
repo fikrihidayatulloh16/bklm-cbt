@@ -1,68 +1,69 @@
 'use client';
 
-import { useForm, useFieldArray, SubmitHandler } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { questionBankSchema, QuestionBankFormValues } from "@/lib/schemas/question-bank.schema";
-import { Button, Input } from "@nextui-org/react";
-import { Plus, Save } from "lucide-react";
-import QuestionItem from "@/components/fragments/QuestionItem";
-import api from "@/lib/api";
+import { useForm, useFieldArray } from "react-hook-form";
 import { useRouter } from "next/navigation";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Accordion, AccordionItem, Button, Input, useDisclosure } from "@nextui-org/react";
+import { Plus, Save, Layers, Trash2 } from "lucide-react";
+import { questionBankFormSchema, QuestionBankFormValues } from "@/lib/schemas/question-bank.schema";
+import CategorySectionBody from "@/components/fragments/question-bank/CategorySection";
+import { transformFormToPayload } from "@/lib/utils/form-transformers";
+import CreateCategoryQuestionModal from "@/components/fragments/question-bank/modal/addCat.modal";
+import api from "@/lib/api";
 import { useState } from "react";
 
 export default function CreateQuestionBankPage() {
-  // --- PERBAIKAN UTAMA DI SINI ---
-  // 1. Hapus <QuestionBankFormValues> generic di sebelah useForm
-  // 2. Biarkan zodResolver yang menentukan tipenya otomatis
-  const { 
-    control, 
-    register, 
-    setValue,
-    handleSubmit, 
-    formState: { errors } 
-  } = useForm({
-    resolver: zodResolver(questionBankSchema),
-    defaultValues: {
-      title: "",
-      description: "", // Sekarang string kosong, match dengan schema
-      questions: [] 
-    }
-  });
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
 
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "questions"
+  const { control, register, handleSubmit, setValue, formState: { errors } } = useForm<QuestionBankFormValues>({
+    resolver: zodResolver(questionBankFormSchema),
+    defaultValues: {
+      title: "",
+      sections: [] // Mulai kosong
+    }
   });
 
-  // Function Submit
-  const onSubmit: SubmitHandler<QuestionBankFormValues> = async (data) => {
+  // Array untuk mengelola Section (Kategori)
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "sections"
+  });
+
+  const onSubmit = async (data: QuestionBankFormValues) => {
     setIsLoading(true);
-    try {
-      // 1. Kirim Data ke Backend
-      // Pastikan endpoint backend Anda benar (misal: /question-banks)
-      const response = await api.post('/question-bank', data); 
-      // Catatan: Cek lagi di NestJS controller, endpoint-nya '/assessments' atau '/question-banks'? 
-      // Jika Anda belum buat endpoint khusus QuestionBank, kita bisa pakai struktur yang ada dulu.
-      
-      // 2. Redirect atau Beri Notifikasi
-      alert("Bank Soal berhasil dibuat!"); // Nanti ganti Toast
+    // ✨ TRANSFORMASI DATA ✨
+    // Ubah struktur Nested UI menjadi Flat Backend Payload
+    const payload = transformFormToPayload(data);
+
+    try {      
+      await api.post('/question-bank', payload);
+      alert("Berhasil disimpan!");
       router.push('/question-bank'); // Kembali ke list
       router.refresh();
-
-    } catch (error: any) {
-      console.error("Gagal menyimpan:", error);
-      alert(error.response?.data?.message || "Terjadi kesalahan saat menyimpan.");
+    } catch (e) {
+      alert("Gagal simpan");
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Fungsi yang akan dipanggil oleh Modal
+  const handleAddCategoryFromModal = (categoryName: string, questions: any[]) => {
+    console.log("Menerima data dari modal:", categoryName, questions);
+     // DISINI logic append yang benar dijalankan
+     append({
+        categoryName: categoryName,
+        questions: questions
+     });
+
+     console.log("Data berhasil di-append!");
+  };
+
   return (
     <div className="max-w-4xl mx-auto py-8 px-4 space-y-8">
-      
       {/* HEADER */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Desain Instrumen</h1>
@@ -76,10 +77,7 @@ export default function CreateQuestionBankPage() {
         </Button>
       </div>
 
-      {/* FORM */}
-      <form onSubmit={handleSubmit(onSubmit as any)} className="space-y-8">
-        
-        {/* METADATA */}
+      {/* METADATA */}
         <div className="bg-white p-6 rounded-xl border border-default-200 shadow-sm space-y-4">
           <Input 
             {...register("title")}
@@ -97,47 +95,84 @@ export default function CreateQuestionBankPage() {
           />
         </div>
 
-        {/* LIST QUESTIONS */}
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-semibold">Daftar Pertanyaan</h3>
-            <Button 
-              size="sm" 
-              variant="flat" 
-              color="primary" 
-              startContent={<Plus size={16}/>}
-              onPress={() => append({ 
-                text: "", 
-                category: "", 
-                type: "MULTIPLE_CHOICE", 
-                options: [] 
-              })}
-            >
-              Tambah Item
-            </Button>
-          </div>
+      {/* AREA UTAMA: LIST KATEGORI */}
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+           <h3 className="text-lg font-bold flex gap-2 items-center">
+             <Layers /> Daftar Kategori
+           </h3>
 
-          <div className="space-y-4">
-            {fields.map((field, index) => (
-              <QuestionItem 
-                key={field.id} 
-                index={index} 
-                register={register as any} 
-                control={control} 
-                errors={errors as any} 
-                remove={remove}
-                setValue={setValue as any}
-              />
-            ))}
-          </div>
-          
-          {fields.length === 0 && (
-             <div className="text-center py-10 text-default-400 border-2 border-dashed border-default-200 rounded-xl">
-               Belum ada pertanyaan.
-             </div>
-          )}
+              
+              <Button 
+                size="sm" 
+                variant="flat" 
+                color="primary" 
+                startContent={<Plus size={16}/>}
+                onPress={onOpen} // Buka Modal
+              >
+                Tambah Kategori
+              </Button>
+
         </div>
-      </form>
+
+        <Accordion variant="splitted" selectionMode="multiple">
+          {fields.map((sectionField, index) => (
+            <AccordionItem
+              key={sectionField.id}
+              aria-label={`Kategori ${index + 1}`}
+              // KITA DEFINISIKAN TITLE (HEADER) DISINI
+              title={
+                <div className="flex gap-4 items-center pr-4">
+                  <Input 
+                    {...register(`sections.${index}.categoryName`)}
+                    placeholder="Nama Kategori (misal: Visual)" 
+                    variant="underlined"
+                    className="max-w-xs font-bold"
+                    color="primary"
+                    // PENTING: Stop Propagation agar saat ngetik accordion tidak nutup/buka
+                    onClick={(e) => e.stopPropagation()} 
+                    onKeyDown={(e) => e.stopPropagation()}
+                    isInvalid={!!errors.sections?.[index]?.categoryName}
+                    errorMessage={errors.sections?.[index]?.categoryName?.message}
+                  />
+                  <div className="flex-grow" />
+                  <Button 
+                    isIconOnly size="sm" color="danger" variant="light" 
+                    onPress={() => remove(index)}
+                  >
+                    <Trash2 size={18}/>
+                  </Button>
+                </div>
+              }
+            >
+              {/* KONTEN BODY (Daftar Soal) dipanggil disini */}
+              <CategorySectionBody 
+                control={control}
+                register={register}
+                setValue={setValue}
+                errors={errors}
+                sectionIndex={index} 
+                removeSection={function (index: number): void {
+                  throw new Error("Function not implemented.");
+                } }              />
+            </AccordionItem>
+          ))}
+        </Accordion>
+
+        {fields.length === 0 && (
+           <div className="text-center py-12 border-2 border-dashed rounded-xl text-gray-400">
+             Belum ada kategori. Klik "Tambah Kategori Baru" untuk memulai.
+           </div>
+        )}
+      </div>
+
+        <CreateCategoryQuestionModal
+          onOpenChange={onOpenChange}
+          isOpen={isOpen}
+          onAddCategory={handleAddCategoryFromModal}
+        />
+
+
     </div>
   );
 }

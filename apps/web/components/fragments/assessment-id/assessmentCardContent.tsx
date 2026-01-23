@@ -7,13 +7,12 @@ import { countdownRenderer } from "@/components/helper/countDownRenderer";
 
 
 interface AssessmentCardContentProps {
-  submissionsLength: number; // Menerima ARRAY submission
-  assessmentDuration: number;      // Menerima ID Assessment (jika butuh)
-  assessmentDeadLine: Date;      // Menerima ID Assessment (jika butuh)
+    submissionsLength: number; // Menerima ARRAY submission
+    assessmentDuration: number;      // Menerima ID Assessment (jika butuh)
+    assessmentDeadLine: Date;      // Menerima ID Assessment (jika butuh)
 }
 
 export default function AssessmentCardContent({submissionsLength, assessmentDuration, assessmentDeadLine}: AssessmentCardContentProps) {
-
     
     return (
 

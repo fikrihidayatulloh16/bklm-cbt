@@ -1,23 +1,29 @@
+// lib/schemas/question-form.schema.ts
 import { z } from "zod";
 
-export const optionSchema = z.object({
-  label: z.string().min(1, "Label opsi wajib diisi"),
-  score: z.coerce.number().default(0), 
+// Schema untuk SATU Soal
+export const questionItemSchema = z.object({
+  text: z.string().min(1, "Pertanyaan wajib diisi"),
+  type: z.enum(["MULTIPLE_CHOICE", "YES_NO", "ESSAY"]),
+  // Opsi boleh kosong jika Essay
+  options: z.array(z.object({
+    label: z.string(),
+    score: z.number()
+  })).optional() 
 });
 
-export const questionSchema = z.object({
-  text: z.string().min(5, "Pertanyaan minimal 5 karakter"),
-  category: z.string().min(1, "Kategori wajib diisi"), 
-  // UPDATE DISINI: Tambahkan "YES_NO" ke dalam Enum
-  type: z.enum(["MULTIPLE_CHOICE", "ESSAY", "YES_NO"]), 
-  options: z.array(optionSchema).default([]), 
+// Schema untuk SATU Kategori (Section)
+export const categorySectionSchema = z.object({
+  categoryName: z.string().min(1, "Nama kategori wajib diisi"),
+  questions: z.array(questionItemSchema)
 });
 
-// ... Sisanya sama ...
-export const questionBankSchema = z.object({
-  title: z.string().min(5, "Judul Instrumen minimal 5 karakter"),
-  description: z.string().default(""), 
-  questions: z.array(questionSchema).default([]), 
+// Schema UTAMA Form UI
+export const questionBankFormSchema = z.object({
+  title: z.string().min(3, "Judul minimal 3 karakter"),
+  description: z.string().optional(),
+  // Disini bedanya: Kita pakai 'sections' bukan 'questions' langsung
+  sections: z.array(categorySectionSchema)
 });
 
-export type QuestionBankFormValues = z.infer<typeof questionBankSchema>;
+export type QuestionBankFormValues = z.infer<typeof questionBankFormSchema>;

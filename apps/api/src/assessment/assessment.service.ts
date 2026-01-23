@@ -175,6 +175,76 @@ export class AssessmentService {
     return buffer as unknown as Buffer;
   }
 
+  // assessments.service.ts
+
+  async forceCloseTimeouts(assessmentId: string) {
+
+    // Memastikan bahwa tidak boleh aksi jika asssessment berada dalam publish
+    const assessment = await this.assessmentRepo.findAssessmentstatus(assessmentId)
+
+    if (!assessment || assessment.assessment_status === "PUBLISHED") {
+      throw new ForbiddenException("Assessment harus ada dan dilaarang PUBLISHED");
+    }
+
+    // 1. Ambil semua submission yang "nyangkut" (IN_PROGRESS)
+    const stuckSubmissions = await this.prisma.submission.findMany({
+      where: {
+        assessment_id: assessmentId,
+        status: 'IN_PROGRESS'
+      },
+      include: {
+        answer: { include: { option: true } }, // Butuh opsi untuk hitung nilai
+        assessment: true // Butuh expired_at
+      }
+    });
+
+    const now = new Date();
+    let closedCount = 0;
+
+    // 2. Proses secara Parallel (biar cepat)
+    const updatePromises = stuckSubmissions.map(async (sub) => {
+      
+      // Tentukan deadline (Prioritas: User deadline -> Global expired_at)
+      const deadline = sub.assessment.expired_at;
+
+      if (!deadline) {
+        throw new BadRequestException(`expired_at yang dimasukkan:${deadline}`)       
+      }
+
+      // Cek apakah MEMANG sudah lewat waktu? (Buffer 1-2 menit jaga-jaga)
+      if (now.getTime() > deadline.getTime()) {
+        
+        // A. Hitung Nilai (Logic yang sama dengan finish normal)
+        let totalScore = 0;
+        sub.answer.forEach(ans => {
+          totalScore += ans.option?.score ?? 0; // Ambil nilai dari Option
+        });
+
+        // B. Update ke Database
+        return this.prisma.submission.update({
+          where: { id: sub.id },
+          data: {
+            status: 'FINISHED',
+            score: totalScore,
+            finish_method: 'FORCED', // <--- Tanda bahwa ini ditutup paksa Guru/Sistem
+            submitted_at: now
+          }
+        });
+      }
+    });
+
+    // Tunggu semua proses selesai
+    const results = await Promise.all(updatePromises);
+    
+    // Filter yang tidak null (yang berhasil di-close)
+    closedCount = results.filter(r => r !== undefined).length;
+
+    return { 
+      message: `Berhasil menutup paksa ${closedCount} siswa yang timeout.`,
+      processed: closedCount 
+    };
+  }
+
   async findAssessmentResults(assessmentId: string) {
     return await this.assessmentRepo.findAssessmentResults(assessmentId);
   }

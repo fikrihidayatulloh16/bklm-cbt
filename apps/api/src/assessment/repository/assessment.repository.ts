@@ -156,6 +156,13 @@ export class AssessmentRepository {
         });
     }
 
+    async findAssessmentstatus(assessmentId : string) {
+        return await this.prisma.assessment.findUnique({
+            where: { id: assessmentId },
+            select: {assessment_status : true}
+        })
+    }
+
     async findOneAssessmentById(id: string) {
         return await this.prisma.assessment.findUnique({
             where: { id }

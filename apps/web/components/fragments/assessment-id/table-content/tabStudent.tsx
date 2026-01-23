@@ -14,6 +14,9 @@ export interface Submission {
 interface StudentProps {
   submissions: Submission[]; // Menerima ARRAY submission
   assessmentId: string;      // Menerima ID Assessment (jika butuh)
+  handleSyncStatus: () => void
+  loading: boolean
+  assessment_status: string;
 }
 
 // --- 2. MAP WARNA STATUS ---
@@ -23,21 +26,23 @@ const statusColorMap: Record<string, "success" | "warning" | "default"> = {
 };
 
 //Terima dta lewat props
-export default function TabStudentRank({ submissions, assessmentId }: StudentProps) {
+export default function TabStudentRank({ submissions, assessmentId, handleSyncStatus, loading, assessment_status }: StudentProps) {
     return (
         <Card className="mt-4 shadow-sm border border-default-200">
             <CardHeader className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <h2>Tabel Siswa</h2>
                 <div>
-                    <Button 
+                    { assessment_status !== "PUBLISHED" && (<Button
+                    onPress={handleSyncStatus}
+                    isDisabled={loading}
                     color="warning" 
                     className="mx-1"
                     // variant="ghost"
-                    // onPress={handleSyncStatus}
+                    
                     // isLoading={isSyncing}
                     >
                     Sinkron Status
-                </Button>
+                </Button>)}
 
                 <Button 
                     color="secondary" 

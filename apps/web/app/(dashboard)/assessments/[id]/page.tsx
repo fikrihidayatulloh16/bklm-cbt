@@ -95,9 +95,6 @@ export default function AssessmentDetailPage() {
   if (isLoading) return <div className="flex h-[50vh] items-center justify-center"><Spinner size="lg" label="Memuat data..." /></div>;
   if (!assessment) return <div className="text-center py-10">Data tidak ditemukan</div>;
 
-  // console.log('questionAnalytics= ',questionAnalytics);
-  
-
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
 
@@ -122,6 +119,7 @@ export default function AssessmentDetailPage() {
         assessmentId={id}
         submissions={submissions}
         question_analytics={questionAnalytics}
+        assessment_status={assessment.assessment_status}
       />
 
         {/* PANGGIL KOMPONEN ANALYTICS DI SINI */}

@@ -64,7 +64,7 @@ export default function QuestionsAnalytics({ questionsAnalytic, assessmentId, on
                                 {/* <TableColumn>No.</TableColumn> */}
                                 <TableColumn>Pertanyaan</TableColumn>
                                 <TableColumn>Kategori</TableColumn>
-                                <TableColumn>Jumlah Responden</TableColumn>
+                                <TableColumn>Responden</TableColumn>
                             </TableHeader>
                             <TableBody items={questionsAnalytic}>
                                 {(quest) => (

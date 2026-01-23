@@ -18,16 +18,46 @@ interface AssessmentDetailTabsProps {
   submissions: Submission[]; // Menerima ARRAY submission
   assessmentId: string;      // Menerima ID Assessment (jika butuh)
   question_analytics: QuestionsAnalytic[]
+  assessment_status: string;
 }
 
 
 
-export default function AssessmentDetailTabs({ submissions, assessmentId, question_analytics }: AssessmentDetailTabsProps) {
+export default function AssessmentDetailTabs({ submissions, assessmentId, question_analytics, assessment_status }: AssessmentDetailTabsProps) {
     const [analytics, setAnalytics] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
 
     // 1. TAMBAHKAN STATE LOADING DOWNLOAD (Agar tombol tidak dipencet 2x)
     const [isDownloading, setIsDownloading] = useState(false);
+
+    // Aksi untuk menghadle sinkronisasi status submit siswa
+    const handleSyncStatus = async () => {
+        // 1. Cek loading state (Debounce sederhana)
+        if (loading) return;
+        setLoading(true); // Mulai Loading
+
+        try {
+            // 2. Request API
+            await api.patch(`/assessments/${assessmentId}/sync-status`);
+            
+            // 3. Success Feedback (HANYA jika tidak error)
+            alert("Berhasil Sinkronisasi Data!");
+            
+            // 4. Refresh Halaman (Cara kasar tapi efektif)
+            window.location.reload(); 
+
+            // Opsi Lebih Baik (Jika ada):
+            // await fetchStudentList(); // Refresh data tanpa reload page
+
+        } catch (error) {
+            console.error(error);
+            // 5. Error Feedback
+            alert("Gagal Sinkronisasi! Cek koneksi atau coba lagi.");
+        } finally {
+            // 6. Matikan Loading (Apapun hasilnya)
+            setLoading(false);
+        }
+    };
 
     // 2. LOGIC DOWNLOAD EXCEL (Ganti alert lama dengan ini)
     const handleDownload = async () => {
@@ -83,6 +113,9 @@ export default function AssessmentDetailTabs({ submissions, assessmentId, questi
                     <TabStudentRank 
                         submissions={submissions} 
                         assessmentId={assessmentId}
+                        handleSyncStatus={handleSyncStatus}
+                        loading={loading}
+                        assessment_status={assessment_status}
                     />
                 </div>
             </Tab>

@@ -217,11 +217,12 @@ model Answer {
 }
 
 model Submission {
-  id             String   @id @default(uuid())
-  score          Int      @default(0)
-  status         SubmissionStatus @default(IN_PROGRESS)
-  started_at     DateTime @default(now())
-  submitted_at   DateTime?
+  id              String   @id @default(uuid())
+  score           Int      @default(0)
+  status          SubmissionStatus @default(IN_PROGRESS)
+  started_at      DateTime @default(now())
+  submitted_at    DateTime?
+  finish_method   String?
 
   //Snashot student data
   student_name      String

@@ -65,4 +65,10 @@ export class AssessmentController {
       // 2. Kirim Buffer langsung
       res.end(buffer);
   }
+
+  @Patch(':id/sync-status')
+  // @UseGuards(TeacherGuard) // Pastikan hanya guru yang bisa akses
+  async syncAssessmentStatus(@Param('id') AssessmentId: string) {
+    return this.assessmentService.forceCloseTimeouts(AssessmentId);
+  }
 }

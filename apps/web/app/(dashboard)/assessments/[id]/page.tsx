@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { useDisclosure, Spinner, Divider } from "@nextui-org/react"; // useDisclosure untuk modal
 import api from "@/lib/api";
@@ -37,25 +37,64 @@ export default function AssessmentDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isPublishing, setIsPublishing] = useState(false);
   const [deadLine, setDeadLine] = useState<Date | null>(null);
+  const [selectedKeys, setSelectedKeys] = useState(new Set(["all"]));
+  const [distinctClasses, setDistinctClasses] = useState<string[]>([]);
 
   // Hook Modal bawaan NextUI (Sangat praktis!)
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
 
+   // 2. HELPER: Mengubah Selection Set menjadi String untuk API
+  const selectedClassName = useMemo(() => {
+    // Ambil value pertama dari Set
+    const selected = Array.from(selectedKeys)[0] as string;
+    return selected === "all" ? undefined : selected;
+  }, [selectedKeys]);
+
+  // 3. FETCH DATA KELAS (Hanya sekali saat mount)
+  useEffect(() => {
+    const fetchClasses = async () => {
+      try {
+        const res = await api.get(`/assessments/${id}/distinct-class`);
+        setDistinctClasses(res.data);
+      } catch (err) {
+        console.error("Gagal ambil daftar kelas", err);
+      }
+    };
+    fetchClasses();
+  }, [id]);
+
   // 1. Fetch Data
-  const fetchDetail = async () => {
+  useEffect(() => {
+   const fetchDetail = async () => {
+    //Mengaktifkan loading
+    setIsLoading(true);
+    
     try {
       const response = await api.get(`/assessments/${id}`);
       setAssessment(response.data);
       setDeadLine(response.data)
 
-      // Backend mengembalikan Object { submissions: [...] }, bukan langsung Array [...]
-        const resSubs = await api.get(`/assessments/${id}/results`);
+      // Tentukan URL: Apakah pakai filter atau tidak?
+      let url = `/assessments/${id}/results`;
+      let questAurl = `/assessments/${id}/analytics`;
+      
+      // Jika ada filter kelas, tambahkan query param
+      if (selectedClassName) {
+        url += `?class_name=${encodeURIComponent(selectedClassName)}`;
+        questAurl += `?class_name=${encodeURIComponent(selectedClassName)}`;
+      }
+
+      console.log('questAurl=',questAurl);
+      
+
+      // Mengambil semua submission beserta filternya
+      const resSubs = await api.get(url);
 
       // Kita ambil array yang ada DI DALAM object tersebut
       const subsArray = resSubs.data?.submissions || []; 
       setSubmissions(subsArray);
 
-      const questA = await api.get(`/assessments/${id}/analytics`);
+      const questA = await api.get(questAurl);
       setQuestionAnalytics(questA.data.question_analysis); // Sesuaikan jika response dibungkus data.data
 
     } catch (error) {
@@ -65,9 +104,17 @@ export default function AssessmentDetailPage() {
     }
   };
 
-  useEffect(() => {
-    if (id) fetchDetail();
-  }, [id]);
+  fetchDetail();
+
+}, [id, selectedClassName]); // <-- Trigger ulang saat selectedClassName berubah
+
+  
+
+  
+
+  // useEffect(() => {
+  //   if (id) fetchDetail();
+  // }, [id]);
 
   // 2. Logic Publish
   const handlePublish = async () => {
@@ -78,7 +125,6 @@ export default function AssessmentDetailPage() {
       await api.patch(`/assessments/${id}/publish`); 
       
       // Refresh data agar status berubah jadi PUBLISHED di layar
-      
       
       window.location.reload();
       console.log('sudah direfresh');
@@ -91,6 +137,8 @@ export default function AssessmentDetailPage() {
       setIsPublishing(false);
     }
   };
+
+ 
 
   if (isLoading) return <div className="flex h-[50vh] items-center justify-center"><Spinner size="lg" label="Memuat data..." /></div>;
   if (!assessment) return <div className="text-center py-10">Data tidak ditemukan</div>;
@@ -112,7 +160,11 @@ export default function AssessmentDetailPage() {
         submissionsLength={submissions.length}
         assessmentDuration={assessment.duration}
         assessmentDeadLine={assessment.expired_at}
-      />
+        selectedClassName={selectedClassName || ''}
+        distinctClasses={distinctClasses}
+        setSelectedKeys={setSelectedKeys} selectedKeys={""}      />
+
+
       
       {/* table cotnent COMPONENT (Bersih kan?) */}
       <AssessmentDetailTabs 
@@ -120,6 +172,7 @@ export default function AssessmentDetailPage() {
         submissions={submissions}
         question_analytics={questionAnalytics}
         assessment_status={assessment.assessment_status}
+        selectedClassName={selectedClassName || ''}
       />
 
         {/* PANGGIL KOMPONEN ANALYTICS DI SINI */}

@@ -48,6 +48,8 @@ export default function AssessmentPage() {
   const fetchAssessments = async () => {
     try {
       setIsLoading(true);
+      console.log('memasuki assessment');
+      
       const res = await api.get('/assessments');
       
       // Defensive check: pastikan array
@@ -56,6 +58,8 @@ export default function AssessmentPage() {
     } catch (error) {
       console.error("Gagal load assessment", error);
     } finally {
+      console.log("selesai fetching");
+      
       setIsLoading(false);
     }
   };

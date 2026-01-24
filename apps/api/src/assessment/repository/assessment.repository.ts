@@ -19,21 +19,23 @@ export class AssessmentRepository {
         })
     }
 
-    // async createOneAssessment(dto: CreateAssessmentDto, user_id) {
-    //     return await this.prisma.assessment.create({
-    //         data: {
-    //             title: dto.title,
-    //             description: dto.description,
-    //             duration: dto.duration,
+    async getDistinctStudentClass(assessmentId: string) {
+        const results = await this.prisma.submission.groupBy({
+            by: ['class_name'],
+            where: {
+                assessment_id: assessmentId,
+                // Opsional: Filter agar tidak mengambil data corrupt yang class_name-nya null
+                class_name: { not: '' } 
+            },
+            orderBy: {
+                class_name: 'asc' // Bonus: Urutkan abjad biar rapi di Dropdown
+            }
+        });
 
-    //             // Relasi ke User (Penulis Soal)
-    //             school: { connect: {id: dto.school_id}},
-
-    //             // Relasi ke User (Penulis Soal)
-    //             user: { connect: {id: user_id} },
-    //         },
-    //     });
-    // }
+        // TRANSFORMASI DATA:
+        // Ubah [{class_name: "A"}, {class_name: "B"}] menjadi ["A", "B"]
+        return results.map(row => row.class_name);
+        }
 
     async createAssessmentFromBank(
         dto: CreateAssessmentFromBankDto,
@@ -78,21 +80,24 @@ export class AssessmentRepository {
     }
 
     async findAllAssessment(user_id) {
-    return await this.prisma.assessment.findMany({
-        where: {user_id: user_id},
-        include: { questions: true },
-        orderBy: {
-        created_at: 'desc'
-        }
-    })
-  }
+        return await this.prisma.assessment.findMany({
+            where: {user_id: user_id},
+            include: { questions: true },
+            orderBy: {
+            created_at: 'desc'
+            }
+        })
+    }
 
-    async findAssessmentResults(assessmentId: string) {
+    async findAssessmentResults(assessmentId: string, className?: string) {
     return await this.prisma.assessment.findUnique({
-      where: { id: assessmentId },
+      where: { 
+        id: assessmentId,
+    },
       include: {
         // Ambil daftar submission (lembar jawab siswa)
         submissions: {
+            where: { ...(className && { class_name: className }) },
           select: {
             id: true,
             student_name: true, // Ambil nama snapshot
@@ -108,7 +113,7 @@ export class AssessmentRepository {
         }
       }
     });
-  }
+    }
 
     async findOneAssessmentWithDetail(id: string) {
         return await this.prisma.assessment.findUnique({
@@ -190,3 +195,19 @@ export class AssessmentRepository {
         })
     }
 }
+
+    // async createOneAssessment(dto: CreateAssessmentDto, user_id) {
+    //     return await this.prisma.assessment.create({
+    //         data: {
+    //             title: dto.title,
+    //             description: dto.description,
+    //             duration: dto.duration,
+
+    //             // Relasi ke User (Penulis Soal)
+    //             school: { connect: {id: dto.school_id}},
+
+    //             // Relasi ke User (Penulis Soal)
+    //             user: { connect: {id: user_id} },
+    //         },
+    //     });
+    // }

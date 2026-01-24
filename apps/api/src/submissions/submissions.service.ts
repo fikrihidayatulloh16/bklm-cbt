@@ -25,6 +25,16 @@ export class SubmissionsService {
 
     const assessment = await this.assessmentrepo.findOneAssessmentById(assessment_id)
 
+    const existing = await this.submissionRepo.findExistingStudent(assessment_id, dto.student_name, dto.class_name)
+
+    if ( existing ) {
+      if (existing.status === "FINISHED") {
+        throw new ForbiddenException("Anda sudah menyelesaikan ujian ini.")
+      } else {
+        return existing
+      }
+    }
+
     if (submission_id != null) {
       const submision = await this.submissionRepo.findOneIdSubmissionWithAnswer(submission_id)
       const submisionStatus = await this.submissionRepo.findSubmissionById(submission_id)

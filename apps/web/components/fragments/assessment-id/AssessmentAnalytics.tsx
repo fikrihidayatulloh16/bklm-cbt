@@ -44,7 +44,6 @@ export default function AssessmentAnalytics({ assessmentId }: { assessmentId: st
 
   if (loading) return <div className="p-4 text-gray-500">Sedang memuat analisis...</div>;
   if (!data) return null;
-  console.log('data= ',data);
   
 
   return (

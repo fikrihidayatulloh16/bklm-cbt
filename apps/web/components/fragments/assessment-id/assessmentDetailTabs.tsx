@@ -19,11 +19,12 @@ interface AssessmentDetailTabsProps {
   assessmentId: string;      // Menerima ID Assessment (jika butuh)
   question_analytics: QuestionsAnalytic[]
   assessment_status: string;
+  selectedClassName: string;
 }
 
 
 
-export default function AssessmentDetailTabs({ submissions, assessmentId, question_analytics, assessment_status }: AssessmentDetailTabsProps) {
+export default function AssessmentDetailTabs({ submissions, assessmentId, question_analytics, assessment_status, selectedClassName }: AssessmentDetailTabsProps) {
     const [analytics, setAnalytics] = useState<any>(null);
     const [loading, setLoading] = useState(false);
 
@@ -32,11 +33,14 @@ export default function AssessmentDetailTabs({ submissions, assessmentId, questi
 
     // Aksi untuk menghadle sinkronisasi status submit siswa
     const handleSyncStatus = async () => {
+        console.log('memasukki aksi handleSyncStatus');
+        
         // 1. Cek loading state (Debounce sederhana)
         if (loading) return;
         setLoading(true); // Mulai Loading
 
         try {
+            console.log('request api');
             // 2. Request API
             await api.patch(`/assessments/${assessmentId}/sync-status`);
             
@@ -50,6 +54,7 @@ export default function AssessmentDetailTabs({ submissions, assessmentId, questi
             // await fetchStudentList(); // Refresh data tanpa reload page
 
         } catch (error) {
+            console.log('memasukki aksi handleSyncStatus');
             console.error(error);
             // 5. Error Feedback
             alert("Gagal Sinkronisasi! Cek koneksi atau coba lagi.");
@@ -65,8 +70,16 @@ export default function AssessmentDetailTabs({ submissions, assessmentId, questi
         setIsDownloading(true);
 
         try {
+            //url export excel-awal
+            let urlExportExel = `/assessments/${assessmentId}/export-excel`
+
+            // Memeriksa apakah ada filter
+            if (selectedClassName) {
+                urlExportExel += `?class_name=${encodeURIComponent(selectedClassName)}`;
+            }
+
             // A. REQUEST KE API DENGAN TIPE 'BLOB'
-            const response = await api.get(`/assessments/${assessmentId}/export-excel`, {
+            const response = await api.get(urlExportExel, {
                 responseType: 'blob', // <--- MANTRA PENTING! (Jangan lupa ini)
             });
 

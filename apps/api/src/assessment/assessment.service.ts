@@ -52,7 +52,7 @@ export class AssessmentService {
       return this.assessmentRepo.updateDeadlineAssessment(assessment_id, globalDeadLine, assessment.assessment_status = 'PUBLISHED')
     }
 
-  async getAnalytics(assessmentId: string) {
+  async getAnalytics(assessmentId: string, className?: string) {
     // 1. Ambil Ranking Siswa (Code lama, tetap dipakai)
     const studentRanks = await this.assessmentRepo.getStudentRanks(assessmentId);
 
@@ -62,8 +62,9 @@ export class AssessmentService {
         where: {
             submission: { 
                 assessment_id: assessmentId,
+                ...(className && { class_name: className })
                 // Opsional: Jika mau menghitung hanya yang sudah finish
-                // status: 'FINISHED' 
+                // status: 'FINISHED'
             }
         },
         include: {
@@ -134,9 +135,9 @@ export class AssessmentService {
     };
   }
 
-  async generateExcel(assessmentId: string): Promise<Buffer> {
+  async generateExcel(assessmentId: string, className?: string): Promise<Buffer> {
     // 1. AMBIL DATA (Reuse fungsi analytics yang sudah ada biar hemat koding)
-    const data = await this.getAnalytics(assessmentId);
+    const data = await this.getAnalytics(assessmentId, className);
 
     // 2. SIAPKAN WORKBOOK (Buku Kerja Excel)
     const workbook = new ExcelJS.Workbook();
@@ -174,8 +175,6 @@ export class AssessmentService {
     // Casting ke Buffer bawaan Node.js agar Controller tidak bingung
     return buffer as unknown as Buffer;
   }
-
-  // assessments.service.ts
 
   async forceCloseTimeouts(assessmentId: string) {
 
@@ -245,8 +244,8 @@ export class AssessmentService {
     };
   }
 
-  async findAssessmentResults(assessmentId: string) {
-    return await this.assessmentRepo.findAssessmentResults(assessmentId);
+  async findAssessmentResults(assessmentId: string, className?) {
+    return await this.assessmentRepo.findAssessmentResults(assessmentId, className);
   }
 
   // mengambil semua assessment untuk dashboard
@@ -281,5 +280,10 @@ export class AssessmentService {
       if (!assessment) throw new NotFoundException(`Ujian tidak ditemukan`);
 
       return assessment;
+  }
+
+  //Mengambil Daftar kelas dari assessment
+  async getDistinctStudentClass(assessmentId: string) {
+    return await this.assessmentRepo.getDistinctStudentClass(assessmentId);
   }
 }

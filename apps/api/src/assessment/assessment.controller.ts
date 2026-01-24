@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, UseGuards, Req, Put, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, UseGuards, Req, Put, Res, Query } from '@nestjs/common';
 import { AssessmentService } from './assessment.service';
 import { CreateAssessmentDto } from './dto/create/create-assessment.dto';
 import { UpdateAssessmentDto } from './dto/update-assessment.dto';
@@ -22,14 +22,17 @@ export class AssessmentController {
   }
 
   @Get(':id/results') // URL: /assessment/123-abc/results
-  findResults(@Param('id') id: string) {
-    return this.assessmentService.findAssessmentResults(id);
+  findResults(
+    @Param('id') id: string,
+    @Query('class_name') className?: string
+  ) {
+    
+    return this.assessmentService.findAssessmentResults(id, className);
   }
 
   @Get()
   findAll(
-    @User('id') userID: string,
-  ) {
+    @User('id') userID: string,) {
     return this.assessmentService.findAllAssessmentByIdUser(userID);
   }
 
@@ -39,8 +42,11 @@ export class AssessmentController {
   }
 
   @Get(':id/analytics')
-  async getAnalytics(@Param('id') assessment_id: string) {
-    return this.assessmentService.getAnalytics(assessment_id)
+  async getAnalytics(
+    @Param('id') assessment_id: string,
+    @Query('class_name') className?: string
+  ) {
+    return this.assessmentService.getAnalytics(assessment_id, className)
   }
 
   @Patch(':id/publish')
@@ -51,9 +57,10 @@ export class AssessmentController {
   @Get(':id/export-excel')
   async exportExcel(
       @Param('id') id: string, 
-      @Res() res: Response
+      @Res() res: Response,
+      @Query('class_name') className?: string
   ) {
-      const buffer = await this.assessmentService.generateExcel(id);
+      const buffer = await this.assessmentService.generateExcel(id, className);
 
       // 1. Set Header agar browser tahu ini file Excel
       res.set({
@@ -66,9 +73,16 @@ export class AssessmentController {
       res.end(buffer);
   }
 
+  @Get(':id/distinct-class')
+  async getDistincStudentClass(@Param('id') assessmentId: string) {
+    return await this.assessmentService.getDistinctStudentClass(assessmentId);
+  }
+
   @Patch(':id/sync-status')
   // @UseGuards(TeacherGuard) // Pastikan hanya guru yang bisa akses
   async syncAssessmentStatus(@Param('id') AssessmentId: string) {
+    console.log(`memasuki endpoint sinkron dengan id: ${AssessmentId}`);
+    
     return this.assessmentService.forceCloseTimeouts(AssessmentId);
   }
 }

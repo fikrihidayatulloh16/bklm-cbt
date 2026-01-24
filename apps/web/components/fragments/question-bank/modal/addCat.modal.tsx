@@ -79,7 +79,7 @@ export default function CreateCategoryQuestionModal({
               
               <p className="text-sm font-bold text-default-600">Import Excel (Khusus tipe Ya/Tidak)</p>
               <Textarea
-                placeholder="Paste dari excel kolom 1=[Soal] kolom 2=[YA/TIDAK]..."
+                placeholder="Paste dari excel kolom 1=[Soal] kolom 2=[YA]..."
                 minRows={5}
                 value={pasteContent}
                 onValueChange={setPasteContent}

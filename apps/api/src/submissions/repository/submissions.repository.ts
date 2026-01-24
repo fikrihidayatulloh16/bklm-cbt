@@ -42,12 +42,23 @@ export class SubmissionRepository {
       })
     }
 
+    async findExistingStudent(assessmentId, studentName, className) {
+        return await this.prisma.submission.findFirst({
+            where: { 
+                assessment_id: assessmentId,
+                student_name: studentName,
+                class_name: className
+            }
+        })
+    }
+
     async findOneIdSubmissionWithAnswer(submissionId) {
             return await this.prisma.submission.findUnique({
             where: { id: submissionId },
             include: { 
                 answer:  {
-                    include: { option: true }
+                    include: { 
+                        option: true }
                 },
                 
             }

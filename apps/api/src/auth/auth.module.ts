@@ -6,15 +6,21 @@ import { PrismaModule } from 'src/prisma/prisma.module';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
     PrismaModule,
     PassportModule,
     // Konfigurasi JWT (Tiket)
-    JwtModule.register({
-      secret: process.env.JWT_SECRET || 'rahasia', // Ambil dari .env
-      signOptions: { expiresIn: '1d' }, // Token berlaku 1 hari
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        // Dia akan menunggu sampai ConfigService siap, baru ambil kuncinya
+        secret: configService.get<string>('JWT_SECRET') || 'rahasia',
+        signOptions: { expiresIn: '1d' },
+      }),
+      inject: [ConfigService],
     }),
   ],
   controllers: [AuthController],

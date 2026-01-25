@@ -4,13 +4,20 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Ambil URL Frontend dari ENV untuk whitelist CORS
-  const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3001";
-
   app.enableCors({
-    origin: frontendUrl, // Hanya izinkan frontend ini yang mengakses
+    origin: true,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
+    allowedHeaders: 'Content-Type, Accept, Authorization',
   });
+
+  // 👇 TAMBAHKAN LOG INI (Hanya untuk debugging env)
+  const secret = process.env.JWT_SECRET;
+  console.log("-------------------------------------------");
+  console.log("🧐 ENV CHECKER");
+  console.log("DATABASE_URL:", process.env.DATABASE_URL ? "✅ TERBACA" : "❌ GAGAL BACA");
+  console.log("JWT_SECRET:", secret ? `✅ TERBACA (${secret.substring(0, 3)}***)` : "❌ GAGAL (Pakai Fallback)");
+  console.log("-------------------------------------------");
 
   await app.listen(process.env.PORT || 3000, '0.0.0.0');
 }

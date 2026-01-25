@@ -1,24 +1,22 @@
-import { ExtractJwt, Strategy } from 'passport-jwt';
-import { PassportStrategy } from '@nestjs/passport';
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { PassportStrategy } from '@nestjs/passport';
+import { ExtractJwt, Strategy } from 'passport-jwt';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
+  constructor(private configService: ConfigService) {
+    // 🗑️ HAPUS console.log DEBUGGING DISINI
+    
     super({
-      // 1. Ambil token dari Header (Authorization: Bearer xyz...)
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      
-      // 2. Jangan biarkan token kadaluarsa lewat
       ignoreExpiration: false,
-      
-      // 3. Kunci Rahasia (Harus sama dengan .env)
-      // Pakai tanda seru (!) untuk meyakinkan TypeScript
-      secretOrKey: process.env.JWT_SECRET!,
+      // ✅ LOGIKA FINAL: Env atau Fallback 'rahasia'
+      // Ini aman karena di server .env terbaca, di local 'rahasia' jalan.
+      secretOrKey: configService.get<string>('JWT_SECRET') || 'rahasia', 
     });
   }
 
-  // Jika token valid, data user akan dikembalikan ke Request
   async validate(payload: any) {
     return { 
       id: payload.sub, 

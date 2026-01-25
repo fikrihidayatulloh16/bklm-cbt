@@ -10,21 +10,20 @@ function AuthSuccessContent() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    // 1. Tangkap token dari URL
     const token = searchParams.get('token');
 
     if (token) {
-      // 2. Simpan ke Cookie (PENTING!)
-      // Token ini yang nanti dicek oleh Checkpoint 1 & 2
-      Cookies.set('token', token, { expires: 1, path: '/' });
+      // ✅ SETUP COOKIE FINAL
+      Cookies.set('token', token, { 
+        expires: 1, 
+        path: '/', // WAJIB ADA
+        secure: process.env.NODE_ENV === 'production', 
+        sameSite: 'Lax' 
+      });
 
-      // 3. Redirect ke Dashboard setelah token aman
-      router.push('/dashboard');
-      router.refresh(); // Pastikan state auth ter-refresh
+      window.location.href = '/dashboard'; 
     } else {
-      console.error("Token tidak ditemukan di URL");
-      // Opsional: Redirect ke login jika gagal
-      setTimeout(() => router.push('/login'), 2000);
+      setTimeout(() => router.push('/login'), 1000);
     }
   }, [router, searchParams]);
 
@@ -36,7 +35,6 @@ function AuthSuccessContent() {
   );
 }
 
-// Wajib dibungkus Suspense di Next.js App Router saat pakai useSearchParams
 export default function AuthSuccessPage() {
   return (
     <Suspense fallback={<div>Loading...</div>}>

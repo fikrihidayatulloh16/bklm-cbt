@@ -12,7 +12,7 @@ import { ConfigModule } from '@nestjs/config';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true, // Biar bisa dibaca di semua module (Auth, User, dll)
+      isGlobal: true, envFilePath: '.env',// Biar bisa dibaca di semua module (Auth, User, dll)
     }),
     PrismaModule, AssessmentModule, UsersModule, AuthModule, QuestionBankModule, SubmissionsModule],
   controllers: [AppController],

@@ -1,23 +1,21 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
 
-// 1. Tentukan URL String-nya dulu (STRING, bukan Object)
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+// ✅ Gunakan Environment Variable lagi (karena build laptop sudah benar)
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
-// 2. Buat Instance Axios (Cukup Satu Kali)
 const api = axios.create({
-  baseURL: API_URL, // <--- Di sini sekarang isinya String URL yang benar
+  baseURL: API_URL,
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// 3. Interceptor Request (Satpam Otomatis)
-// (Kode ini persis sama dengan punya Anda, tidak saya ubah karena sudah benar)
 api.interceptors.request.use(
   (config) => {
-    const token = Cookies.get('token'); 
+    const token = Cookies.get('token');
+    // 🗑️ HAPUS LOG DEBUGGING DISINI (yang console.log roket/cookie tadi)
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -26,19 +24,14 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// 4. Interceptor Response (Penanganan Error Global)
-// (Kode ini juga sama, logika logout otomatisnya sudah oke)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // ✅ KEMBALIKAN LOGIKA REDIRECT (Hapus Alert)
     if (error.response?.status === 401) {
-      Cookies.remove('token');
-      // Redirect manual ke login
+      Cookies.remove('token', { path: '/' }); // Pastikan path '/' dihapus
       if (typeof window !== 'undefined') {
-        // Cek agar tidak looping redirect jika sudah di login page
-        if (!window.location.pathname.includes('/login')) {
-            window.location.href = '/login';
-        }
+        window.location.href = '/login'; // Tendang ke login dengan sopan
       }
     }
     return Promise.reject(error);

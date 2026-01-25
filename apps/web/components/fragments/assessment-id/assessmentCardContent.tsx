@@ -84,36 +84,38 @@ export default function AssessmentCardContent({
                 </Card>
             </div>
 
-            {/* ✨ DROPDOWN FILTER KELAS ✨ */}
-          <Dropdown>
-            <DropdownTrigger>
-              <Button 
-                variant="flat" 
-                color="primary"
-                startContent={<Filter size={18} />}
-              >
-                {selectedClassName || "Semua Kelas"}
-              </Button>
-            </DropdownTrigger>
-            <DropdownMenu 
-                aria-label="Filter Kelas"
-                disallowEmptySelection
-                selectionMode="single"
-                selectedKeys={selectedKeys}
-                onSelectionChange={(keys) => setSelectedKeys(keys as Set<string>)}
-            >
-                {/* 2. Map satu array gabungan tersebut */}
-                {dropdownItems.map((item) => (
-                <DropdownItem 
-                    key={item} 
-                    // Logic styling conditional: Jika 'all', buat tebal/warna beda
-                    className={item === "all" ? "text-primary font-bold border-b border-default-200" : ""}
-                >
-                    {item === "all" ? "Tampilkan Semua" : item}
-                </DropdownItem>
-                ))}
-            </DropdownMenu>
-          </Dropdown>
+            <div className="w-full flex md:justify-end mb-4">
+                {/* ✨ DROPDOWN FILTER KELAS ✨ */}
+                <Dropdown>
+                    <DropdownTrigger>
+                    <Button 
+                        variant="flat" 
+                        color="success"
+                        startContent={<Filter size={18} />}
+                    >
+                        {selectedClassName || "Semua Kelas"}
+                    </Button>
+                    </DropdownTrigger>
+                    <DropdownMenu 
+                        aria-label="Filter Kelas"
+                        disallowEmptySelection
+                        selectionMode="single"
+                        selectedKeys={selectedKeys}
+                        onSelectionChange={(keys) => setSelectedKeys(keys as Set<string>)}
+                    >
+                        {/* 2. Map satu array gabungan tersebut */}
+                        {dropdownItems.map((item) => (
+                        <DropdownItem 
+                            key={item} 
+                            // Logic styling conditional: Jika 'all', buat tebal/warna beda
+                            className={item === "all" ? "text-primary font-bold border-b border-default-200" : ""}
+                        >
+                            {item === "all" ? "Tampilkan Semua" : item}
+                        </DropdownItem>
+                        ))}
+                    </DropdownMenu>
+                </Dropdown>
+            </div>
         </div>
     )
 }

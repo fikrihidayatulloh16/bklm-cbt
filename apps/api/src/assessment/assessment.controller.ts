@@ -6,11 +6,15 @@ import { CreateAssessmentFromBankDto } from './dto/create/create-assessment-from
 import { User } from 'src/common/decorators/user.decorator';
 import { AuthGuard } from '@nestjs/passport';
 import { Response } from 'express';
+import { AssessmentExportService } from './assessment.export.service';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('assessments')
 export class AssessmentController {
-  constructor(private readonly assessmentService: AssessmentService) {}
+  constructor(
+    private readonly assessmentService: AssessmentService,
+    private readonly exportService: AssessmentExportService
+  ) {}
 
   @Post('from-bank') // URL: POST /assessment/from-bank
   @HttpCode(HttpStatus.CREATED)
@@ -60,7 +64,7 @@ export class AssessmentController {
       @Res() res: Response,
       @Query('class_name') className?: string
   ) {
-      const buffer = await this.assessmentService.generateExcel(id, className);
+      const buffer = await this.exportService.generateExcel(id, className);
 
       // 1. Set Header agar browser tahu ini file Excel
       res.set({

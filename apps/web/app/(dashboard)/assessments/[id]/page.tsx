@@ -176,7 +176,7 @@ export default function AssessmentDetailPage() {
       />
 
         {/* PANGGIL KOMPONEN ANALYTICS DI SINI */}
-        <AssessmentAnalytics assessmentId={id} />
+        {/* <AssessmentAnalytics assessmentId={id} /> */}
 
 
       {/* ISI KONTEN LAIN (Statistik, Tabel, dll - Kode lama Anda) */}

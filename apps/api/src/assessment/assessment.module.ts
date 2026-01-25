@@ -5,11 +5,12 @@ import { QuestionBankModule } from 'src/question-bank/question-bank.module';
 import { ExamController } from './exam.controller';
 import { AssessmentRepository } from './repository/assessment.repository';
 import { SubmissionsModule } from 'src/submissions/submissions.module';
+import { AssessmentExportService } from './assessment.export.service';
 
 @Module({
   imports: [QuestionBankModule,],
   controllers: [AssessmentController, ExamController],
-  providers: [AssessmentService, AssessmentRepository],
+  providers: [AssessmentService, AssessmentRepository, AssessmentExportService],
   exports: [AssessmentRepository]
 })
 export class AssessmentModule {}

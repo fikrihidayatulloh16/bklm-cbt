@@ -8,9 +8,12 @@ export interface QuestionsAnalytic {
   id: string;
   question_id: string;
   question_text: string;
-  category: string; // Tambahan dari backend
-  respondents: number;
+  category: string;
   total_risk_score: number;
+  respondents: number;
+  percentageRaw: number,
+  percentage: string;
+  priority: string;
   average: number;
 }
 
@@ -21,13 +24,20 @@ interface QuestionsAnalyticProps {
   isDownloading?: boolean;
 }
 
+const priorityColorMap: Record<string, "danger" | "warning" | "default"> = {
+  TINGGI: "danger",
+  SEDANG: "warning",
+  RENDAH: "default"
+};
+
+
 //Terima dta lewat props
 export default function QuestionsAnalytics({ questionsAnalytic, assessmentId, onDownload, isDownloading }: QuestionsAnalyticProps) {
     console.log('questionAnalytics di filetab= ',questionsAnalytic);
     
     return (
         <>
-        <div>
+        <div className="w-full flex justify-end mb-4">
             {questionsAnalytic.length > 0 ? (
                         <><Button
                         // onPress={onDownload}
@@ -65,6 +75,8 @@ export default function QuestionsAnalytics({ questionsAnalytic, assessmentId, on
                                 <TableColumn>Pertanyaan</TableColumn>
                                 <TableColumn>Kategori</TableColumn>
                                 <TableColumn>Responden</TableColumn>
+                                <TableColumn>Persentase</TableColumn>
+                                <TableColumn>Prioritas</TableColumn>
                             </TableHeader>
                             <TableBody items={questionsAnalytic}>
                                 {(quest) => (
@@ -83,6 +95,14 @@ export default function QuestionsAnalytics({ questionsAnalytic, assessmentId, on
                                         </TableCell>
                                         <TableCell>
                                             <span className="font-semibold text-gray-600 text-center">{quest.total_risk_score || "-"}</span>
+                                        </TableCell>
+                                        <TableCell>
+                                            <span className="font-semibold text-gray-600 text-center">{quest.percentage || "-"}</span>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Chip size="sm" color={priorityColorMap[quest.priority]} variant="flat" className="capitalize">
+                                                {quest.priority}
+                                            </Chip>
                                         </TableCell>
                                     </TableRow>
                                 )}

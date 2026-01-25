@@ -35,7 +35,23 @@ export class AssessmentRepository {
         // TRANSFORMASI DATA:
         // Ubah [{class_name: "A"}, {class_name: "B"}] menjadi ["A", "B"]
         return results.map(row => row.class_name);
+    }
+
+    async findmanyAnswerByAssessmentIdClassName(assessmentId: string, className?: string) {
+        return await this.prisma.answer.findMany({
+        where: {
+            submission: { 
+                assessment_id: assessmentId,
+                ...(className && { class_name: className }),
+                status: 'FINISHED' // Pastikan hanya yang selesai
+            }
+        },
+        include: {
+            option: { select: { score: true } }, 
+            question: { select: { id: true, text: true, category: true } }
         }
+    });
+    }
 
     async createAssessmentFromBank(
         dto: CreateAssessmentFromBankDto,

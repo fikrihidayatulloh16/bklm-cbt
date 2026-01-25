@@ -29,12 +29,13 @@ const statusColorMap: Record<string, "success" | "warning" | "default"> = {
 export default function TabStudentRank({ submissions, assessmentId, handleSyncStatus, loading, assessment_status }: StudentProps) {
     return (
         <Card className="mt-4 shadow-sm border border-default-200">
-            <CardHeader className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <CardHeader className="flex flex-col flex-row justify-between items-start md:items-center gap-4">
                 <h2>Tabel Siswa</h2>
-                <div>
+                <div className="">
                     { assessment_status !== "PUBLISHED" && (<Button
                     onPress={handleSyncStatus}
                     isDisabled={loading}
+                    radius="full"
                     color="warning" 
                     className="mx-1"
                     // variant="ghost"
@@ -43,15 +44,6 @@ export default function TabStudentRank({ submissions, assessmentId, handleSyncSt
                     >
                     Sinkron Status
                 </Button>)}
-
-                <Button 
-                    color="secondary" 
-                    // variant="ghost"
-                    // onPress={handleSyncStatus}
-                    // isLoading={isSyncing}
-                    >
-                    Filter
-                </Button>
                 </div>
                 
             </CardHeader>

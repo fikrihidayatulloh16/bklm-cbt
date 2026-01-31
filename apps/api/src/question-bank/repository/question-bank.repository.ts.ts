@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import { CreateQuestionBankDto } from '../dto/create/create-question-bank.dto';
 import { QuestionBankMapper } from '../mapper/question-bank.mapper';
 import { CreateBulkYesNoDto } from '../dto/create/create-bulk-question.dto';

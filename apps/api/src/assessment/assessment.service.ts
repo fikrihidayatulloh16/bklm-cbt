@@ -81,7 +81,7 @@ export class AssessmentService {
     const assessment = await this.assessmentRepo.findAssessmentstatus(assessmentId)
 
     if (!assessment || assessment.assessment_status === "PUBLISHED") {
-      throw new ForbiddenException("Assessment harus ada dan dilaarang PUBLISHED");
+      throw new ForbiddenException("Assessment harus ada dan dilarang sinkron saat PUBLISHED");
     }
 
     // 1. Ambil semua submission yang "nyangkut" (IN_PROGRESS)

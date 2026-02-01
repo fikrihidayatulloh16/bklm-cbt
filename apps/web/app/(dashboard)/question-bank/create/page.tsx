@@ -11,6 +11,7 @@ import { transformFormToPayload } from "@/lib/utils/form-transformers";
 import CreateCategoryQuestionModal from "@/components/fragments/question-bank/modal/addCat.modal";
 import api from "@/lib/api";
 import { useState } from "react";
+import { showToast } from "@/components/ui/toast/toast-trigger";
 
 export default function CreateQuestionBankPage() {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
@@ -40,11 +41,19 @@ export default function CreateQuestionBankPage() {
 
     try {      
       await api.post('/question-bank', payload);
-      alert("Berhasil disimpan!");
       router.push('/question-bank'); // Kembali ke list
       router.refresh();
+      showToast({
+        type: "success",
+        message: "Berhasil",
+        description: "Berhasil disimpan!",
+      });
     } catch (e) {
-      alert("Gagal simpan");
+        showToast({
+          type: "danger",
+          message: "Gagal",
+          description: "Gagal simpan bank soal!",
+        });
     } finally {
       setIsLoading(false);
     }

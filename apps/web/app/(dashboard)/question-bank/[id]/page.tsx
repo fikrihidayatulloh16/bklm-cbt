@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Button, Card, CardBody, Chip, Divider, Spinner } from "@nextui-org/react";
 import { ArrowLeft, Edit } from "lucide-react";
 import api from "@/lib/api";
+import { showToast } from '@/components/ui/toast/toast-trigger';
 
 // Tipe Data untuk Tampilan Detail
 interface QuestionDetail {
@@ -36,7 +37,11 @@ export default function QuestionBankDetailPage() {
         setData(res.data);
       } catch (error) {
         console.error("Gagal ambil detail:", error);
-        alert("Data tidak ditemukan.");
+        showToast({
+            type: "danger",
+            message: "Gagal",
+            description: "Data tidak ditemukan!",
+        });
         router.push('/dashboard/assessments');
       } finally {
         setLoading(false);

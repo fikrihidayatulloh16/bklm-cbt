@@ -32,21 +32,23 @@ export default function TabStudentRank({ submissions, assessmentId, handleSyncSt
             <CardHeader className="flex flex-col flex-row justify-between items-start md:items-center gap-4">
                 <h2>Tabel Siswa</h2>
                 <div className="">
-                    { assessment_status !== "PUBLISHED" && (<Button
-                    onPress={handleSyncStatus}
-                    isDisabled={loading}
-                    radius="full"
-                    color="warning" 
-                    className="mx-1"
-                    // variant="ghost"
-                    
-                    // isLoading={isSyncing}
-                    >
-                    Sinkron Status
-                </Button>)}
+                    { assessment_status !== "PUBLISHED" && (
+                        <Button
+                            onPress={handleSyncStatus}
+                            isDisabled={loading}
+                            radius="full"
+                            color="warning" 
+                            className="mx-1"
+                            // variant="ghost"
+                            
+                            isLoading={loading}
+                            >
+                            Sinkron Status
+                        </Button>)}
                 </div>
                 
             </CardHeader>
+
             <CardBody className="p-0">
                 {submissions.length > 0 ? (
                     <Table aria-label="Tabel Nilai Siswa" removeWrapper shadow="none">

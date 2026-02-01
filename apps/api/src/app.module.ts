@@ -25,7 +25,7 @@ import { ThrottlerStorageRedisService } from 'nestjs-throttler-storage-redis'; /
         throttlers: [
           {
             ttl: 60000, // 60 detik
-            limit: 10,  // 10 request
+            limit: 150,  // 10 request
           },
         ],
         // 👇 KITA HUBUNGKAN KE REDIS DOCKER

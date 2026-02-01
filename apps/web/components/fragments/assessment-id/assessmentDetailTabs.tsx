@@ -11,6 +11,7 @@ import { BarChart3 } from "lucide-react";
 import api from "@/lib/api";
 import TabStudentRank, { Submission } from "./table-content/tabStudent";
 import QuestionsAnalytics, { QuestionsAnalytic } from "./table-content/tabQuestion";
+import { showToast } from "@/components/ui/toast/toast-trigger";
 
 
 
@@ -27,44 +28,54 @@ interface AssessmentDetailTabsProps {
 export default function AssessmentDetailTabs({ submissions, assessmentId, question_analytics, assessment_status, selectedClassName }: AssessmentDetailTabsProps) {
     const [analytics, setAnalytics] = useState<any>(null);
     const [loading, setLoading] = useState(false);
+    const router = useRouter();
 
     // 1. TAMBAHKAN STATE LOADING DOWNLOAD (Agar tombol tidak dipencet 2x)
     const [isDownloading, setIsDownloading] = useState(false);
 
     // Aksi untuk menghadle sinkronisasi status submit siswa
     const handleSyncStatus = async () => {
-        console.log('memasukki aksi handleSyncStatus');
         
         // 1. Cek loading state (Debounce sederhana)
         if (loading) return;
         setLoading(true); // Mulai Loading
 
         try {
-            console.log('request api');
             // 2. Request API
             await api.patch(`/assessments/${assessmentId}/sync-status`);
             
-            // 3. Success Feedback (HANYA jika tidak error)
-            alert("Berhasil Sinkronisasi Data!");
+            router.refresh();
             
             // 4. Refresh Halaman (Cara kasar tapi efektif)
-            window.location.reload(); 
+            // window.location.reload(); 
+
+            
 
             // Opsi Lebih Baik (Jika ada):
             // await fetchStudentList(); // Refresh data tanpa reload page
 
         } catch (error) {
-            console.log('memasukki aksi handleSyncStatus');
             console.error(error);
-            // 5. Error Feedback
-            alert("Gagal Sinkronisasi! Cek koneksi atau coba lagi.");
+            // Menampilkan Toast hasil dari aksi
+            showToast({
+                type: "danger",
+                message: "Sinkronisasi Gagal,",
+                description: "Periksa Koneksi atu hubungi admin.",
+            });
         } finally {
             // 6. Matikan Loading (Apapun hasilnya)
             setLoading(false);
+
+            // Menampilkan Toast hasil dari aksi
+            showToast({
+                type: "success",
+                message: "Sinkronisasi Berhasil",
+                description: "Status ujian siswa telah diperbarui.",
+            });
         }
     };
 
-    // 2. LOGIC DOWNLOAD EXCEL (Ganti alert lama dengan ini)
+    // 2. LOGIC DOWNLOAD EXCEL
     const handleDownload = async () => {
         if (isDownloading) return; // Cegah double click
         setIsDownloading(true);
@@ -103,7 +114,12 @@ export default function AssessmentDetailTabs({ submissions, assessmentId, questi
 
         } catch (error) {
             console.error("Gagal download:", error);
-            alert("Gagal mengunduh file. Coba lagi nanti.");
+            // Menampilkan Toast hasil dari aksi
+            showToast({
+                type: "danger",
+                message: "Gagal mengunduh",
+                description: "Coba lagi nanti.",
+            });
         } finally {
             setIsDownloading(false);
         }
@@ -112,7 +128,7 @@ export default function AssessmentDetailTabs({ submissions, assessmentId, questi
     return(
     <div> 
         
-      <div className="mt-4">
+      <div className="mt-2">
         <Tabs aria-label="Assessment Options" color="primary" variant="underlined">
             
             {/* TAB 1: HASIL SISWA */}
@@ -122,7 +138,7 @@ export default function AssessmentDetailTabs({ submissions, assessmentId, questi
                     <span>Hasil & Nilai</span>
                 </div>
             }>
-                <div className="mt-4">
+                <div className="mt-2">
                     <TabStudentRank 
                         submissions={submissions} 
                         assessmentId={assessmentId}

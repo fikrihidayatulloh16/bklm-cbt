@@ -13,6 +13,7 @@ import { QuestionsAnalytic } from "@/components/fragments/assessment-id/table-co
 import AssessmentDetailTabs from "@/components/fragments/assessment-id/assessmentDetailTabs";
 import AssessmentCardContent from "@/components/fragments/assessment-id/assessmentCardContent";
 import AssessmentAnalytics from "@/components/fragments/assessment-id/AssessmentAnalytics";
+import { showToast } from "@/components/ui/toast/toast-trigger";
 
 // ... (Interface Submission dll tetap sama, boleh dipisah ke file types.ts kalau mau lebih rapi) ...
 interface AssessmentDetail {
@@ -130,9 +131,15 @@ export default function AssessmentDetailPage() {
       console.log('sudah direfresh');
       
       onClose(); // Tutup modal
+      
     } catch (error) {
-      alert("Gagal mempublish ujian!");
+      showToast({
+        type: "danger",
+        message: "Gagal",
+        description: "Gagal mempublish ujian!",
+      });
       console.error(error);
+
     } finally {
       setIsPublishing(false);
     }

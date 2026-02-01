@@ -9,6 +9,7 @@ import {
 import { Plus, Calendar, Clock, FileText, CheckCircle2 } from "lucide-react"; 
 import api from "@/lib/api"; 
 import { useRouter } from "next/navigation";
+import { showToast } from "@/components/ui/toast/toast-trigger";
 
 // Tipe Data
 interface Assessment {
@@ -108,10 +109,19 @@ export default function AssessmentPage() {
       
       onOpenChange(); // Tutup modal
       fetchAssessments(); // Refresh data
-      alert("Jadwal Ujian berhasil dibuat!");
+      showToast({
+        type: "success",
+        message: "Berhasil",
+        description: "Jadwal Ujian berhasil dibuat",
+      });
     } catch (error: any) {
       console.error(error);
-      alert(error.response?.data?.message || "Gagal membuat assessment");
+      showToast({
+        type: "danger",
+        message: "Gagal membuat assessment",
+        description: error.response?.data?.message,
+      });
+
     } finally {
       setIsSubmitting(false);
     }

@@ -84,7 +84,7 @@ export default function AssessmentCardContent({
                 </Card>
             </div>
 
-            <div className="w-full flex md:justify-end mb-4">
+            <div className="w-full flex md:justify-end mb-4 mt-2">
                 {/* ✨ DROPDOWN FILTER KELAS ✨ */}
                 <Dropdown>
                     <DropdownTrigger>

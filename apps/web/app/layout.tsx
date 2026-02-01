@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { Providers } from "./providers"; // <--- Import Provider
+import { Providers } from "./providers";
+import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -21,6 +22,7 @@ export default function RootLayout({
         {/* Bungkus Children dengan Providers */}
         <Providers>
           {children}
+          <Toaster position="top-right" richColors closeButton />
         </Providers>
       </body>
     </html>

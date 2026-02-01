@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useDisclosure } from "@nextui-org/react"; // Hanya hook ini yang butuh diimport dari UI lib
 import api from "@/lib/api";
+import { showToast } from "@/components/ui/toast/toast-trigger";
 
 // --- 1. DEFINISI TIPE DATA (Export agar bisa dipakai di Page) ---
 
@@ -302,7 +303,11 @@ export const useExamLogic = () => {
 
     } catch (error: any) {
         console.error("Start Error:", error);
-        alert(error.response?.data?.message || "Gagal memulai ujian.");
+        showToast({
+          type: "danger",
+          message: "Gagal",
+          description: "Gagal memulai ujian..",
+        });
         setStep('IDENTITY'); 
     }
   };
@@ -319,9 +324,18 @@ export const useExamLogic = () => {
             });
         } 
         catch (error) {
-            alert("Gagal simpan jawaban (silent fail)");
+          showToast({
+            type: "danger",
+            message: "Berhasil",
+            description: "Berhasil disimpan!",
+          });
+            showToast({
+              type: "danger",
+              message: "Gagal",
+              description: "Gagal simpan jawaban, Hubungi staf",
+            });
 
-            window.location.reload();
+            router.refresh();
 
         } 
     }
@@ -338,7 +352,11 @@ export const useExamLogic = () => {
         setStep('FINISHED');
         onOpenChange(); 
     } catch (error: any) {
-        alert("Gagal submit: " + (error.response?.data?.message || error.message));
+      showToast({
+          type: "danger",
+          message: "Gagal submit",
+          description: (error.response?.data?.message || error.message),
+        });
         setStep('EXAM'); 
     }
   };

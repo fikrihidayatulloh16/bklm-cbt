@@ -52,7 +52,7 @@ jobs:
           
           echo "🛠️ Build API..."
           cd apps/api
-          npm install --production=false
+          npm install --production=false --legacy-peer-deps
           npx prisma generate
           npx prisma db push
           npm run build
@@ -60,7 +60,7 @@ jobs:
           
           echo "🛠️ Build WEB..."
           cd apps/web
-          npm install --production=false
+          npm install --production=false --legacy-peer-deps
           npm run build
           cd ../..
 

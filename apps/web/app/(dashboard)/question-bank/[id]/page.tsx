@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Button, Card, CardBody, Chip, Divider, Spinner } from "@nextui-org/react";
-import { ArrowLeft, Edit } from "lucide-react";
+import { Button, Card, CardBody, Chip, Divider, Spinner, useDisclosure } from "@nextui-org/react";
+import { ArrowLeft, Edit, Trash } from "lucide-react";
 import api from "@/lib/api";
 import { showToast } from '@/components/ui/toast/toast-trigger';
+import { DeleteConfirmModal } from '@/components/ui/DeleteConfirmModal.';
 
 // Tipe Data untuk Tampilan Detail
 interface QuestionDetail {
@@ -29,11 +30,18 @@ export default function QuestionBankDetailPage() {
   
   const [data, setData] = useState<BankDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
+
+  // State untuk menyimpan ID mana yang mau dihapus
+  const [selectedIdToDelete, setSelectedIdToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     const fetchDetail = async () => {
       try {
         const res = await api.get(`/question-bank/${params.id}`);
+        console.log(res.data);
+        
         setData(res.data);
       } catch (error) {
         console.error("Gagal ambil detail:", error);
@@ -51,6 +59,36 @@ export default function QuestionBankDetailPage() {
     if (params.id) fetchDetail();
   }, [params.id, router]);
 
+  // Aksi
+  // 3. Trigger saat tombol sampah diklik
+  const handleDeleteClick = (id: string) => {
+    setSelectedIdToDelete(id); // Simpan ID-nya
+    onOpen(); // Buka Modal
+  };
+
+  // 4. Eksekusi ke API
+  const confirmDelete = async () => {
+    if (!selectedIdToDelete) return;
+
+    setIsDeleting(true); // Nyalakan loading di tombol modal
+    try {
+      // Panggil API Delete Backend
+      const res = await api.delete(`question-bank/${selectedIdToDelete}`);
+
+      router.push('/question-bank');
+
+      showToast({ type: "success", message: "Berhasil", description: 'Data berhasil dihapus' });
+      
+      // ... Lakukan refresh data / refresh router di sini ...
+      
+      onClose(); // Tutup modal otomatis
+    } catch (error) {
+      showToast({ type: "danger", message: "Gagal menghapus data" });
+    } finally {
+      setIsDeleting(false); // Matikan loading
+    }
+  };
+
   if (loading) return <div className="flex justify-center py-20"><Spinner size="lg" /></div>;
   if (!data) return null;
 
@@ -67,11 +105,27 @@ export default function QuestionBankDetailPage() {
                 <p className="text-default-500 text-sm">{data.description || "Tidak ada deskripsi"}</p>
             </div>
         </div>
-        
-        {/* Tombol Edit (Nanti difungsikan) */}
-        <Button color="primary" variant="flat" startContent={<Edit size={18} />}>
-            Edit Soal
-        </Button>
+
+        <div>
+            {/* Tombol Hapus */}
+            <Button onPress={() => handleDeleteClick(data.id)}
+            className='mx-1' color="danger" variant="flat" startContent={<Trash size={18} />}>
+                Hapus Soal
+            </Button>
+            <DeleteConfirmModal 
+                isOpen={isOpen}
+                onOpenChange={onOpenChange}
+                onConfirm={confirmDelete}
+                isLoading={isDeleting}
+                title="Hapus Soal?"
+                description="Soal yang dihapus tidak bisa dikembalikan lagi."
+            />
+            
+            {/* Tombol Edit (Nanti difungsikan) */}
+            <Button color="primary" variant="flat" startContent={<Edit size={18} />}>
+                Edit Soal
+            </Button>
+        </div>
       </div>
 
       <Divider />

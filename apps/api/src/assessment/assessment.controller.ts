@@ -7,7 +7,9 @@ import { User } from 'src/common/decorators/user.decorator';
 import { AuthGuard } from '@nestjs/passport';
 import { Response } from 'express';
 import { AssessmentExportService } from './assessment.export.service';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
 
+@ApiTags('Assessment (Guru)')
 @UseGuards(AuthGuard('jwt'))
 @Controller('assessments')
 export class AssessmentController {
@@ -23,6 +25,12 @@ export class AssessmentController {
     @User('id') user_id: string
   ) {
     return await this.assessmentService.createFromBank(createAssessmentFromBankDto, user_id)
+  }
+
+  @Get('stats')
+  @ApiOperation({ summary: 'Mengambil jumlah untuk kebutuhan stats dashboard' })
+  getAssessmentStats(@User('id') userId: string,) {
+    return this.assessmentService.getDashboardStats(userId)
   }
 
   @Get(':id/results') // URL: /assessment/123-abc/results

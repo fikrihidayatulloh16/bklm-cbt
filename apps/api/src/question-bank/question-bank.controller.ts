@@ -1,11 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, UseGuards, Req, ParseUUIDPipe } from '@nestjs/common';
 import { QuestionBankService } from './question-bank.service';
 import { CreateQuestionBankDto } from './dto/create/create-question-bank.dto';
-import { UpdateQuestionBankDto } from './dto/update-question-bank.dto';
+import { UpdateQuestionBankDto } from './dto/update/update-question-bank.dto';
 import { User } from 'src/common/decorators/user.decorator';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { Logger } from '@nestjs/common';
+import { QuestionBankMapper } from './mapper/question-bank.mapper';
 
 @ApiTags('Bank Soal (Guru)')
 @UseGuards(AuthGuard('jwt'))
@@ -46,18 +47,24 @@ export class QuestionBankController {
     return this.questionBankService.findOne(id);
   }
 
-  // @Get(':id')
-  // findOne(@Param('id') id: string) {
-  //   return this.questionBankService.findOne(+id);
-  // }
+  // Endpoint untuk delete question bank
+  @Delete(':id')
+  @ApiOperation({ summary: 'Menghapus satu question Bank (Soft Delete)' })
+  // Gunakan ParseUUIDPipe biar otomatis 400 Bad Request kalau ID ngawur
+  async removeQuestionBank(@Param('id', ParseUUIDPipe) questionBankId: string) {
+    return this.questionBankService.removeOneQuestionBank(questionBankId); // Hapus 'await' yang tidak perlu
+  }
 
-  // @Patch(':id')
-  // update(@Param('id') id: string, @Body() updateQuestionBankDto: UpdateQuestionBankDto) {
-  //   return this.questionBankService.update(+id, updateQuestionBankDto);
-  // }
 
-  // @Delete(':id')
-  // remove(@Param('id') id: string) {
-  //   return this.questionBankService.remove(+id);
-  // }
+  @Patch(':id')
+  @ApiOperation({ summary: 'Mengubah satu question Bank (Surgycal)' })
+  async updateQuestionBank(
+    @Param('id', ParseUUIDPipe) questionBankId: string, 
+    @Body() updateQuestionBankDto: UpdateQuestionBankDto
+  ) {
+    const params = QuestionBankMapper.toUpdateParams(updateQuestionBankDto);
+
+    return this.questionBankService.updateQuestionBank(questionBankId, params);
+  }
+
 }

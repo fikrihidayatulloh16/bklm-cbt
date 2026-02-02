@@ -1,9 +1,11 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateQuestionBankDto } from './dto/create/create-question-bank.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateBankQuestionDto } from './dto/create/create-bankquestion.dto';
 import { QuestionBankMapper } from './mapper/question-bank.mapper';
 import { QuestionBankRepository } from './repository/question-bank.repository.ts';
+import { error } from 'console';
+import { UpdateQuestionBankParams } from './helper/interfaces/question-bank.interface';
 // import { UpdateQuestionBankDto } from './dto/update-question-bank.dto';
 
 @Injectable()
@@ -16,6 +18,15 @@ export class QuestionBankService {
     this.ValidateQuestionLogic(dto.questions);
 
     return await this.repo.createQuestionBank(dto, userId)
+  }
+
+  async updateQuestionBank(questionBankId: string, params: UpdateQuestionBankParams) {
+    // Cek dulu barangnya ada gak (Penting untuk Update)
+    const existing = await this.repo.findOnlyQuestionBank(questionBankId);
+    if (!existing) throw new NotFoundException('Question Bank tidak ditemukan');
+
+    // Panggil Repo untuk melakukan operasi database yang rumit
+    return this.repo.updateWithNestedTransaction(questionBankId, params);
   }
 
   private ValidateQuestionLogic(questions: CreateBankQuestionDto[]) {
@@ -49,27 +60,22 @@ export class QuestionBankService {
     return bankquestion
   }
 
-  /**
-   * if (type == 'MULTIPLE_CHOICE') {
-   *  
-   * } else if (type == 'SCALE') {
-   * 
-   * }
-   */
+  async removeOneQuestionBank(questionBankId: string) {
+    // 1. Cukup SATU kali call DB
+    const questionBank = await this.repo.findOnlyQuestionBank(questionBankId);
 
-  // findAll() {
-  //   return `This action returns all questionBank`;
-  // }
+    // 2. Cek Eksistensi (404 Not Found lebih tepat daripada BadRequest)
+    if (!questionBank) {
+      throw new NotFoundException("Question bank tidak ditemukan");
+    }
 
-  // findOne(id: number) {
-  //   return `This action returns a #${id} questionBank`;
-  // }
+    // 3. Cek apakah SUDAH dihapus sebelumnya (Logic Bug Fixed)
+    // Asumsi field di DB adalah 'deleted_at' (Date | null)
+    if (questionBank.deleted_at !== null) {
+      throw new BadRequestException("Question Bank sudah dihapus sebelumnya");
+    }
 
-  // update(id: number, updateQuestionBankDto: UpdateQuestionBankDto) {
-  //   return `This action updates a #${id} questionBank`;
-  // }
-
-  // remove(id: number) {
-  //   return `This action removes a #${id} questionBank`;
-  // }
+    // 4. Eksekusi
+    return this.repo.softRemoveOneQuestionBank(questionBankId);
+  }
 }

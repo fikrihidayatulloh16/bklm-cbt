@@ -17,7 +17,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="light"> 
+    <html lang="en" className="light bg-gray-100"> 
       <body className={inter.className}>
         {/* Bungkus Children dengan Providers */}
         <Providers>

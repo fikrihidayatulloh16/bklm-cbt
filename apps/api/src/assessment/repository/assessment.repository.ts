@@ -9,6 +9,51 @@ import { connect } from "http2";
 export class AssessmentRepository {
     constructor(private prisma: PrismaService) {}
 
+    async getAssessmentStats(userId: string) {
+        // Jalankan 4 Query secara PARALEL
+    const [
+      totalAssessment,
+      totalQuestionBank,
+      totalQuestion,
+      totalSubmissions
+    ] = await Promise.all([
+      
+      // 1. Hitung Total Ujian milik Guru ini
+      this.prisma.assessment.count({
+        where: { user_id: userId }, // Sesuaikan field relation di DB Anda
+      }),
+
+      // 2. Hitung Total Bank Soal milik Guru ini
+      this.prisma.questionBank.count({
+        where: { author_id: userId, deleted_at: null},
+      }),
+
+      // 3. Hitung Total Butir Soal (Opsional: Bisa hitung dari tabel Question langsung)
+      this.prisma.question.count({
+        where: { 
+          // Ambil soal yang ada di dalam Bank Soal milik Guru ini
+          assessment: {user_id: userId}
+        },
+      }),
+
+      // 4. Hitung Total Siswa yang Mengerjakan (Submissions)
+      // Asumsi: Anda punya tabel AssessmentSubmission atau StudentResult
+      this.prisma.submission.count({
+        where: {
+          assessment: { user_id: userId }
+        }
+      }),
+    ]);
+
+    // Return format sesuai Interface Frontend (DashboardStats)
+        return {
+        totalAssessment,
+        totalQuestionBank,
+        totalQuestion,
+        totalSubmissions,
+        };
+    }
+
     async updateDeadlineAssessment(assessment_id: string, globalDeadLine, assessment_status) {
         return await this.prisma.assessment.update({
             where: { id: assessment_id },

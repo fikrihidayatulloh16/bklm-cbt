@@ -31,6 +31,8 @@ export default function OptionList({ basePath, control }: OptionListProps) {
             {String.fromCharCode(65 + k)}. 
           </div>
 
+          <input type="hidden" {...control.register(`${basePath}.options.${k}.id`)} />
+
           {/* Input Teks Jawaban */}
           <Input
             // Cara register manual tanpa hook 'register' (pake control lebih aman utk nested)

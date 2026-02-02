@@ -62,6 +62,8 @@ export default function QuestionItem({
              <Trash2 size={16} />
            </Button>
         </div>
+
+        <input type="hidden" {...register(`${basePath}.id`)} />
         
         <Input 
            {...register(`${basePath}.text`)}

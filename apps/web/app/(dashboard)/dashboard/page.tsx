@@ -1,52 +1,59 @@
 'use client';
 
-import { Card, CardHeader, CardBody, Divider, Button } from "@nextui-org/react";
+import { Button } from "@nextui-org/react";
+import { PlayCircle, Plus } from "lucide-react";
+
+import { useDashboardLogic } from "@/features/dashboard/hooks/useDashboardLogic";
+import { AssessmentList } from "@/features/dashboard/components/AssessmentHorizon";
+import { QuestionBankList } from "@/features/dashboard/components/QuestionBankHorizon";
+import { DashboardStatsGrid } from "@/features/dashboard/components/DashboardStats";
 
 export default function DashboardPage() {
+  // Memanggil Hook Logic
+  const { isLoading, error, dashboardStats, lastAssessments, lastQuestionBanks, } = useDashboardLogic()
+
+  console.log('pagedashboardStats:', dashboardStats);
+  
+
+  // Handle State Loading/Error
+  if (isLoading) return <div className="p-10 text-center">Memuat data...</div>;
+  if (error) return <div className="p-10 text-center text-red-500">{error}</div>;
+
+  // 3. Render UI (Otot)
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-800">Overview Guru</h2>
+    <div className="space-y-8 pb-8">
       
-      {/* Grid Kartu Statistik */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Kartu 1 */}
-        <Card className="max-w-[400px]">
-          <CardHeader className="flex gap-3">
-            <div className="flex flex-col">
-              <p className="text-md">Total Bank Soal</p>
-              <p className="text-small text-default-500">Update hari ini</p>
-            </div>
-          </CardHeader>
-          <Divider/>
-          <CardBody>
-            <p className="text-4xl font-bold text-primary">24</p>
-          </CardBody>
-        </Card>
-
-        {/* Kartu 2 */}
-        <Card className="max-w-[400px]">
-          <CardHeader className="flex gap-3">
-            <div className="flex flex-col">
-              <p className="text-md">Siswa Aktif</p>
-              <p className="text-small text-default-500">Sedang online</p>
-            </div>
-          </CardHeader>
-          <Divider/>
-          <CardBody>
-            <p className="text-4xl font-bold text-success">118</p>
-          </CardBody>
-        </Card>
-
-        {/* Action Card */}
-        <Card className="max-w-[400px] bg-primary text-white">
-          <CardBody className="flex flex-col justify-center items-center gap-4">
-            <p className="text-lg font-semibold">Buat Ujian Baru</p>
-            <Button size="sm" className="bg-white text-primary font-bold">
-              + Create Assessment
-            </Button>
-          </CardBody>
-        </Card>
+      {/* 1. HEADER SECTION 
+          UX: Sapaan personal membuat dashboard terasa "hidup".
+          Di HP: Stack ke bawah. Di Laptop: Kiri Kanan.
+      */}
+      <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">Halo, Selamat Datang! 👋</h1>
+          <p className="text-default-500 text-sm">Berikut ringkasan aktivitas Anda Terakhir.</p>
+        </div>
+        
+        {/* <div className="flex gap-3"> */}
+          {/* Action Button Utama ditaruh disini agar mudah diakses */}
+          {/* <Button variant="flat" color="primary" startContent={<Plus size={18}/>}> */}
+            {/* Bank Soal Baru */}
+          {/* </Button> */}
+          {/* <Button color="primary" startContent={<PlayCircle size={18}/>}> */}
+            {/* Jadwalkan Ujian */}
+          {/* </Button> */}
+        {/* </div> */}
       </div>
+
+
+      {/* Kirim data stats ke Component StatsGrid */}
+      {dashboardStats && <DashboardStatsGrid data={dashboardStats} />}
+      
+      {/* Kirim data assessments ke Component List */}
+      <AssessmentList data={lastAssessments} />
+      
+      {/* Kirim data questionBanks ke Component List (Nanti diaktifkan) */}
+      <QuestionBankList data={lastQuestionBanks} />
+
     </div>
   );
 }

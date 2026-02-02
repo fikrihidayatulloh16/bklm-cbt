@@ -1,7 +1,7 @@
 name: Monorepo Deploy
 
 on:
-  # Kita aktifkan DUA trigger sekaligus
+  # Mulai Deploy
   push:
     branches:
       - master

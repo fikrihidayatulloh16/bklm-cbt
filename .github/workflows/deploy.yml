@@ -1,6 +1,10 @@
 name: Monorepo Deploy
 
 on:
+  # Kita aktifkan DUA trigger sekaligus
+  push:
+    branches:
+      - master      =
   workflow_dispatch:
 
 jobs:

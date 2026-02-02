@@ -8,7 +8,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: self-hosted # ✅ Benar, jalan di VPS sendiri
+    runs-on: self-hosted
 
     steps:
       - name: Checkout Code
@@ -18,22 +18,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
-      # 👇 PERUBAHAN BESAR ADA DI SINI
-      # Kita hapus "uses: easingthemes/ssh-deploy" dan "appleboy/ssh-action"
-      # Kita ganti dengan script manual (run)
       
       - name: Deploy Local Script
         run: |
-          # 1. Definisikan Folder Tujuan
           TARGET_DIR="/var/www/bklm-cbt"
           
-          echo "📂 Memulai Copy File Lokal..."
-          
-          # Kita gunakan RSYNC LOKAL (Antar folder di komputer yang sama)
-          # Tidak perlu SSH Key, tidak perlu IP Address
-          # ./ artinya folder runner saat ini
-          # $TARGET_DIR/ artinya folder tujuan
+          echo "📂 Copying Files..."
           rsync -av --delete \
             --exclude '.git' \
             --exclude '.github' \
@@ -43,27 +33,25 @@ jobs:
             --exclude 'db_data' \
             ./ $TARGET_DIR/
           
-          echo "✅ Copy selesai. Pindah ke folder kerja..."
           cd $TARGET_DIR
           
-          # ====================================================
-          # Mulai Proses Build & Restart (Sama seperti sebelumnya)
-          # ====================================================
+          # ============================================
+          # PERUBAHAN DI SINI: HAPUS SUDO DARI DOCKER
+          # ============================================
           
-          echo "🐳 Reset Database (Docker)..."
-          # Gunakan sudo karena docker butuh root access
-          sudo docker compose down
-          sudo docker compose up -d
-          echo "⏳ Menunggu Database siap (10 detik)..."
+          echo "🐳 Reset Database..."
+          # HAPUS 'sudo' di sini 👇
+          docker compose down
+          docker compose up -d
+          
+          echo "⏳ Menunggu Database (10s)..."
           sleep 10
           
-          echo "📄 Syncing .env files..."
-          # Asumsi file .env induk sudah Anda buat manual di /var/www/bklm-cbt/.env
-          # Jika belum ada, script ini akan error. Pastikan file itu ada!
+          echo "📄 Syncing .env..."
           cp .env apps/api/.env
           cp .env apps/web/.env
           
-          echo "🛠️ Building API (NestJS)..."
+          echo "🛠️ Build API..."
           cd apps/api
           npm install --production=false
           npx prisma generate
@@ -71,17 +59,15 @@ jobs:
           npm run build
           cd ../..
           
-          echo "🛠️ Building WEB (Next.js)..."
+          echo "🛠️ Build WEB..."
           cd apps/web
           npm install --production=false
           npm run build
           cd ../..
 
-          echo "🚀 Restarting Apps via PM2..."
-          # Install PM2 global (jaga-jaga kalau belum ada)
-          npm install -g pm2
-          
-          # Start atau Reload
+          echo "🚀 Restart PM2..."
+          # HAPUS 'npm install -g pm2' (Install manual saja sekali di VPS)
+          # Pastikan user fikri16 bisa menjalankan pm2 tanpa sudo
           pm2 reload ecosystem.config.js || pm2 start ecosystem.config.js
           pm2 save
           

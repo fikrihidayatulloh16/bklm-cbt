@@ -39,10 +39,9 @@ jobs:
           # PERUBAHAN DI SINI: HAPUS SUDO DARI DOCKER
           # ============================================
           
-          echo "🐳 Reset Database..."
+          echo "🐳 Mengecek Konfigurasi Database..."
           # HAPUS 'sudo' di sini 👇
-          docker compose down
-          docker compose up -d
+          docker compose up -d --remove-orphans
           
           echo "⏳ Menunggu Database (10s)..."
           sleep 10

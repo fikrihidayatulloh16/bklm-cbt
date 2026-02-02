@@ -6,6 +6,7 @@ module.exports = {
       script: "dist/main.js",
       env: {
         NODE_ENV: "production",
+        PORT: 3001,
       },
     },
     {
@@ -15,6 +16,7 @@ module.exports = {
       args: "start",          
       env: {
         NODE_ENV: "production",
+        PORT: 3001,
       },
     },
   ],

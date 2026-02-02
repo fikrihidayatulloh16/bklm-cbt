@@ -1,7 +1,6 @@
-name: Monorepo Deploy
+name: Monorepo Self-Hosted Deploy
 
 on:
-  # Mulai Deploy
   push:
     branches:
       - master
@@ -9,7 +8,8 @@ on:
 
 jobs:
   deploy:
-    runs-on: self-hosted
+    runs-on: self-hosted # ✅ Benar, jalan di VPS sendiri
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -19,55 +19,70 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Deploy to VPS
-        uses: easingthemes/ssh-deploy@main
-        with:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          ARGS: "-rlgoDzvc -i --delete"
-          SOURCE: "."
-          TARGET: "/var/www/bklm-cbt"
-          REMOTE_HOST: ${{ secrets.HOST }}
-          REMOTE_USER: ${{ secrets.USERNAME }}
-          # Exclude lengkap
-          EXCLUDE: "/.git/, /.github/, /.env, node_modules/, apps/*/node_modules/, db_data/"
+      # 👇 PERUBAHAN BESAR ADA DI SINI
+      # Kita hapus "uses: easingthemes/ssh-deploy" dan "appleboy/ssh-action"
+      # Kita ganti dengan script manual (run)
+      
+      - name: Deploy Local Script
+        run: |
+          # 1. Definisikan Folder Tujuan
+          TARGET_DIR="/var/www/bklm-cbt"
+          
+          echo "📂 Memulai Copy File Lokal..."
+          
+          # Kita gunakan RSYNC LOKAL (Antar folder di komputer yang sama)
+          # Tidak perlu SSH Key, tidak perlu IP Address
+          # ./ artinya folder runner saat ini
+          # $TARGET_DIR/ artinya folder tujuan
+          rsync -av --delete \
+            --exclude '.git' \
+            --exclude '.github' \
+            --exclude '.env' \
+            --exclude 'node_modules' \
+            --exclude 'apps/*/node_modules' \
+            --exclude 'db_data' \
+            ./ $TARGET_DIR/
+          
+          echo "✅ Copy selesai. Pindah ke folder kerja..."
+          cd $TARGET_DIR
+          
+          # ====================================================
+          # Mulai Proses Build & Restart (Sama seperti sebelumnya)
+          # ====================================================
+          
+          echo "🐳 Reset Database (Docker)..."
+          # Gunakan sudo karena docker butuh root access
+          sudo docker compose down
+          sudo docker compose up -d
+          echo "⏳ Menunggu Database siap (10 detik)..."
+          sleep 10
+          
+          echo "📄 Syncing .env files..."
+          # Asumsi file .env induk sudah Anda buat manual di /var/www/bklm-cbt/.env
+          # Jika belum ada, script ini akan error. Pastikan file itu ada!
+          cp .env apps/api/.env
+          cp .env apps/web/.env
+          
+          echo "🛠️ Building API (NestJS)..."
+          cd apps/api
+          npm install --production=false
+          npx prisma generate
+          npx prisma db push
+          npm run build
+          cd ../..
+          
+          echo "🛠️ Building WEB (Next.js)..."
+          cd apps/web
+          npm install --production=false
+          npm run build
+          cd ../..
 
-      - name: Post-Deploy Script
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd /var/www/bklm-cbt
-            
-            echo "🔥 Starting Database..."
-            # Matikan container lama biar bersih (opsional tapi aman)
-            sudo docker compose down
-            # Nyalakan lagi
-            sudo docker compose up -d
-            sleep 15
-            
-            echo "📄 Syncing .env files..."
-            cp .env apps/api/.env
-            cp .env apps/web/.env
-            
-            echo "🛠️ Building API..."
-            cd apps/api
-            npm install --production=false
-            npx prisma generate
-            npx prisma db push
-            npm run build
-            cd ../..
-            
-            echo "🛠️ Building WEB..."
-            cd apps/web
-            npm install --production=false
-            npm run build
-            cd ../..
-
-            echo "🚀 Launching Apps..."
-            npm install -g pm2
-            pm2 start ecosystem.config.js
-            pm2 save
-            
-            echo "✅ Deploy Selesai!"
+          echo "🚀 Restarting Apps via PM2..."
+          # Install PM2 global (jaga-jaga kalau belum ada)
+          npm install -g pm2
+          
+          # Start atau Reload
+          pm2 reload ecosystem.config.js || pm2 start ecosystem.config.js
+          pm2 save
+          
+          echo "✅ DEPLOY SUCCESSFUL!"

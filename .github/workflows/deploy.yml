@@ -15,12 +15,7 @@ jobs:
         with:
           node-version: '20'
 
-      # HAPUS langkah build di GitHub Server.
-      # Kita akan build langsung di VPS agar lebih aman path-nya untuk monorepo pemula.
-      # (Atau kalau mau build di GitHub, scriptnya jadi sangat panjang).
-      # Untuk sekarang, kita kirim mentahan kode ke VPS, lalu build disana.
-      
-      - name: Deploy to VPS (Copy Files)
+      - name: Deploy to VPS
         uses: easingthemes/ssh-deploy@main
         with:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
@@ -29,10 +24,10 @@ jobs:
           TARGET: "/var/www/bklm-cbt"
           REMOTE_HOST: ${{ secrets.HOST }}
           REMOTE_USER: ${{ secrets.USERNAME }}
-          # Exclude node_modules di root maupun di dalam apps
+          # Exclude lengkap
           EXCLUDE: "/.git/, /.github/, /.env, node_modules/, apps/*/node_modules/, db_data/"
 
-      - name: Post-Deploy Script (Build & Start)
+      - name: Post-Deploy Script
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.HOST }}
@@ -41,42 +36,34 @@ jobs:
           script: |
             cd /var/www/bklm-cbt
             
-            # 1. Nyalakan Database (Docker)
             echo "🔥 Starting Database..."
-            # Kita pakai sudo karena user mungkin butuh akses docker
+            # Matikan container lama biar bersih (opsional tapi aman)
+            sudo docker compose down
+            # Nyalakan lagi
             sudo docker compose up -d
-            sleep 10 # Tunggu DB bangun
+            sleep 15
             
-            # 2. Setup ENVIRONMENT VARIABLES
-            # Kita copy .env root ke masing-masing folder apps
-            # Agar API dan WEB bisa baca config DB/Auth
             echo "📄 Syncing .env files..."
             cp .env apps/api/.env
             cp .env apps/web/.env
             
-            # 3. Build BACKEND (API)
             echo "🛠️ Building API..."
             cd apps/api
-            npm install --production=false # Install devDependencies juga buat build (NestJS butuh CLI)
-            npx prisma generate            # Generate Client Prisma
-            npx prisma db push             # Sync Schema ke DB
-            npm run build                  # Build NestJS -> dist/
-            cd ../..                       # Kembali ke root
+            npm install --production=false
+            npx prisma generate
+            npx prisma db push
+            npm run build
+            cd ../..
             
-            # 4. Build FRONTEND (WEB)
             echo "🛠️ Building WEB..."
             cd apps/web
             npm install --production=false
-            npm run build                  # Build Next.js -> .next/
-            cd ../..                       # Kembali ke root
+            npm run build
+            cd ../..
 
-            # 5. Start Semua dengan PM2 Ecosystem
             echo "🚀 Launching Apps..."
-            # Install PM2 jika belum ada
             npm install -g pm2
-            
-            # Jalankan konfigurasi ecosystem
             pm2 start ecosystem.config.js
             pm2 save
             
-            echo "✅ Deploy Monorepo Selesai!"
+            echo "✅ Deploy Selesai!"

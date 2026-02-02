@@ -1,36 +1,29 @@
-# docker-compose.yml
 version: '3.8'
 
 services:
-
-  # --- Service untuk postgres ---
   postgres_db:
     image: postgres:15-alpine
     container_name: bk-assessment-db
-
-    env_file:
-      - ./apps/api/.env
-    
     restart: always
-
+    # Gunakan .env dari root project saja (lebih aman karena file ini pasti ada di VPS)
+    env_file:
+      - .env 
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
-
     deploy:
       resources:
         limits:
-          cpus: '0.50'    # Batasi CPU usage max 50%
-          memory: 512M    # Batasi RAM max 512MB (Sangat cukup untuk dev)
+          cpus: '0.50'
+          memory: 512M
         reservations:
-          memory: 128M    # Garansi minimal 128MB tersedia
-
+          memory: 128M
     ports:
       - "5432:5432"
-
     volumes:
-      - ./pgdata_clean:/var/lib/postgresql/data
+      # ✅ PERBAIKAN: Gunakan folder di root, bukan di dalam apps/api
+      - ./db_data/postgres:/var/lib/postgresql/data
 
   redis:
     image: redis:alpine
@@ -39,7 +32,8 @@ services:
     ports:
       - 6379:6379
     volumes:
-      - redis_data:/data
+      # ✅ PERBAIKAN: Gunakan folder mount agar data redis juga aman
+      - ./db_data/redis:/data
     restart: always
 
   loki:
@@ -56,10 +50,9 @@ services:
     image: grafana/promtail:2.9.0
     container_name: bklm_promtail
     volumes: 
-      # Mount promtail yang sudah dibuat
       - ./monitoring/promtail-config.yaml:/etc/promtail/config.yml
-      # 
-      - ./apps/api/logs:/var/log/app
+      # Mounting logs agar bisa dibaca
+      - ./logs:/var/log/app
     command: -config.file=/etc/promtail/config.yml
     depends_on:
       - loki
@@ -67,7 +60,6 @@ services:
   grafana:
     image: grafana/grafana:latest
     container_name: bklm_grafana
-    
     ports:
       - 3002:3000
     environment:
@@ -79,6 +71,5 @@ services:
       - loki
 
 volumes:
-  redis_data:
   loki_data:
   grafana_data:

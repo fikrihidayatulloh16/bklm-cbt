@@ -12,9 +12,6 @@ export default function DashboardPage() {
   // Memanggil Hook Logic
   const { isLoading, error, dashboardStats, lastAssessments, lastQuestionBanks, } = useDashboardLogic()
 
-  console.log('pagedashboardStats:', dashboardStats);
-  
-
   // Handle State Loading/Error
   if (isLoading) return <div className="p-10 text-center">Memuat data...</div>;
   if (error) return <div className="p-10 text-center text-red-500">{error}</div>;

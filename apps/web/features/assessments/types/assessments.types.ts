@@ -1,4 +1,4 @@
-export interface lastAssessment {
+export interface AssessmentTypes {
     id: string;
     title: string;
     duration: number;

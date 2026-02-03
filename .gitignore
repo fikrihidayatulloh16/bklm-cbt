@@ -1,5 +1,6 @@
 # --- DATABASE & DOCKER ---
 pgdata/
+db_data/
 pgdata_clean/
 postgres_data/
 .env

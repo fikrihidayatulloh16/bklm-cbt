@@ -7,7 +7,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-gray-300">
+    <div className="min-h-screen bg-gray-200">
       
       {/* 1. Sidebar (Hanya muncul di Desktop) */}
       <Sidebar />

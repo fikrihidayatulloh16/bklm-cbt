@@ -8,55 +8,18 @@ import {
 import { Plus, Search } from "lucide-react"; // Gunakan icon agar lebih modern
 import api from "@/lib/api"; 
 import AssessmentCard from "@/components/ui/AssessmentCard"; // Import Card yang baru dibuat
+import { QuestionBankListType } from "@/features/question-bank/types/question-bank.types";
+import { useQBListLogic } from "@/features/question-bank/hooks/useQBListLogic";
 //import CreateAssessmentModal from "@/components/fragments/CreateAssessmentModal"; // Import Modal yang tadi
 
 // Definisikan Tipe Data
-interface Assessment {
-  id: string;
-  title: string;
-  description?: string;
-  createdAt: string; 
+interface Props {
+  data: QuestionBankListType[]
 }
 
 export default function AssessmentPage() {
-  // 1. Setup Modal Hook (NextUI)
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
-
-  // 2. State Data
-  const [searchValue, setSearchValue] = useState("");
-  const [assessments, setAssessments] = useState<Assessment[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // 3. Fetch Data Logic
-  const fetchData = async () => {
-    try {
-      setIsLoading(true);
-      const response = await api.get('/question-bank');
-      setAssessments(response.data);
-    } catch (error) {
-      console.error("Gagal ambil data:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Panggil saat pertama kali load
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  // Panggil ulang saat Modal ditutup (agar data baru muncul)
-  // Kita passing function ini ke onOpenChange nanti atau handle di dalam modal via router.refresh()
-  // Tapi karena ini SPA, lebih aman trigger fetch ulang manual jika perlu.
-  // Note: Di code Modal sebelumnya kita pakai router.refresh(), itu valid untuk Server Component, 
-  // tapi untuk Client Fetching seperti ini, router.refresh() kadang tidak men-trigger useEffect.
-  // Solusi: Kita akan biarkan router.refresh() bekerja, atau passing fetch callback.
-  // Untuk kesederhanaan, kita andalkan router.refresh() dulu.
-
-  // 4. Filter Logic
-  const filteredAssessments = assessments.filter((item) =>
-    item.title.toLowerCase().includes(searchValue.toLowerCase())
-  );
+  //Mengambil dataa yang dibutuhkan dari hooks
+  const {isLoading, searchValue, setSearchValue, filteredQuestionBank} = useQBListLogic()
 
   return (
     <div className="space-y-8">
@@ -96,20 +59,20 @@ export default function AssessmentPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredAssessments.length > 0 ? (
-                filteredAssessments.map((item) => (
+            {filteredQuestionBank.length > 0 ? (
+                filteredQuestionBank.map((item) => (
                     // Menggunakan Komponen Terpisah agar Rapi
                     <AssessmentCard 
                       key={item.id} 
                       id={item.id} 
                       title={item.title} 
-                      createdAt={item.createdAt} 
+                      createdAt={item.created_at.toString()} 
                     />
                 ))
             ) : (
                 <div className="col-span-full flex flex-col items-center justify-center py-20 text-default-400 border-2 border-dashed border-default-200 rounded-xl">
                     <p>Belum ada data ujian yang cocok.</p>
-                    <Button variant="light" color="primary" onPress={onOpen} className="mt-2">
+                    <Button as={NextLink} href="/question-bank/create" variant="light" color="primary" className="mt-2">
                       Buat assessment sekarang
                     </Button>
                 </div>

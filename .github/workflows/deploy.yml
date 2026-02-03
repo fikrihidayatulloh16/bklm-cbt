@@ -69,5 +69,9 @@ jobs:
           # Pastikan user fikri16 bisa menjalankan pm2 tanpa sudo
           pm2 reload ecosystem.config.js || pm2 start ecosystem.config.js
           pm2 save
+
+          pm2 logs
+
+          pm2 status
           
           echo "✅ DEPLOY SUCCESSFUL!"

@@ -11,6 +11,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'; // Import
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerStorageRedisService } from 'nestjs-throttler-storage-redis'; // Opsional jika mau simpan hitungan di Redis
+import { ClientLoggerModule } from './client-logger/client-logger.module';
 
 @Module({
   imports: [
@@ -37,7 +38,7 @@ import { ThrottlerStorageRedisService } from 'nestjs-throttler-storage-redis'; /
         }),
       }),
     }),
-    PrismaModule, AssessmentModule, UsersModule, AuthModule, QuestionBankModule, SubmissionsModule],
+    PrismaModule, AssessmentModule, UsersModule, AuthModule, QuestionBankModule, SubmissionsModule, ClientLoggerModule],
   controllers: [AppController],
   providers: [
     {

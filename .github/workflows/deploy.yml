@@ -70,9 +70,8 @@ jobs:
           pm2 reload ecosystem.config.js || pm2 start ecosystem.config.js
           pm2 save
 
-          # 6. [REKOMENDASI] Health Check via CURL
-          # Ini jauh lebih akurat daripada baca log. Kalau ini sukses, berarti server PASTI jalan.
-          echo "🚀 Checking API Health..."
-          curl --fail --max-time 10 http://localhost:3001/api/health || echo "⚠️ Health Check Failed (Check logs manually)"
+          pm2 logs
 
+          pm2 status
+          
           echo "✅ DEPLOY SUCCESSFUL!"

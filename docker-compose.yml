@@ -52,7 +52,7 @@ services:
     volumes: 
       - ./monitoring/promtail-config.yaml:/etc/promtail/config.yml
       # Mounting logs agar bisa dibaca
-      - ./logs:/var/log/app
+      - ./apps/api/logs:/var/log/app
     command: -config.file=/etc/promtail/config.yml
     depends_on:
       - loki

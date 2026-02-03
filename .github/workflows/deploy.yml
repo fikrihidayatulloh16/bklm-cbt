@@ -70,8 +70,14 @@ jobs:
           pm2 reload ecosystem.config.js || pm2 start ecosystem.config.js
           pm2 save
 
-          pm2 logs
+          # Reload aplikasi
+          pm2 reload bklm-api
 
+          # Tampilkan status (Table proses) - Ini aman karena langsung exit
           pm2 status
-          
+
+          # Tampilkan 20 baris log terakhir LALU BERHENTI (Penting: --nostream)
+          pm2 logs bklm-api --lines 20 --nostream
+
+          # Pesan sukses
           echo "✅ DEPLOY SUCCESSFUL!"

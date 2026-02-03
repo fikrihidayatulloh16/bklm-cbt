@@ -1,5 +1,5 @@
 import api from "@/lib/api";
-import { QuestionBankListType, QuestionDetailType, QuestionBankDetailType } from "../types/question-bank.types";
+import { QuestionBankListType, QuestionDetailType, QuestionBankDetailType, CreateQuestionBankPayload } from "../types/question-bank.types";
 
 const ENDPOINTS = {
     QUESTIONBANK: '/question-bank',
@@ -20,3 +20,8 @@ export const removeOneQB = async (questionBankId: string): Promise<QuestionBankL
     const data = await api.delete(ENDPOINTS.QBDETAIL(questionBankId))
     return data.data
 }
+
+export const createQuestionBank = async (payload: CreateQuestionBankPayload): Promise<void> => {
+    // Kita tidak perlu return data spesifik jika hanya create
+    await api.post('/question-bank', payload);
+};

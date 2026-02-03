@@ -47,7 +47,6 @@ export const useQBListLogic = () => {
         );
     } else { filteredQuestionBank = qbList }
     
-
     return {
         isLoading,
         searchValue,

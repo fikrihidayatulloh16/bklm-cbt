@@ -159,6 +159,13 @@ export class QuestionBankRepository {
   async findAllQuestionBankById(id:string) {
     return await this.prisma.questionBank.findMany({
       where: { author_id: id, deleted_at: null },
+
+      include: {
+        author: { select: { name:true } },
+        _count: {
+          select: { questions: true }
+        }
+      },
       orderBy: { created_at: 'desc' },
     })
   }

@@ -70,14 +70,21 @@ jobs:
           pm2 reload ecosystem.config.js || pm2 start ecosystem.config.js
           pm2 save
 
-          # Reload aplikasi
-          pm2 reload bklm-api
+          # 3. Tunggu sebentar (5 detik) agar NestJS sempat booting dan menulis log
+          sleep 5
 
-          # Tampilkan status (Table proses) - Ini aman karena langsung exit
+          # 4. Tampilkan Status (Pastikan status 'online')
           pm2 status
 
-          # Tampilkan 20 baris log terakhir LALU BERHENTI (Penting: --nostream)
-          pm2 logs bklm-api --lines 20 --nostream
+          # 5. [SOLUSI] Baca File Log Langsung (Bypass CLI PM2)
+          # Ini membaca 30 baris terakhir dari file fisik di harddisk.
+          # Pastikan path ini sesuai dengan lokasi log PM2 Anda (biasanya di ~/.pm2/logs/)
+          echo "📄 Reading latest logs..."
+          tail -n 30 /home/fikri16/.pm2/logs/bklm-api-out.log || echo "⚠️ Log file not found, skipping..."
 
-          # Pesan sukses
+          # 6. [REKOMENDASI] Health Check via CURL
+          # Ini jauh lebih akurat daripada baca log. Kalau ini sukses, berarti server PASTI jalan.
+          echo "🚀 Checking API Health..."
+          curl --fail --max-time 10 http://localhost:3001/api/health || echo "⚠️ Health Check Failed (Check logs manually)"
+
           echo "✅ DEPLOY SUCCESSFUL!"

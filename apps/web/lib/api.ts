@@ -44,7 +44,7 @@ api.interceptors.response.use(
         const duration = endTime - config.metadata.startTime;
 
         // Logic RUM: Lapor jika lambat (> 300ms)
-        if (duration > 300) { 
+        if (duration > 1) { 
            sendReportToBackend(response.config.url, duration);
         }
     }

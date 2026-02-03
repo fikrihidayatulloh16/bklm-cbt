@@ -5,6 +5,7 @@ import { WinstonModule } from 'nest-winston';
 import { winstonConfig } from './common/logger/winston.config';
 import { LoggingInterceptor } from './common/utils/interceptors/logging.interceptor';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import * as compression from 'compression';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -28,6 +29,8 @@ async function bootstrap() {
     .setVersion('1.0')
     .addBearerAuth()
     .build();
+
+  app.use(compression());
 
   if (process.env.NODE_ENV !== 'production') {
   const document = SwaggerModule.createDocument(app, config);

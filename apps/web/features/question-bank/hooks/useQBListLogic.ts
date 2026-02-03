@@ -1,57 +1,52 @@
-import { error } from "console";
-import { useCallback, useEffect, useState } from "react";
-import { QuestionBankListType } from "../types/question-bank.types";
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query"; // ✅ Import Utama
 import { getQuestionBankList } from "../api/question-bank.api";
 import { showToast } from "@/components/ui/toast/toast-trigger";
+import { QuestionBankListType } from "../types/question-bank.types";
 
 export const useQBListLogic = () => {
-    // Page State
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<String | null>(null)
+    // 1. State hanya untuk Search (Client Side)
     const [searchValue, setSearchValue] = useState("");
 
-    // Data State
-    const [qbList, setQBList] = useState<QuestionBankListType[]>([])
+    // 2. Ganti useEffect manual dengan useQuery
+    const { 
+        data,       // Data hasil fetch (otomatis disimpan disini)
+        isLoading,  // Status loading otomatis
+        isError,    // Status error otomatis
+        error,      // Detail error
+        refetch     // Fungsi untuk refresh data manual
+    } = useQuery({
+        queryKey: ['question-bank-list'], // ID Unik untuk cache ini
+        queryFn: getQuestionBankList,     // Fungsi API yang dipanggil
+        // staleTime: 1000 * 60,          // (Opsional) Data dianggap segar selama 1 menit
+    });
 
-    const fetchData = useCallback( async () => {
-        try {
-            setIsLoading(true)
-            setError(null)
+    // 3. Safety Check: Pastikan data selalu Array (cegah crash jika API error/null)
+    const qbList: QuestionBankListType[] = Array.isArray(data) ? data : [];
 
-            const result = await getQuestionBankList(); //mengeksekusi fetch api
-            if (Array.isArray(result)) {
-                setQBList(result);
-            } else {
-                // Handle jika response bukan array (misal single object atau error object)
-                console.error("API response is not an array:", result);
-                setQBList([]); 
-            }
-        } catch (err: any) {
-            showToast({type: 'danger', message: 'Gagal', description: 'Gagal mengambil list bank soal'})
-        } finally {
-            setIsLoading(false)
-        }
-    }, [])
-
-    //Effect
+    // 4. Handle Error Notification (Side Effect)
+    // Karena useQuery v5 tidak punya callback onError, kita pakai useEffect simple ini
     useEffect(() => {
-        fetchData()
-    }, [fetchData])
+        if (isError) {
+            console.error(error);
+            showToast({
+                type: 'danger', 
+                message: 'Gagal', 
+                description: 'Gagal mengambil list bank soal'
+            });
+        }
+    }, [isError, error]);
 
-    let filteredQuestionBank = null
+    // 5. Filter Logic (Tetap sama)
+    const filteredQuestionBank = qbList.filter((item) =>
+        item.title?.toLowerCase().includes(searchValue.toLowerCase())
+    );
 
-    if (qbList != null) {
-        // 4. Filter Logic
-        filteredQuestionBank = qbList.filter((item) =>
-            item.title.toLowerCase().includes(searchValue.toLowerCase())
-        );
-    } else { filteredQuestionBank = qbList }
-    
     return {
         isLoading,
         searchValue,
         setSearchValue,
         filteredQuestionBank,
-        refetch: fetchData
-    }
+        refetch
+    };
 }

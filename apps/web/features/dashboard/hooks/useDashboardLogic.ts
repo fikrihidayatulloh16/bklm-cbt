@@ -3,53 +3,50 @@
 import { useState, useEffect, useCallback } from "react";
 import { DashboardStats, LastAssessment, LastQuestionBank } from "../types/dashboard.types";
 import { getAssessmentList, getQuestionBankList, getAssessmentDashboard } from "../api/dashboard.api";
+import { QuestionBankListType } from "@/features/question-bank/types/question-bank.types"; 
 import { showToast } from "@/components/ui/toast/toast-trigger";
+import { useQuery } from "@tanstack/react-query"; // ✅ Import Utama
 
 export const useDashboardLogic = () => {
-    // State Management
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
 
-    // State data
-    const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
-    const [lastAssessments, setLastAssessment] = useState<LastAssessment[]>([]);
-    const [lastQuestionBanks, setLastQuestionBank] = useState<LastQuestionBank[]>([])
-
-    // Fetching Function
-    const fetchData = useCallback( async () => {
-        try {
-            setIsLoading(true);
-            setError(null)
-
-            const [lastAssessmentData, lastQBData, DashboardStats] = await Promise.all([
-                getAssessmentList(),
-                getQuestionBankList(),
-                getAssessmentDashboard()
+// 2. Ganti useEffect manual dengan useQuery
+    const { 
+        data,
+        isLoading,  // Status loading otomatis
+        isError,    // Status error otomatis
+        error,      // Detail error
+        refetch     // Fungsi untuk refresh data manual
+    } = useQuery({
+        queryKey: ['dashboard-data'], // ID Unik untuk cache ini
+        queryFn: async () => {
+            const [assessments, questionBanks, stats] = await Promise.all([
+                getAssessmentList(), getQuestionBankList(), getAssessmentDashboard()
             ]);
 
-            //Set State From Fetching
-            setLastAssessment(lastAssessmentData);
-            setLastQuestionBank(lastQBData)
+            return {
+                assessments, questionBanks, stats
+            }
+        },    // Fungsi API yang dipanggil
+        staleTime: 5 * 60 * 1000,          // 5 menit
+    });
 
-            setDashboardStats(DashboardStats)
-        } catch (err: any) {
-            showToast({type: 'danger', message: 'Gagal', description: 'Gagal Memuat Dashboard'})
-        } finally {
-            setIsLoading(false)
-        }
-    }, []);
-
-    // Effect
     useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+        if (isError) {
+            console.error(error);
+            showToast({
+                type: 'danger', 
+                message: 'Gagal', 
+                description: 'Gagal mengambil list bank soal'
+            });
+        }
+    }, [isError, error]);
 
     return {
         isLoading,
         error,
-        dashboardStats,
-        lastAssessments,
-        lastQuestionBanks,
-        refetch: fetchData
+        dashboardStats: data?.stats || null,
+        lastAssessments: data?.assessments || [],
+        lastQuestionBanks: data?.questionBanks || [],
+        refetch
     }
 }

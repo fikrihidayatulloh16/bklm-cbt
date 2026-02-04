@@ -18,7 +18,7 @@ export const useQBListLogic = () => {
     } = useQuery({
         queryKey: ['question-bank-list'], // ID Unik untuk cache ini
         queryFn: getQuestionBankList,     // Fungsi API yang dipanggil
-        // staleTime: 1000 * 60,          // (Opsional) Data dianggap segar selama 1 menit
+        staleTime: 60 * 1000,          // (Opsional) Data dianggap segar selama 1 menit
     });
 
     // 3. Safety Check: Pastikan data selalu Array (cegah crash jika API error/null)

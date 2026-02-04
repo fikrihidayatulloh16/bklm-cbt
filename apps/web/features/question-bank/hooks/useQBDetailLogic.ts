@@ -6,57 +6,48 @@ import { useDisclosure } from '@nextui-org/react';
 import { showToast } from '@/components/ui/toast/toast-trigger'; // Sesuaikan import
 import { getQBDetail, removeOneQB } from '../api/question-bank.api'; // Sesuaikan import
 import { QuestionBankDetailType } from '../types/question-bank.types'; // Sesuaikan import
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export const useQBDetailLogic = () => {
     // 1. Hooks & Params
     const params = useParams();
     const router = useRouter();
     const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
-
-    // 2. State Management
-    const [qbDetail, setQBDetail] = useState<QuestionBankDetailType | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const queryClient = useQueryClient(); 
+    const id = params.id as string;
 
     // State Delete
     const [selectedIdToDelete, setSelectedIdToDelete] = useState<string | null>(null);
-    const [isDeleting, setIsDeleting] = useState(false);
 
-    // 3. Fetching Function (Pola yang Anda inginkan) ✅
-    const fetchData = useCallback(async () => {
-        // Guard Clause: Kalau tidak ada ID, stop.
-        if (!params.id) return;
+    const {
+        data,
+        isError,
+        isLoading,
+        error,
+        refetch
+    } = useQuery({
+        queryKey: ['question-bank-detail', id], // ID Unik untuk cache ini
+        queryFn: () => getQBDetail(id),     // Fungsi API yang dipanggil
+        staleTime: 1000 * 60 * 5,         // cache selama 5 menit
+    });
 
-        try {
-            setIsLoading(true);
-            setError(null);
-
-            // Fetch API
-            const result = await getQBDetail(params.id as string);
-            
-            // Validasi sederhana (jika backend return object)
-            if (result) {
-                setQBDetail(result);
-            } else {
-                throw new Error("Data kosong");
-            }
-
-        } catch (err) {
-            console.error("Fetch Error:", err);
-            setError("Gagal mengambil data");
-            showToast({ type: "danger", message: "Gagal", description: "Data tidak ditemukan!" });
-            
-            // Redirect jika data tidak ketemu (UX yang bagus)
-            router.push('/question-bank');
-        } finally {
-            setIsLoading(false);
-        }
-    }, [params.id, router]); // Dependency: Akan dibuat ulang hanya jika ID berubah
 
     // 4. Effect (Trigger Fetch saat mount atau ID berubah)
     useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+        if (error) {
+            showToast({type: 'danger', message: 'Gagal', description: 'Gagal Memuata Detail Bank Soal'})
+        }
+    }, [isError, error]);
+
+    const confirmDelete = useMutation ({
+        mutationFn: () => removeOneQB(id),
+        onSuccess: async () => {
+            showToast({ type: 'success', message: 'Berhasil', description: 'Bank soal dihapus' });
+            await queryClient.invalidateQueries({queryKey: ['question-bank-list']})
+            router.push('/question-bank') // kembali ke list question bank
+        },
+        onError: () => {showToast({type: 'danger', message: 'Gagal', description: 'Gagal menghapus bank soal'})}
+    })
 
     // 5. Delete Logic (Tetap sama)
     const handleDeleteClick = (id: string) => {
@@ -64,36 +55,23 @@ export const useQBDetailLogic = () => {
         onOpen();
     };
 
-    const confirmDelete = async () => {
-        if (!selectedIdToDelete) return;
-        setIsDeleting(true);
-        try {
-            await removeOneQB(selectedIdToDelete);
-            showToast({ type: "success", message: "Berhasil", description: 'Data berhasil dihapus' });
-            router.push('/question-bank');
-            onClose();
-        } catch (error) {
-            showToast({ type: "danger", message: "Gagal menghapus data" });
-        } finally {
-            setIsDeleting(false);
-        }
+    const onConfirmDelete = () => {
+        confirmDelete.mutate();
     };
 
     // 6. Return Values
     return {
         // Data State
-        qbDetail,
+        qbDetail: data as QuestionBankDetailType | null,
         isLoading,
-        error,
-        
-        // Actions
-        refetch: fetchData, // <-- INI KELEBIHANNYA. Bisa dipanggil manual nanti.
+        isError,
+        refetch,
         
         // Delete Modal Props
         isOpen,
         onOpenChange,
         handleDeleteClick,
-        confirmDelete,
-        isDeleting,
+        onConfirmDelete,
+        isDeleting: confirmDelete.isPending,
     };
 };

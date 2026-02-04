@@ -15,7 +15,7 @@ export default function QuestionBankDetailPage() {
     handleDeleteClick, 
     isOpen, 
     onOpenChange, 
-    confirmDelete, 
+    onConfirmDelete, 
     isDeleting 
   } = useQBDetailLogic();
 
@@ -74,7 +74,7 @@ export default function QuestionBankDetailPage() {
       <DeleteConfirmModal 
         isOpen={isOpen}
         onOpenChange={onOpenChange}
-        onConfirm={confirmDelete}
+        onConfirm={onConfirmDelete}
         isLoading={isDeleting}
         title="Hapus Bank Soal?"
         description="Data yang dihapus tidak bisa dikembalikan lagi."

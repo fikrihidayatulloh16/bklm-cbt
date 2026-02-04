@@ -9,6 +9,7 @@ export interface QuestionBankListType {
     author_id:   String
     author: { name: string}
     _count: {
+        questions: number;
         select: { questions: true }
     }
 }

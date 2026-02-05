@@ -53,7 +53,7 @@ export const SubmissionSchema = z.object({
     class_name: z.string(),
     score: z.number(),
     status: z.enum(["FINISHED", "IN_PROGRESS"]),
-    submitted_at: z.string(),
+    submitted_at: z.string().or(z.date()).nullable(),
 });
 
 // Schema Analytics

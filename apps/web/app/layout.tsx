@@ -18,7 +18,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="light bg-gray-100"> 
-      <body className={inter.className}>
+      <body 
+        className={inter.className}
+        suppressHydrationWarning={true}
+      >
         {/* Bungkus Children dengan Providers */}
         <Providers>
           {children}

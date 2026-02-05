@@ -9,6 +9,7 @@ import { AssessmentRepository } from 'src/assessment/repository/assessment.repos
 import { AnswerRepository } from './repository/answer.repository';
 import { QuestionRepository } from './repository/question.repository';
 import { error } from 'console';
+import { SubmissionsGateway } from './submissions.gateway';
 
 @Injectable()
 export class SubmissionsService {
@@ -17,7 +18,8 @@ export class SubmissionsService {
     private submissionRepo: SubmissionRepository,
     private assessmentrepo: AssessmentRepository,
     private answerRepo: AnswerRepository,
-    private questionRepo: QuestionRepository
+    private questionRepo: QuestionRepository,
+    private readonly submissionsGateway: SubmissionsGateway,
   ) {}
 
   // Pastikan DTO Anda menerima 'class_name' (String), bukan 'class_id'
@@ -72,6 +74,19 @@ export class SubmissionsService {
     }
 
     const newSubmission = await this.submissionRepo.createSubmission(dto, assessment_id);
+
+    const socketPayload = {
+      id: newSubmission.id,
+      student_name: newSubmission.student_name, // Pastikan query include student
+      class_name: newSubmission.class_name,
+      // deadline: newSubmission.deadline,
+      status: "IN_PROGRESS",
+      score: 0,
+      submitted_at: null
+    };
+
+    console.log("🚀 Emitting WebSocket Event:", socketPayload); // Log biar kelihatan di terminal
+    this.submissionsGateway.notifyNewSubmission(socketPayload);
 
     return {
       submission_id: newSubmission.id,
@@ -216,6 +231,21 @@ export class SubmissionsService {
     }
 
     console.log(`[Finish] Submission ${submissionId} Finished. Score: ${totalScore}`);
+
+    const socketPayload = {
+        id: submissionId,                 // ID untuk mencari baris di tabel
+        status: 'FINISHED',               // Status baru
+        score: totalScore,                        // Nilai akhir (Ambil dari hasil hitungan logic Anda)
+        submitted_at: new Date(),         // Waktu selesai
+        // Data pelengkap (opsional jika frontend butuh nama lagi)
+        // student_name: submission.student.name, 
+    };
+
+    // 3. EMIT EVENT
+    const submisionfinish_socket = this.submissionsGateway.notifySubmissionFinished(socketPayload);
+
+    console.log('submit finish socket: ', submisionfinish_socket);
+    
 
     // 5. UPDATE STATUS & SCORE
     return await this.submissionRepo.updateStatusFinishSubmission(submissionId, totalScore);

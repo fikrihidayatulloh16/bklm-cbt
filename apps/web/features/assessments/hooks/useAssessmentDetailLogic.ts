@@ -1,8 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useDisclosure } from "@nextui-org/react";
 import { showToast } from "@/components/ui/toast/toast-trigger";
+import { SubmissionType } from "../schemas/assessment.schemas";
 
 // API Imports
 import { 
@@ -12,6 +13,7 @@ import {
   getAssessmentAnalytics, 
   publishAssessment 
 } from "../api/assessment.api";
+import { getSocket } from "@/lib/socket";
 
 export const useAssessmentDetailLogic = () => {
   const params = useParams();
@@ -82,6 +84,71 @@ export const useAssessmentDetailLogic = () => {
       showToast({ type: "danger", message: "Gagal", description: "Gagal mempublish ujian." });
     }
   });
+
+  // 👇 LOGIC WEBSOCKET LIVE UPDATE
+  useEffect(() => {
+    const socket = getSocket();
+    socket.connect();
+
+    // 1. Dengarkan Event dari Backend
+    socket.on("submission:initiated", (newSubmission: SubmissionType) => {
+      console.log("⚡ NEW DATA RECEIVED:", newSubmission);
+
+      // 2. Update Cache TanStack Query (Key harus persis sama dengan useQuery submissions)
+      // Key: ["assessment-submissions", id, selectedClassName]
+      queryClient.setQueryData(
+        ["assessment-submissions", id, selectedClassName], 
+        (oldData: SubmissionType[] | undefined) => {
+            // Jika cache kosong, buat array baru isi 1
+            if (!oldData) return [newSubmission];
+
+            // Cek duplikat (biar aman)
+            const exists = oldData.find(s => s.id === newSubmission.id);
+            if (exists) return oldData;
+
+            // Masukkan data baru ke ATAS (index 0), sisanya di bawah
+            return [newSubmission, ...oldData];
+        }
+      );
+    });
+
+    // Listener 2: FINISH (BARU) 🟢
+    socket.on("submission:finished", (payload: any) => {
+        console.log("🏁 SUBMISSION FINISHED:", payload);
+
+        // Mapping payload jika perlu (misal submission_id -> id)
+        const updatedInfo = {
+            id: payload.id,
+            status: payload.status,
+            score: payload.score,
+            submitted_at: payload.submitted_at
+        };
+
+        const queryKey = ["assessment-submissions", id, selectedClassName];
+
+        queryClient.setQueryData(queryKey, (oldData: SubmissionType[] | undefined) => {
+            if (!oldData) return [];
+
+            // TEKNIK IMMUTABLE UPDATE:
+            // Loop semua data, cari yang ID-nya sama, ganti isinya.
+            // Yang ID-nya beda, biarkan tetap.
+            return oldData.map((item) => {
+                if (item.id === updatedInfo.id) {
+                    // Gabungkan data lama dengan data baru (merge)
+                    return { ...item, ...updatedInfo };
+                }
+                return item;
+            });
+        });
+    });
+
+    // Cleanup
+    return () => {
+      socket.off("submission:initiated"); // Matikan pendengar saja
+      socket.off("submission:finished"); // Matikan pendengar saja
+      socket.disconnect();
+    };
+  }, [id, selectedClassName, queryClient]); // Dependencies
 
   return {
     // Data

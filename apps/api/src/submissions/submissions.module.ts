@@ -5,12 +5,13 @@ import { SubmissionRepository } from './repository/submissions.repository';
 import { QuestionRepository } from './repository/question.repository';
 import { AnswerRepository } from './repository/answer.repository';
 import { AssessmentModule } from 'src/assessment/assessment.module';
+import { SubmissionsGateway } from './submissions.gateway';
 
 
 @Module({
   imports: [AssessmentModule],
   controllers: [SubmissionsController],
-  providers: [SubmissionsService, SubmissionRepository, QuestionRepository, AnswerRepository],
-  exports: [SubmissionRepository, QuestionRepository, AnswerRepository]
+  providers: [SubmissionsService, SubmissionRepository, QuestionRepository, AnswerRepository, SubmissionsGateway],
+  exports: [SubmissionRepository, QuestionRepository, AnswerRepository, SubmissionsGateway]
 })
 export class SubmissionsModule {}

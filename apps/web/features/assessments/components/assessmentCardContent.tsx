@@ -4,18 +4,16 @@ import { Button, Card, CardBody, Divider, Dropdown, DropdownItem, DropdownMenu, 
 import { Clock, Filter, Users } from "lucide-react";
 import Countdown from "react-countdown";
 import { countdownRenderer } from "@/components/helper/countDownRenderer";
-import { useState } from "react";
-
+import { Dispatch, SetStateAction } from "react";
 
 interface AssessmentCardContentProps {
     submissionsLength: number; // Menerima ARRAY submission
     assessmentDuration: number;      // Menerima ID Assessment (jika butuh)
-    assessmentDeadLine: Date;      // Menerima ID Assessment (jika butuh)
+    assessmentDeadLine: Date | null;      // Menerima ID Assessment (jika butuh)
     selectedClassName: string;
     distinctClasses: string[];
-    selectedKeys: string
-    setSelectedKeys: (keys: Set<string>) => void;
-    
+    selectedKeys: Set<string>;
+    setSelectedKeys: Dispatch<SetStateAction<Set<string>>>;
 }
 
 export default function AssessmentCardContent({
@@ -34,10 +32,7 @@ export default function AssessmentCardContent({
     const dropdownItems = ["all", ...distinctClasses];
     
     return (
-
         <div>
-            <Divider className="my-2"/>
-
             {/* --- STATISTIK RINGKAS (Layout Cards) --- */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Card shadow="sm">

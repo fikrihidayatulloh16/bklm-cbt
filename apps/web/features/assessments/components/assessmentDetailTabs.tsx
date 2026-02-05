@@ -1,29 +1,22 @@
 'use client';
 
-import React, { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { 
-  Button, Card, CardBody, Chip, Divider, Spinner, 
-  Tabs, Tab, Table, TableHeader, TableColumn, TableBody, TableRow, TableCell,
-  Snippet, User
-} from "@nextui-org/react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Tabs, Tab} from "@nextui-org/react";
 import { BarChart3 } from "lucide-react";
 import api from "@/lib/api";
-import TabStudentRank, { Submission } from "./table-content/tabStudent";
-import QuestionsAnalytics, { QuestionsAnalytic } from "./table-content/tabQuestion";
+import TabStudentRank from "./table-content/tabStudent";
+import QuestionsAnalytics from "./table-content/tabQuestion";
 import { showToast } from "@/components/ui/toast/toast-trigger";
-
-
+import { SubmissionType, QuestionAnalyticType } from "@/features/assessments/schemas/assessment.schemas";
 
 interface AssessmentDetailTabsProps {
-  submissions: Submission[]; // Menerima ARRAY submission
+  submissions: SubmissionType[]; // Menerima ARRAY submission
   assessmentId: string;      // Menerima ID Assessment (jika butuh)
-  question_analytics: QuestionsAnalytic[]
+  question_analytics: QuestionAnalyticType[]
   assessment_status: string;
   selectedClassName: string;
 }
-
-
 
 export default function AssessmentDetailTabs({ submissions, assessmentId, question_analytics, assessment_status, selectedClassName }: AssessmentDetailTabsProps) {
     const [analytics, setAnalytics] = useState<any>(null);

@@ -1,5 +1,5 @@
 // lib/utils/form-transformers.ts
-import { QuestionBankFormValues } from "@/lib/schemas/question-bank.schema";
+import { QuestionBankFormValues } from "@/features/question-bank/schemas/question-bank.schema";
 
 export const transformFormToPayload = (formData: QuestionBankFormValues) => {
   // Kita "ratakan" (flatten) section kembali menjadi satu array questions panjang

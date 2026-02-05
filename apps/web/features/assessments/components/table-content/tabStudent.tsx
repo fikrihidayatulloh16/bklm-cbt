@@ -1,18 +1,8 @@
 import { Button, Card, CardBody, CardHeader, Chip, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, User } from "@nextui-org/react";
-import React from "react";
-
-// --- 1. UPDATE INTERFACE (Sesuai Backend Service Anda) ---
-export interface Submission {
-  id: string;
-  student_name: string;
-  class_name: string; // Tambahan dari backend
-  score: number;
-  status: "FINISHED" | "IN_PROGRESS";
-  submitted_at: string | null;
-}
+import { SubmissionType } from "@/features/assessments/schemas/assessment.schemas";
 
 interface StudentProps {
-  submissions: Submission[]; // Menerima ARRAY submission
+  submissions: SubmissionType[]; // Menerima ARRAY submission
   assessmentId: string;      // Menerima ID Assessment (jika butuh)
   handleSyncStatus: () => void
   loading: boolean

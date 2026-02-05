@@ -3,7 +3,7 @@
 import { useFieldArray, Control } from "react-hook-form";
 import { Button, Input, Checkbox } from "@nextui-org/react";
 import { Plus, Trash2 } from "lucide-react";
-import { QuestionBankFormValues } from "@/lib/schemas/question-bank.schema";
+import { QuestionBankFormValues } from "@/features/question-bank/schemas/question-bank.schema";
 
 interface OptionListProps {
   control: Control<any>;

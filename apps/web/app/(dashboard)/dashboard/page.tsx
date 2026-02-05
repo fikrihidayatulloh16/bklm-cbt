@@ -14,7 +14,7 @@ export default function DashboardPage() {
 
   // Handle State Loading/Error
   if (isLoading) return <div className="p-10 text-center">Memuat data...</div>;
-  if (error) return <div className="p-10 text-center text-red-500">{error}</div>;
+  if (error) return <div className="p-10 text-center text-red-500">{error.message}</div>;
 
   // 3. Render UI (Otot)
   return (

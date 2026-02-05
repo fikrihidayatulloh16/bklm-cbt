@@ -87,4 +87,8 @@ jobs:
           echo "🚀 Checking API Health..."
           curl --fail --max-time 10 http://localhost:3001/api/health || echo "⚠️ Health Check Failed (Check logs manually)"
 
+          docker restart bklm_promtail
+
+          
+
           echo "✅ DEPLOY SUCCESSFUL!"

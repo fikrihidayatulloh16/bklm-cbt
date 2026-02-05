@@ -7,7 +7,7 @@ import {
 } from "@nextui-org/react";
 import { Plus, Search } from "lucide-react"; // Gunakan icon agar lebih modern
 import api from "@/lib/api"; 
-import AssessmentCard from "@/components/ui/AssessmentCard"; // Import Card yang baru dibuat
+import AssessmentCard from "@/features/assessments/components/AssessmentCard"; // Import Card yang baru dibuat
 import { QuestionBankListType } from "@/features/question-bank/types/question-bank.types";
 import { useQBListLogic } from "@/features/question-bank/hooks/useQBListLogic";
 //import CreateAssessmentModal from "@/components/fragments/CreateAssessmentModal"; // Import Modal yang tadi

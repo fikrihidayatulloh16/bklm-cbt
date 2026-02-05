@@ -9,7 +9,7 @@ import {
 } from "react-hook-form";
 import { Button, Card, CardBody, Input, Select, SelectItem } from "@nextui-org/react"; // 👈 Pastikan Input dari sini!
 import { Trash2 } from "lucide-react";
-import OptionList from "../OptionList"; // Pastikan path benar
+import OptionList from "./OptionList"; // Pastikan path benar
 
 interface QuestionItemProps {
   control: Control<any>; // Jika masih error "not generic", hapus <any>. Cukup: Control;

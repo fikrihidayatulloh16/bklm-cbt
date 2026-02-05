@@ -1,24 +1,9 @@
-import { Button, Card, CardBody, Chip, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, User } from "@nextui-org/react";
-import { div } from "framer-motion/client";
-import { Download, Play } from "lucide-react";
-import React from "react";
-
-// --- 1. UPDATE INTERFACE (Sesuai Backend Service Anda) ---
-export interface QuestionsAnalytic {
-  id: string;
-  question_id: string;
-  question_text: string;
-  category: string;
-  total_risk_score: number;
-  respondents: number;
-  percentageRaw: number,
-  percentage: string;
-  priority: string;
-  average: number;
-}
+import { Button, Card, CardBody, Chip, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@nextui-org/react";
+import { Download } from "lucide-react";
+import { QuestionAnalyticType } from "@/features/assessments/schemas/assessment.schemas";
 
 interface QuestionsAnalyticProps {
-  questionsAnalytic: QuestionsAnalytic[]; // Menerima ARRAY submission
+  questionsAnalytic: QuestionAnalyticType[]; // Menerima ARRAY submission
   assessmentId: string;      // Menerima ID Assessment (jika butuh)
   onDownload: () => void;
   isDownloading?: boolean;
@@ -33,7 +18,6 @@ const priorityColorMap: Record<string, "danger" | "warning" | "default"> = {
 
 //Terima dta lewat props
 export default function QuestionsAnalytics({ questionsAnalytic, assessmentId, onDownload, isDownloading }: QuestionsAnalyticProps) {
-    console.log('questionAnalytics di filetab= ',questionsAnalytic);
     
     return (
         <>

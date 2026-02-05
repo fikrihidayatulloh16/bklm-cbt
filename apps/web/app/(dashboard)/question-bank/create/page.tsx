@@ -4,8 +4,8 @@ import { Button, Input, Accordion, AccordionItem } from "@nextui-org/react";
 import { Plus, Save, Layers, Trash2 } from "lucide-react";
 
 // Components
-import CategorySectionBody from "@/components/fragments/question-bank/CategorySection";
-import CreateCategoryQuestionModal from "@/components/fragments/question-bank/modal/addCat.modal";
+import CategorySectionBody from "@/features/question-bank/components/CategorySection";
+import CreateCategoryQuestionModal from "@/features/question-bank/components/addCat.modal";
 
 // Hooks
 import { useQBCreateLogic } from "@/features/question-bank/hooks/useQBCreateLogic";

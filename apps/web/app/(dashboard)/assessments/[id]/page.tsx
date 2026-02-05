@@ -1,198 +1,117 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
-import { useDisclosure, Spinner, Divider } from "@nextui-org/react"; // useDisclosure untuk modal
-import api from "@/lib/api";
+import React from "react";
+import { Spinner, Divider } from "@nextui-org/react";
 
-// Import Komponen Pecahan Tadi
-import PublishModal from "@/components/fragments/assessment-id/publishModal";
-import AssessmentHeader from "@/components/fragments/assessment-id/assessment-id-header";
-import { Submission } from "@/components/fragments/assessment-id/table-content/tabStudent";
-import { QuestionsAnalytic } from "@/components/fragments/assessment-id/table-content/tabQuestion";
-import AssessmentDetailTabs from "@/components/fragments/assessment-id/assessmentDetailTabs";
-import AssessmentCardContent from "@/components/fragments/assessment-id/assessmentCardContent";
-import AssessmentAnalytics from "@/components/fragments/assessment-id/AssessmentAnalytics";
-import { showToast } from "@/components/ui/toast/toast-trigger";
+// Components
+import PublishModal from "@/features/assessments/components/publishModal";
+import AssessmentHeader from "@/features/assessments/components/AssessmentIdHeader";
+import AssessmentDetailTabs from "@/features/assessments/components/assessmentDetailTabs";
+import AssessmentCardContent from "@/features/assessments/components/assessmentCardContent";
 
-// ... (Interface Submission dll tetap sama, boleh dipisah ke file types.ts kalau mau lebih rapi) ...
-interface AssessmentDetail {
-  id: string;
-  title: string;
-  description: string;
-  assessment_status: string; // pastikan backend kirim 'status' atau 'assessment_status'
-  created_at: Date;
-  expired_at: Date;
-  duration: number;
-  submissions: any[];
-}
+// Logic Hook
+import { useAssessmentDetailLogic } from "@/features/assessments/hooks/useAssessmentDetailLogic"; 
 
 export default function AssessmentDetailPage() {
-  const params = useParams();
-  const id = params.id as string;
-  
-  // State Data
-  const [assessment, setAssessment] = useState<AssessmentDetail | null>(null);
-  const [questionAnalytics, setQuestionAnalytics] = useState<QuestionsAnalytic[]>([]);
-  const [submissions, setSubmissions] = useState<Submission[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isPublishing, setIsPublishing] = useState(false);
-  const [deadLine, setDeadLine] = useState<Date | null>(null);
-  const [selectedKeys, setSelectedKeys] = useState(new Set(["all"]));
-  const [distinctClasses, setDistinctClasses] = useState<string[]>([]);
+  const {
+    assessment,
+    distinctClasses,
+    submissions,
+    questionAnalytics,
+    isLoading,
+    isPublishing,
+    selectedKeys,
+    setSelectedKeys,
+    selectedClassName,
+    modalProps,
+    handlePublish,
+    isError,   // 👈 Ambil ini
+    error,
+  } = useAssessmentDetailLogic();
 
-  // Hook Modal bawaan NextUI (Sangat praktis!)
-  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
+// 1. PENGAMAN PERTAMA: Loading
+  // Saat ini assessment masih undefined, tapi kita tampilkan Spinner
+  if (isLoading) {
+    return (
+        <div className="flex h-[50vh] items-center justify-center">
+            <Spinner size="lg" label="Memuat data..." />
+        </div>
+    );
+  }
 
-   // 2. HELPER: Mengubah Selection Set menjadi String untuk API
-  const selectedClassName = useMemo(() => {
-    // Ambil value pertama dari Set
-    const selected = Array.from(selectedKeys)[0] as string;
-    return selected === "all" ? undefined : selected;
-  }, [selectedKeys]);
+  // 2. PENGAMAN KEDUA: Error
+  // Assessment undefined karena error
+  if (isError) {
+    console.error("🔥 DETAIL ERROR:", error); // Cek Console Browser (F12)
+    return (
+      <div className="p-8 flex flex-col items-center justify-center gap-4 text-center">
+        <div className="text-danger text-5xl">⚠️</div>
+        <h2 className="text-xl font-bold text-danger">Gagal Memuat Data</h2>
+        
+        {/* Tampilkan pesan teknisnya */}
+        <div className="bg-gray-100 p-4 rounded-lg text-left text-sm font-mono max-w-2xl overflow-auto border border-red-200">
+           <p className="font-bold text-red-600 mb-2">Pesan Error:</p>
+           {/* Menampilkan pesan error utama */}
+           <p>{error instanceof Error ? error.message : "Unknown Error"}</p>
+           
+           <div className="divider my-2 border-t border-gray-300"></div>
+           
+           <p className="font-bold text-red-600 mb-2">Detail JSON:</p>
+           {/* Menampilkan isi error lengkap (berguna utk Zod) */}
+           <pre>{JSON.stringify(error, null, 2)}</pre>
+        </div>
+      </div>
+    );
+  }
 
-  // 3. FETCH DATA KELAS (Hanya sekali saat mount)
-  useEffect(() => {
-    const fetchClasses = async () => {
-      try {
-        const res = await api.get(`/assessments/${id}/distinct-class`);
-        setDistinctClasses(res.data);
-      } catch (err) {
-        console.error("Gagal ambil daftar kelas", err);
-      }
-    };
-    fetchClasses();
-  }, [id]);
-
-  // 1. Fetch Data
-  useEffect(() => {
-   const fetchDetail = async () => {
-    //Mengaktifkan loading
-    setIsLoading(true);
-    
-    try {
-      const response = await api.get(`/assessments/${id}`);
-      setAssessment(response.data);
-      setDeadLine(response.data)
-
-      // Tentukan URL: Apakah pakai filter atau tidak?
-      let url = `/assessments/${id}/results`;
-      let questAurl = `/assessments/${id}/analytics`;
-      
-      // Jika ada filter kelas, tambahkan query param
-      if (selectedClassName) {
-        url += `?class_name=${encodeURIComponent(selectedClassName)}`;
-        questAurl += `?class_name=${encodeURIComponent(selectedClassName)}`;
-      }
-
-      console.log('questAurl=',questAurl);
-      
-
-      // Mengambil semua submission beserta filternya
-      const resSubs = await api.get(url);
-
-      // Kita ambil array yang ada DI DALAM object tersebut
-      const subsArray = resSubs.data?.submissions || []; 
-      setSubmissions(subsArray);
-
-      const questA = await api.get(questAurl);
-      setQuestionAnalytics(questA.data.question_analysis); // Sesuaikan jika response dibungkus data.data
-
-    } catch (error) {
-      console.error("Gagal ambil detail:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  fetchDetail();
-
-}, [id, selectedClassName]); // <-- Trigger ulang saat selectedClassName berubah
-
-  
-
-  
-
-  // useEffect(() => {
-  //   if (id) fetchDetail();
-  // }, [id]);
-
-  // 2. Logic Publish
-  const handlePublish = async () => {
-    try {
-      setIsPublishing(true);
-      // Panggil API Backend (Pastikan route-nya benar)
-      // PATCH /assessments/:id/publish
-      await api.patch(`/assessments/${id}/publish`); 
-      
-      // Refresh data agar status berubah jadi PUBLISHED di layar
-      
-      window.location.reload();
-      console.log('sudah direfresh');
-      
-      onClose(); // Tutup modal
-      
-    } catch (error) {
-      showToast({
-        type: "danger",
-        message: "Gagal",
-        description: "Gagal mempublish ujian!",
-      });
-      console.error(error);
-
-    } finally {
-      setIsPublishing(false);
-    }
-  };
-
- 
-
-  if (isLoading) return <div className="flex h-[50vh] items-center justify-center"><Spinner size="lg" label="Memuat data..." /></div>;
-  if (!assessment) return <div className="text-center py-10">Data tidak ditemukan</div>;
+  // 3. PENGAMAN KETIGA: Data Kosong (Guard Clause)
+  // Loading selesai, Error tidak ada, TAPI datanya null/undefined?
+  // KITA STOP DISINI. Jangan lanjut ke bawah.
+  if (!assessment) {
+    return <div className="text-center py-10">Data tidak ditemukan</div>;
+  }
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-
-      {/* Table Content */}
+    <div className="space-y-6 max-w-7xl mx-auto p-6">
+      
+      {/* 1. Header & Status */}
       <AssessmentHeader 
         id={assessment.id}
         title={assessment.title}
-        description={assessment.description}
-        assessment_status={assessment.assessment_status} // Sesuaikan field backend (status / assessment_status)
-        onPublishClick={onOpen}    // Trigger buka modal
+        description={assessment.description || ""}
+        assessment_status={assessment.assessment_status}
+        onPublishClick={modalProps.onOpen} 
       />
 
-      <Divider className="my-2"/>
+      {/* 2. Filter & Summary Cards */}
       <AssessmentCardContent
         submissionsLength={submissions.length}
         assessmentDuration={assessment.duration}
-        assessmentDeadLine={assessment.expired_at}
-        selectedClassName={selectedClassName || ''}
+        // Pastikan konversi Date string ke Date object jika komponen butuh Date
+        assessmentDeadLine={assessment.expired_at ? new Date(assessment.expired_at) : null}
+        
         distinctClasses={distinctClasses}
-        setSelectedKeys={setSelectedKeys} selectedKeys={""}      />
-
-
+        selectedClassName={selectedClassName || ''}
+        
+        // FIX: Passing setSelectedKeys dengan benar (Set<string>)
+        // Pastikan komponen AssessmentCardContent menerima Dispatch<SetStateAction<Set<string>>>
+        selectedKeys={selectedKeys} 
+        setSelectedKeys={setSelectedKeys} 
+      />
       
-      {/* table cotnent COMPONENT (Bersih kan?) */}
+      {/* 3. Tabs (Submissions & Analytics) */}
       <AssessmentDetailTabs 
-        assessmentId={id}
+        assessmentId={assessment.id}
         submissions={submissions}
         question_analytics={questionAnalytics}
         assessment_status={assessment.assessment_status}
         selectedClassName={selectedClassName || ''}
       />
 
-        {/* PANGGIL KOMPONEN ANALYTICS DI SINI */}
-        {/* <AssessmentAnalytics assessmentId={id} /> */}
-
-
-      {/* ISI KONTEN LAIN (Statistik, Tabel, dll - Kode lama Anda) */}
-      {/* Card Content */}
-
-      {/* MODAL COMPONENT (Tersembunyi sampai dipanggil) */}
+      {/* 4. Modal Publish */}
       <PublishModal 
-        isOpen={isOpen}
-        onOpenChange={onOpenChange}
+        isOpen={modalProps.isOpen}
+        onOpenChange={modalProps.onOpenChange}
         onConfirm={handlePublish}
         isLoading={isPublishing}
       />

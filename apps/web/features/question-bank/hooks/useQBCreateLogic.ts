@@ -7,8 +7,8 @@ import { showToast } from "@/components/ui/toast/toast-trigger";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 // Import Schema & Utils
-import { questionBankFormSchema, QuestionBankFormValues } from "@/lib/schemas/question-bank.schema";
-import { transformFormToPayload } from "@/lib/utils/form-transformers";
+import { questionBankFormSchema, QuestionBankFormValues } from "@/features/question-bank/schemas/question-bank.schema";
+import { transformFormToPayload } from "@/features/question-bank/types/form-transformers";
 import { createQuestionBank } from "../api/question-bank.api";
 import { CreateQuestionBankPayload } from "../types/question-bank.types";
 

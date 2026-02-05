@@ -1,5 +1,17 @@
 import api from "@/lib/api";
-import { ListAssessmentSchema, ListAssessmentTypes, createAssessmentFromBankPayload, createAssessmentFromBankPayloadType } from "../schemas/assessment.schemas";
+import { 
+    ListAssessmentSchema, 
+    ListAssessmentTypes, 
+    createAssessmentFromBankPayload, 
+    createAssessmentFromBankPayloadType,
+    AssessmentDetailType, 
+    AssessmentDetailSchema, 
+    DistinctClassSchema,
+    SubmissionSchema,
+    QuestionAnalyticSchema,
+    SubmissionType,
+    QuestionAnalyticType
+} from "../schemas/assessment.schemas";
 import z, { check } from "zod";
 import { error } from "console";
 
@@ -31,3 +43,39 @@ export const createAssessmentFromBank = async (payload: createAssessmentFromBank
 
     await api.post(ENCPOINTS.POSTASSESSMENTFROMBANK, validation.data)
 }
+
+// 1. Get Detail
+export const getAssessmentDetail = async (id: string): Promise<AssessmentDetailType> => {
+  const { data } = await api.get(`/assessments/${id}`);
+  return AssessmentDetailSchema.parse(data);
+};
+
+// 2. Get Classes
+export const getDistinctClasses = async (id: string): Promise<string[]> => {
+  const { data } = await api.get(`/assessments/${id}/distinct-class`);
+  return DistinctClassSchema.parse(data);
+};
+
+// 3. Get Submissions (Support Filter)
+export const getAssessmentSubmissions = async (id: string, className?: string): Promise<SubmissionType[]> => {
+  const { data } = await api.get(`/assessments/${id}/results`, {
+    params: { class_name: className } // Axios otomatis handle encodeURI
+  });
+  // Asumsi response backend: { submissions: [...] }
+  return z.array(SubmissionSchema).parse(data.submissions || []);
+};
+
+// 4. Get Analytics (Support Filter)
+export const getAssessmentAnalytics = async (id: string, className?: string): Promise<QuestionAnalyticType[]> => {
+  const { data } = await api.get(`/assessments/${id}/analytics`, {
+    params: { class_name: className }
+  });
+  
+  // Asumsi response backend: { question_analysis: [...] }
+  return z.array(QuestionAnalyticSchema).parse(data.question_analysis || []);
+};
+
+// 5. Publish
+export const publishAssessment = async (id: string): Promise<void> => {
+  await api.patch(`/assessments/${id}/publish`);
+};

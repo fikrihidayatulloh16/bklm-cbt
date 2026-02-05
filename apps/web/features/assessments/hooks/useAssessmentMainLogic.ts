@@ -15,6 +15,7 @@ import {
   createAssessmentFromBankPayloadType 
 } from "../schemas/assessment.schemas";
 import { showToast } from "@/components/ui/toast/toast-trigger";
+import { error } from "console";
 
 export const useAssessmentMainLogic = () => {
     const router = useRouter();
@@ -41,7 +42,8 @@ export const useAssessmentMainLogic = () => {
     const { 
         data, 
         isLoading, 
-        isError 
+        isError,
+        error
     } = useQuery({
         queryKey: ['assessments-page-data'], // Satu key untuk halaman ini
         queryFn: async () => {

@@ -31,3 +31,46 @@ export type AssessmentFormValues = {
     question_bank_id: string;
     school_id?: string;
 }
+
+// Schema Detail Assessment
+export const AssessmentDetailSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  description: z.string().nullable().transform((v) => v ?? ""),
+  assessment_status: z.string(), // "DRAFT" | "PUBLISHED"
+  created_at: z.string().or(z.date()),
+ expired_at: z.string().or(z.date()).nullable(),
+  duration: z.number(), // dalam menit
+});
+
+// Schema untuk Class List (Array of Strings)
+export const DistinctClassSchema = z.array(z.string());
+
+// Schema Submission (Sesuaikan dengan data riil submission kamu)
+export const SubmissionSchema = z.object({
+    id: z.string(),
+    student_name: z.string(),
+    class_name: z.string(),
+    score: z.number(),
+    status: z.enum(["FINISHED", "IN_PROGRESS"]),
+    submitted_at: z.string(),
+});
+
+// Schema Analytics
+export const QuestionAnalyticSchema = z.object({
+    // id: z.string(),
+    question_id: z.string(),
+    question_text: z.string(),
+    category: z.string(),
+    total_risk_score: z.number(),
+    respondents: z.number(),
+    percentageRaw: z.number(),
+    percentage: z.string(),
+    priority: z.string(),
+    average: z.number(),
+});
+
+// Types Inference
+export type AssessmentDetailType = z.infer<typeof AssessmentDetailSchema>;
+export type SubmissionType = z.infer<typeof SubmissionSchema>;
+export type QuestionAnalyticType = z.infer<typeof QuestionAnalyticSchema>;

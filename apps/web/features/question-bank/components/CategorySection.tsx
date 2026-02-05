@@ -5,7 +5,7 @@ import { useFieldArray, Control, UseFormRegister, FieldErrors, UseFormSetValue }
 import { Button, Input } from "@nextui-org/react";
 
 import QuestionItem from "./QuestionItem"; // Component lama Anda
-import { QuestionBankFormValues } from "@/lib/schemas/question-bank.schema";
+import { QuestionBankFormValues } from "@/features/question-bank/schemas/question-bank.schema";
 import { Plus } from "lucide-react";
 
 interface CategorySectionProps {

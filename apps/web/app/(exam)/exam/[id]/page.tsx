@@ -2,7 +2,7 @@
 
 import React from "react";
 // 1. Import Logic Hook
-import { useExamLogic, CLASS_OPTIONS } from "@/hooks/exam/useExamLogic"; 
+import { useExamLogic, CLASS_OPTIONS } from "@/features/exam/hooks/useExamLogic"; 
 
 import { 
   Button, Card, CardBody, Progress, RadioGroup, Radio, 

@@ -163,12 +163,20 @@ export class AssessmentService {
 
     const now = new Date(); // membuat waktu saat ini
 
-    if ( !assessment.expired_at ) { return 'deadline belum dibuat'  }
-
-    // jika hari ini melebih waktu deadline ubah status jadi closed
-    if ( now.getTime() >= assessment.expired_at.getTime() ) {
-        this.assessmentRepo.updateDeadlineAssessment(assessment.id, assessment.expired_at, assessment.assessment_status = 'CLOSED')
+    if (assessment.expired_at) {
+    // 2. Masuk sini HANYA jika expired_at TIDAK NULL.
+    // TypeScript jadi happy, karena dia tau di dalam blok ini expired_at aman.
+    
+    if (now.getTime() >= assessment.expired_at.getTime()) {
+        // Update status jadi CLOSED
+        await this.assessmentRepo.updateDeadlineAssessment(
+            assessment.id, 
+            assessment.expired_at, 
+            'CLOSED' // Update status local variable juga biar return-nya benar
+        );
+        assessment.assessment_status = 'CLOSED'; 
     }
+}
 
     return assessment;
   }

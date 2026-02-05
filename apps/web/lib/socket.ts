@@ -9,8 +9,9 @@ export const getSocket = (): Socket => {
   if (!socket) {
     socket = io(SOCKET_URL, {
       // ✅ PAKSA WEBSOCKET (Hapus 'polling')
-      transports: ["websocket"], 
-      
+      transports: ["polling", "websocket"], 
+      withCredentials: true,
+      secure: true,
       // Opsi tambahan untuk kestabilan
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,

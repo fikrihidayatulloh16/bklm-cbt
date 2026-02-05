@@ -25,6 +25,7 @@ export default function AssessmentDetailPage() {
     selectedClassName,
     modalProps,
     handlePublish,
+    handleComplete,
     isError,   // 👈 Ambil ini
     error,
   } = useAssessmentDetailLogic();
@@ -97,6 +98,7 @@ export default function AssessmentDetailPage() {
         // Pastikan komponen AssessmentCardContent menerima Dispatch<SetStateAction<Set<string>>>
         selectedKeys={selectedKeys} 
         setSelectedKeys={setSelectedKeys} 
+        handleComplete={handleComplete}
       />
       
       {/* 3. Tabs (Submissions & Analytics) */}

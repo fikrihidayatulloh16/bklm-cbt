@@ -77,7 +77,7 @@ export default function ExamPage() {
                 <CardBody className="gap-6">
                     <div className="text-center">
                         <h1 className="text-2xl font-bold">{exam.title}</h1>
-                        <p className="text-default-500">Durasi: {exam.duration} Menit</p>
+                        <p className="text-default-500">Durasi: {exam.duration / 60000} Menit</p>
                     </div>
                     
                     <div className="space-y-4">

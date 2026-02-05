@@ -2,9 +2,9 @@
 
 import { Button, Card, CardBody, Divider, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from "@nextui-org/react";
 import { Clock, Filter, Users } from "lucide-react";
-import Countdown from "react-countdown";
+import Countdown, { CountdownRenderProps } from "react-countdown";
 import { countdownRenderer } from "@/components/helper/countDownRenderer";
-import { Dispatch, SetStateAction } from "react";
+import { Dispatch, SetStateAction, useState } from "react";
 
 interface AssessmentCardContentProps {
     submissionsLength: number; // Menerima ARRAY submission
@@ -14,6 +14,7 @@ interface AssessmentCardContentProps {
     distinctClasses: string[];
     selectedKeys: Set<string>;
     setSelectedKeys: Dispatch<SetStateAction<Set<string>>>;
+    handleComplete: () => void;
 }
 
 export default function AssessmentCardContent({
@@ -23,8 +24,16 @@ export default function AssessmentCardContent({
     selectedClassName, 
     distinctClasses,
     selectedKeys,
-    setSelectedKeys
+    setSelectedKeys,
+    handleComplete
 }: AssessmentCardContentProps) {
+
+    const [isTimeUp, setIsTimeUp] = useState(false);
+    // Wrapper agar bisa update state lokal UI juga
+    const onTimerComplete = () => {
+        setIsTimeUp(true);
+        handleComplete(); // 👈 Panggil logic dari Hook
+    };
 
     // State Dropdown (NextUI menggunakan Set untuk selection)
     // Default "all" artinya semua kelas
@@ -56,24 +65,23 @@ export default function AssessmentCardContent({
                 </Card>
                 <Card shadow="sm">
                     <CardBody className="flex flex-row items-center gap-4">
-                        <div className="p-3 bg-danger-100 text-primary rounded-lg"><Clock size={24} /></div>
+                        <div className="p-3 bg-danger-100 text-primary rounded-lg">
+                        <Clock size={24} />
+                        </div>
                         <div>
                             <p className="text-tiny text-default-500 uppercase font-bold">Waktu Tersisa</p>
                             {assessmentDeadLine ? (
-                                    <Countdown 
-                                        date={assessmentDeadLine} 
-                                        renderer={countdownRenderer} // Panggil helper yang sudah kita buat
-                                        // onComplete={() => {
-                                        //     // Logic ketika waktu habis
-                                        //     window.location.reload(); 
-                                        // }} 
-                                    />
-                                    ) : (
-                                    // Tampilan Loading (Skeleton) saat menunggu API response
-                                    <div className="flex items-center gap-2 px-1 py-2 rounded-lg bg-gray-100 text-dark-400 font-mono font-bold text-lg md:text-md">
-                                        Assessment Tidak di Buka
-                                    </div>
-                                    )}
+                                <Countdown 
+                                    key={assessmentDeadLine.toString()} // Trik reset timer
+                                    date={assessmentDeadLine} 
+                                    renderer={countdownRenderer} 
+                                    onComplete={onTimerComplete} 
+                                />
+                            ) : (
+                                <div className="font-mono text-lg font-bold">
+                                    {assessmentDuration} Menit
+                                </div>
+                            )}
                         </div>
                     </CardBody>
                 </Card>

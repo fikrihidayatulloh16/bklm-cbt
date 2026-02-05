@@ -70,6 +70,13 @@ export const useAssessmentDetailLogic = () => {
       console.error("🔥 Zod Error Analytics:", analyticsQuery.error);
   }
 
+  const handleComplete = () => {
+    console.log("⏳ Waktu habis (Logic Triggered)");
+    
+    // Contoh logic: Refresh data agar status di header jadi 'CLOSED'
+    queryClient.invalidateQueries({ queryKey: ["assessment-detail", id] });
+  };
+
   // --- MUTATIONS ---
 
   const publishMutation = useMutation({
@@ -92,7 +99,6 @@ export const useAssessmentDetailLogic = () => {
 
     // 1. Dengarkan Event dari Backend
     socket.on("submission:initiated", (newSubmission: SubmissionType) => {
-      console.log("⚡ NEW DATA RECEIVED:", newSubmission);
 
       // 2. Update Cache TanStack Query (Key harus persis sama dengan useQuery submissions)
       // Key: ["assessment-submissions", id, selectedClassName]
@@ -114,7 +120,6 @@ export const useAssessmentDetailLogic = () => {
 
     // Listener 2: FINISH (BARU) 🟢
     socket.on("submission:finished", (payload: any) => {
-        console.log("🏁 SUBMISSION FINISHED:", payload);
 
         // Mapping payload jika perlu (misal submission_id -> id)
         const updatedInfo = {
@@ -173,5 +178,6 @@ export const useAssessmentDetailLogic = () => {
     // Modal & Actions
     modalProps: { isOpen, onOpen, onOpenChange },
     handlePublish: publishMutation.mutate,
+    handleComplete
   };
 };

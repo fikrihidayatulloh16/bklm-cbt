@@ -244,9 +244,6 @@ export class SubmissionsService {
     // 3. EMIT EVENT
     const submisionfinish_socket = this.submissionsGateway.notifySubmissionFinished(socketPayload);
 
-    console.log('submit finish socket: ', submisionfinish_socket);
-    
-
     // 5. UPDATE STATUS & SCORE
     return await this.submissionRepo.updateStatusFinishSubmission(submissionId, totalScore);
   }

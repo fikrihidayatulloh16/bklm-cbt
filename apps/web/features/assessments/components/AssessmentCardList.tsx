@@ -4,15 +4,20 @@ import router from "next/router"
 import NextLink from "next/link";
 import { ListAssessmentTypes } from "../schemas/assessment.schemas";
 import { useRouter } from "next/navigation";
+import { LastAssessment } from "@/features/dashboard/types/dashboard.types";
 
 interface AssessmentCardListProps {
 isLoading: boolean;
-assessmentsList: ListAssessmentTypes[];
+assessmentsList: LastAssessment[];
 handleOpenCreateModal: () => void;
 }
 
 export const AssessmentCardList = ({isLoading, assessmentsList, handleOpenCreateModal}:AssessmentCardListProps) => {
 const router = useRouter()
+console.log('di assessmentCardList',assessmentsList);
+
+
+
     return (
         <>
         {/* LIST CONTENT */}
@@ -71,7 +76,7 @@ const router = useRouter()
                         <div className="pt-2 border-t border-default-100 flex justify-between items-center text-xs text-default-400 mt-2">
                             <span className="flex items-center gap-1">
                                 <FileText size={14} />
-                                {item._count || 0} Soal
+                                {item._count?.questions || 0} Soal
                                 
                             </span>
                             <span className="text-primary cursor-pointer hover:underline font-medium">Detail &rarr;</span>

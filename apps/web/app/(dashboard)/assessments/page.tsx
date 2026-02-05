@@ -32,6 +32,9 @@ export default function AssessmentPage() {
     modalProps: {isOpen, onOpenChange, onClose}
   } = useAssessmentMainLogic()
 
+  console.log('di assessment/page',assessmentsList);
+  
+
   // Destruktur form methods
   const { control, setValue, formState: {errors} } = form
 

@@ -66,6 +66,59 @@ DevOps,"GitHub Actions (CI), Proxmox VE (Self-hosted Production)"
 #⚡ Developer Guide (Getting Started)
 For future reference: How to run this project locally.
 
+# Quick Cheatsheet
+## 1. Infrastructure Setup 
+1. Duplicate the example env file before starting anything:
+```bash
+cp .env.example .env
+# ⚠️ Don't forget to fill in DATABASE_URL and REDIS_HOST inside .env
+```
+
+2. In the root directory, start the database and services:
+```bash
+docker-compose up -d
+```
+
+## Database (Prisma)
+1. Navigate to the Prisma directory (apps/api/prisma) or run from root if configured
+2. the common command below for prisma
+   - Generate Prisma Client
+   ```bash
+   npx prisma generate
+   ```
+
+   - Init Migration (Development)
+   ```bash
+   npx prisma migrate dev --name init
+   ```
+
+   - Migrate the update database/table
+   ```bash
+   npx prisma migrate dev --name  add_duration_assessment_int_default
+   ```
+
+## Backend (NestJS)
+### In the apps/api folder
+- install dependencies
+```bash
+npm install
+```
+- npm run start:dev (development mode)
+```bash
+npm run start:dev
+```
+
+## Frontend (Next.JS)
+### In the apps/web folder
+- Install dependencies.
+```bash
+npm install
+```
+- Development mode.
+```bash
+npm run dev
+```
+
 ### 1. Prerequisites
 Node.js >= 20.x
 
@@ -107,32 +160,12 @@ Run Frontend (Next.js):
 Bash
 cd frontend
 npm run dev
-
-# Quick Cheatsheet
-### After clone the project 
-in the root use "docker-compose up -d"
-
-## Database Prisma
-1. go to prisma locaton in root/apps/api/prisma
-2. the command below for prisma
-   - npx prisma generate (generate database)
-   - npx prisma migrate dev -m "add_user_table"
-
-## Backend (NestJS)
-### In the api folder
-- npm install (install dependencies)
-- npm run start:dev (development mode)
-
-## Frontend (Next.JS)
-### In the web folder
-- npm install (install dependencies)
-- npm run start:dev (development mode)
   
 # 🚀 Deployment
 
 ### How to deploy after commit and sync to repository origin
 
-- Ater sync go to repository github where the project stored
+- After sync go to repository github where the project stored
 - go to action tab
 - go to Monorepo Self-Hosted Deploy under Action and All Workflow on the left
 - search for button run workflow

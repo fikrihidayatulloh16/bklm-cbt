@@ -11,7 +11,8 @@ An automated assessment platform designed to replace manual Excel/Google Form wo
 - [Key Features](#-key-features)
 - [System Architecture](#-system-architecture)
 - [Tech Stack](#-tech-stack)
-- [⚡ Developer Guide (Getting Started)](#-developer-guide-getting-started)
+- [Quick Cheatsheet](#-quick-cheatsheet)
+- [Developer Guide (Getting Started)](#-developer-guide-getting-started)
 - [Deployment](#-deployment)
 
 ---
@@ -42,138 +43,160 @@ I engineered a dedicated SaaS platform that automates the entire lifecycle:
 
 ## 🏗 System Architecture
 
-This project follows **Domain-Driven Design (DDD)** and **Clean Architecture** to decouple business logic from frameworks.
+This project is structured as a **Monorepo**, separating concerns between the Client (Next.js) and Server (NestJS) while sharing configuration and type definitions.
+
+- **Backend Strategy: Modular Monolith**
+The API follows a **Module-based Architecture** where each business domain (Auth, Assessment, Users) is encapsulated in its own module containing specific logic, controllers, and services.
+
+- **Frontend Strategy: Feature-Sliced Design**
+The frontend utilizes Next.js App Router organized by **Features**, ensuring that UI components and logic related to a specific domain (e.g., Exam, Dashboard) remain co-located.
 
 ```text
-src/
-├── application/      # Use Cases (Business Logic)
-├── domain/           # Entities & Interfaces (Pure TS, no framework dependencies)
-├── infrastructure/   # Database, External APIs (Implementation of interfaces)
-├── presentation/     # Controllers, Resolvers (HTTP/GraphQL layers)
-└── main.ts           # Entry point
+.
+├── apps/
+│   ├── api/                  # NestJS Backend Service
+│   │   ├── prisma/           # Database Schema & Migrations
+│   │   ├── src/
+│   │   │   ├── auth/         # Authentication (Guards, Strategies)
+│   │   │   ├── assessment/   # Assessment Business Logic
+│   │   │   ├── question-bank/# Question Management Module
+│   │   │   ├── users/        # User Management
+│   │   │   └── main.ts       # Entry Point
+│   │   └── test/             # E2E Testing
+│   │
+│   └── web/                  # Next.js Frontend Application
+│       ├── app/              # App Router (Pages & Layouts)
+│       ├── features/         # Feature-Specific Components (Dashboard, Exam)
+│       ├── components/ui/    # Shared Reusable UI (Shadcn)
+│       ├── lib/              # Shared Utilities & Socket Configuration
+│       └── middleware.ts     # Edge Middleware for Route Protection
+│
+├── monitoring/               # Promtail & Logging Configuration
+├── docker-compose.yml        # Infrastructure Orchestration
+└── ecosystem.config.js       # PM2 Process Manager Config
 ```
 
 ## 🛠 Tech Stack
 
-Layer,Technology
-Backend,"NestJS (TypeScript), Prisma ORM"
-Frontend,"Next.js 14 (App Router), Tailwind CSS, Shadcn UI"
-Database,PostgreSQL 16
-Caching/Queue,Redis
-Infrastructure,"Docker Compose, Nginx Reverse Proxy, Cloudflare Tunnels"
-DevOps,"GitHub Actions (CI), Proxmox VE (Self-hosted Production)"
+| Layer | Technology |
+| :--- | :--- |
+| **Backend** | NestJS (TypeScript), Prisma ORM |
+| **Frontend** | Next.js 14 (App Router), Tailwind CSS, NextUI |
+| **Database** | PostgreSQL |
+| **Caching/Queue** | Redis, TanStack Query |
+| **Infrastructure** | Docker Compose, Cloudflare Tunnels |
+| **DevOps** | GitHub Actions (CI), Proxmox VE (Self-hosted Production) |
 
-#⚡ Developer Guide (Getting Started)
-For future reference: How to run this project locally.
+## ⚡ Quick Cheatsheet
 
-# Quick Cheatsheet
-## 1. Infrastructure Setup 
-1. Duplicate the example env file before starting anything:
+### 1. Infrastructure Setup
+Duplicate the example env file before starting anything:
 ```bash
 cp .env.example .env
 # ⚠️ Don't forget to fill in DATABASE_URL and REDIS_HOST inside .env
 ```
 
-2. In the root directory, start the database and services:
+Start Database & Redis services:
 ```bash
 docker-compose up -d
 ```
 
-## Database (Prisma)
-1. Navigate to the Prisma directory (apps/api/prisma) or run from root if configured
-2. the common command below for prisma
-   - Generate Prisma Client
-   ```bash
-   npx prisma generate
-   ```
-
-   - Init Migration (Development)
-   ```bash
-   npx prisma migrate dev --name init
-   ```
-
-   - Migrate the update database/table
-   ```bash
-   npx prisma migrate dev --name  add_duration_assessment_int_default
-   ```
-
-## Backend (NestJS)
-### In the apps/api folder
-- install dependencies
+### 2. Database (Prisma)
+Navigate to `apps/api/prisma` (or root depending on config):
 ```bash
-npm install
+# Generate Prisma Client
+npx prisma generate
+
+# Run Migration (Development)
+npx prisma migrate dev --name init
 ```
-- npm run start:dev (development mode)
+
+### 3. Backend (NestJS)
 ```bash
+cd apps/api
+npm install
 npm run start:dev
 ```
 
-## Frontend (Next.JS)
-### In the apps/web folder
-- Install dependencies.
+### 4. Frontend (Next.js)
 ```bash
+cd apps/web
 npm install
-```
-- Development mode.
-```bash
 npm run dev
 ```
 
+### 5. Common Commands
+```bash
+# View Data (GUI)
+npx prisma studio
+
+# Stop Infrastructure
+docker-compose down
+```
+
+---
+
+## ⚡ Developer Guide (Getting Started)
+For future reference: How to run this project locally.
+
+
 ### 1. Prerequisites
-Node.js >= 20.x
-
-Docker & Docker Compose (Required for DB & Redis)
-
-pnpm (recommended) or npm
+- Node.js >= 20.x
+- Docker & Docker Compose (Required for DB & Redis)
+- pnpm or npm
 
 ### 2. Environment Setup
 Copy the example env file:
 
-Bash
+```Bash
 cp .env.example .env
-Update DATABASE_URL and REDIS_HOST inside .env
+# Update DATABASE_URL and REDIS_HOST inside .env
+```
 
 ### 3. Start Infrastructure (DB & Redis)
 Don't install Postgres manually. Use the docker-compose file:
 
-Bash
-(Starts Postgres and Redis in background)
+```Bash
+# Starts Postgres and Redis in background
 docker-compose up -d
+```
 
 ### 4. Database Migration
 Sync the Prisma schema with the Docker database:
 
-Bash
+```Bash
 npx prisma migrate dev --name init
+```
 
 ### 5. Run the Application
 Run Backend (NestJS):
 
-Bash
-Watch mode (Hot Reload)
+```Bash
+# Watch mode (Hot Reload)
 npm run start:dev
 
-Production build test
+# Production build test
 npm run build && npm run start:prod
+```
+
 Run Frontend (Next.js):
 
-Bash
+```Bash
 cd frontend
 npm run dev
+```
   
-# 🚀 Deployment
+## 🚀 Deployment
 
-### How to deploy after commit and sync to repository origin
+This project uses **GitHub Actions** for CI/CD deployments to a self-hosted Proxmox environment.
 
-- After sync go to repository github where the project stored
-- go to action tab
-- go to Monorepo Self-Hosted Deploy under Action and All Workflow on the left
-- search for button run workflow
-- klik run workflow
-- the deployment has been initiated
+### How to Trigger Deployment (Manual)
+1.  **Sync:** Push your latest commits to the GitHub repository.
+2.  **Navigate:** Go to the **Actions** tab in the repository.
+3.  **Select Workflow:** Click **"Monorepo Self-Hosted Deploy"** on the left sidebar.
+4.  **Run:** Click the **"Run workflow"** dropdown button -> Select **Run workflow**.
+5.  **Status:** The deployment pipeline will initiate automatically.
 
-The production version is currently self-hosted on a Proxmox Home Lab utilizing LXC containers for efficiency.
+>The production version is currently self-hosted on a Proxmox Home Lab utilizing LXC containers for efficiency.
 
-CI/CD: GitHub Actions triggers build and pushes Docker image.
-
-Exposure: Exposed securely via Cloudflare Tunnels (Zero Trust) to avoid opening public ports.
+> **Production Note:** The app runs on **Proxmox LXC Containers** exposed securely via **Cloudflare Tunnels** (Zero Trust) to avoid opening public ports.

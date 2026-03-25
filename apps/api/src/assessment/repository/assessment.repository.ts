@@ -255,6 +255,17 @@ export class AssessmentRepository {
             }
         })
     }
+
+    async findStudentAnswerDetails(submissionId: string) {
+        return await this.prisma.answer.findMany({
+            where: { submission_id: submissionId },
+            include: {
+                question: true,
+                option: true,
+                submission: {  }
+            },
+        })
+    }
 }
 
     // async createOneAssessment(dto: CreateAssessmentDto, user_id) {

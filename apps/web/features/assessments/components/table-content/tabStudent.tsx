@@ -1,5 +1,7 @@
 import { Button, Card, CardBody, CardHeader, Chip, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, User } from "@nextui-org/react";
 import { SubmissionType } from "@/features/assessments/schemas/assessment.schemas";
+import { getInitials } from "@/lib/utils/initName";
+import { useRouter } from "next/navigation";
 
 interface StudentProps {
   submissions: SubmissionType[]; // Menerima ARRAY submission
@@ -15,8 +17,11 @@ const statusColorMap: Record<string, "success" | "warning" | "default"> = {
   IN_PROGRESS: "warning",
 };
 
+
+
 //Terima dta lewat props
 export default function TabStudentRank({ submissions, assessmentId, handleSyncStatus, loading, assessment_status }: StudentProps) {
+    const router = useRouter()
     return (
         <Card className="mt-4 shadow-sm border border-default-200">
             <CardHeader className="flex flex-col flex-row justify-between items-start md:items-center gap-4">
@@ -48,6 +53,7 @@ export default function TabStudentRank({ submissions, assessmentId, handleSyncSt
                             <TableColumn>WAKTU SUBMIT</TableColumn>
                             <TableColumn>STATUS</TableColumn>
                             <TableColumn>NILAI</TableColumn>
+                            <TableColumn>AKSI</TableColumn>
                         </TableHeader>
                         <TableBody items={submissions}>
                             {(sub) => (
@@ -56,7 +62,12 @@ export default function TabStudentRank({ submissions, assessmentId, handleSyncSt
                                         <User 
                                             name={sub.student_name} 
                                             description="Siswa"
-                                            avatarProps={{src: `https://i.pravatar.cc/150?u=${sub.id}`}}
+                                            avatarProps={{
+                                                // Hapus 'src', ganti dengan 'name' yang sudah di-format
+                                                name: getInitials(sub.student_name),
+                                                // Tambahkan warna agar inisialnya terlihat jelas (opsional)
+                                                className: "bg-green-100 text-blue-600 font-bold" 
+                                            }}
                                         />
                                     </TableCell>
                                     <TableCell>
@@ -83,6 +94,20 @@ export default function TabStudentRank({ submissions, assessmentId, handleSyncSt
                                         ) : (
                                             <span className="text-gray-300">-</span>
                                         )}
+                                    </TableCell>
+                                    {/* Kolom Aksi Baru */}
+                                    <TableCell>
+                                        {/* <div className="flex items-center"> */}
+                                            <Button 
+                                                size="sm" 
+                                                color="primary" 
+                                                variant="flat"
+                                                onPress={() => router.push(`/assessments/${assessmentId}/student-answer/${sub.id}`)}
+                                            >
+                                                Detail
+                                            </Button>
+                                            {/* Ruang untuk tombol lain di masa depan */}
+                                        {/* </div> */}
                                     </TableCell>
                                 </TableRow>
                             )}

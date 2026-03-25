@@ -10,7 +10,7 @@ import { AssessmentExportService } from './assessment.export.service';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 
 @ApiTags('Assessment (Guru)')
-@UseGuards(AuthGuard('jwt'))
+// @UseGuards(AuthGuard('jwt'))
 @Controller('assessments')
 export class AssessmentController {
   constructor(
@@ -46,6 +46,14 @@ export class AssessmentController {
   findAll(
     @User('id') userID: string,) {
     return this.assessmentService.findAllAssessmentByIdUser(userID);
+  }
+
+  @Get(':id/submissions/:submissionId/answers')
+  async findStudentAnswerDetails (
+    @Param('id') AssessmentId: string,
+    @Param('submissionId') submissionId: string,
+  ) {
+    return await this.assessmentService.findStudentAnswerDetails(AssessmentId, submissionId)
   }
 
   @Get(':id') // Endpoint: GET /assessments/uuid-disini

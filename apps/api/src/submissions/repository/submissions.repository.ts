@@ -65,7 +65,7 @@ export class SubmissionRepository {
       })}
 
       async findOneSubmissionWithQuestion(submissiondId: string) {
-        return this.prisma.submission.findUnique({
+        return await this.prisma.submission.findUnique({
             where: { id: submissiondId },
             include: {
             // 👇 WAJIB ADA: Agar jawaban siswa ikut terambil
@@ -84,6 +84,48 @@ export class SubmissionRepository {
             },
         })
       }
+
+    async findStudentAnswerDetails(submissionId: string) {
+        return await this.prisma.submission.findUnique({
+            where: { id: submissionId },
+            select: {
+                // 1. Ambil data siswa
+                student_name: true,
+                gender: true,
+                score: true,
+                
+                // 2. Ambil judul assessment dan list soalnya saja (Tanpa SEMUA opsi)
+                assessment: {
+                    select: {
+                        title: true,
+                        questions: {
+                            select: {
+                                id: true, // Butuh ID untuk dicocokkan dengan jawaban nanti
+                                text: true,
+                                category: true,
+                                type: true,
+                                // label: true,
+                            }
+                        }
+                    }
+                },
+
+                // 3. Ambil jawaban siswa, dan LANGSUNG ambil label & skor dari opsi yang dia pilih
+                answer: {
+                    select: {
+                        question_id: true,
+                        text_value: true, // Untuk jaga-jaga kalau tipe soalnya Essay
+                        option: {
+                            select: {
+                                label: true,
+                                score: true
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
 
     // submission.repository.ts
     async findSubmissionNAssessmentDeadline(id: string) {

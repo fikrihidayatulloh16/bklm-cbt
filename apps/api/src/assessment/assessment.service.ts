@@ -3,6 +3,7 @@ import { CreateAssessmentFromBankDto } from './dto/create/create-assessment-from
 import { QuestionBankRepository } from 'src/question-bank/repository/question-bank.repository.ts';
 import { AssessmentMapper } from './mapper/assessment.mapper';
 import { AssessmentRepository } from './repository/assessment.repository';
+import { SubmissionRepository } from 'src/submissions/repository/submissions.repository';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as ExcelJS from 'exceljs';
 
@@ -12,6 +13,7 @@ export class AssessmentService {
     private prisma: PrismaService,
     private questionBankRepo: QuestionBankRepository,
     private assessmentRepo: AssessmentRepository,
+    private submissionsRepo: SubmissionRepository,
   ) {}
 
   async getDashboardStats(user_id) {
@@ -147,6 +149,25 @@ export class AssessmentService {
     return await this.assessmentRepo.findAssessmentResults(assessmentId, className);
   }
 
+  async findStudentAnswerDetails(assessmentId: string, submissionId: string) {
+    const assessment = await this.assessmentRepo.findOneAssessmentWithDetail(assessmentId);
+
+    // Memastikan melihat jawaban hanya pada saat assessment tidak PUBLISHED
+    if (assessment?.assessment_status == 'PUBLISHED') {
+      throw new ForbiddenException('Detail jawaban hanya dapat dilihat ketika assessment sudah ditutup.')
+    }
+
+    const rawData = await this.submissionsRepo.findStudentAnswerDetails(submissionId);
+
+    if (!rawData) {
+      throw new ForbiddenException('Detail jawaban hanya dapat dilihat ketika assessment sudah ditutup.')
+    }
+
+    const cleanJson = AssessmentMapper.mapStudentAnswerDetails(rawData)
+
+    return cleanJson;
+  }
+
   // mengambil semua assessment untuk dashboard
   async findAllAssessmentByIdUser(user_id) {
     return await this.assessmentRepo.countAllAssessmentQuestionsByUserId(user_id);
@@ -164,19 +185,19 @@ export class AssessmentService {
     const now = new Date(); // membuat waktu saat ini
 
     if (assessment.expired_at) {
-    // 2. Masuk sini HANYA jika expired_at TIDAK NULL.
-    // TypeScript jadi happy, karena dia tau di dalam blok ini expired_at aman.
-    
-    if (now.getTime() >= assessment.expired_at.getTime()) {
-        // Update status jadi CLOSED
-        await this.assessmentRepo.updateDeadlineAssessment(
-            assessment.id, 
-            assessment.expired_at, 
-            'CLOSED' // Update status local variable juga biar return-nya benar
-        );
-        assessment.assessment_status = 'CLOSED'; 
-    }
-}
+      // 2. Masuk sini HANYA jika expired_at TIDAK NULL.
+      // TypeScript jadi happy, karena dia tau di dalam blok ini expired_at aman.
+      
+      if (now.getTime() >= assessment.expired_at.getTime()) {
+          // Update status jadi CLOSED
+          await this.assessmentRepo.updateDeadlineAssessment(
+              assessment.id, 
+              assessment.expired_at, 
+              'CLOSED' // Update status local variable juga biar return-nya benar
+          );
+          assessment.assessment_status = 'CLOSED'; 
+      }
+  }
 
     return assessment;
   }

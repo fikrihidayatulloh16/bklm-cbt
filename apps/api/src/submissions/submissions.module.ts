@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { SubmissionsService } from './submissions.service';
 import { SubmissionsController } from './submissions.controller';
 import { SubmissionRepository } from './repository/submissions.repository';
@@ -9,7 +9,9 @@ import { SubmissionsGateway } from './submissions.gateway';
 
 
 @Module({
-  imports: [AssessmentModule],
+  imports: [
+    forwardRef(() => AssessmentModule)
+  ],
   controllers: [SubmissionsController],
   providers: [SubmissionsService, SubmissionRepository, QuestionRepository, AnswerRepository, SubmissionsGateway],
   exports: [SubmissionRepository, QuestionRepository, AnswerRepository, SubmissionsGateway]

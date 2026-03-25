@@ -28,6 +28,30 @@ export class AssessmentMapper {
     }));
   }
 
+  static mapStudentAnswerDetails(rawData) {
+    const cleanJson = {
+        student_name: rawData.student_name,
+        gender: rawData.gender,
+        assessment_title: rawData.assessment.title,
+        student_scores: rawData.score,
+        questions: rawData.assessment.questions.map(question => {
+            // Cari jawaban siswa untuk soal ini
+            const studentAnswer = rawData.answer.find(a => a.question_id === question.id);
+
+            return {
+                text: question.text,
+                category: question.category,
+                type: question.type,
+                // label: question.label,
+                // Langsung ambil skor dan label dari relasi option yang sudah ditarik Prisma
+                score: studentAnswer?.option?.score || 0,
+                selected_answer: studentAnswer?.option?.label || studentAnswer?.text_value || null,
+            };
+        })
+    };
+    return cleanJson
+  }
+
   static mapAnswerStats(rawAnswers: any[]) {
     const statsMap = new Map<string, any>();
     let grandTotalProblems = 0; // 1. Deklarasi di sini

@@ -21,8 +21,8 @@ export class UpdateBankQuestionOptionDTO {
     @IsNotEmpty()
     score: number;
 
-    @ApiProperty({ example: 1 })
-    @IsInt()
-    @IsNotEmpty()
-    order: number;
+    // @ApiProperty({ example: 1 })
+    // @IsInt()
+    // @IsNotEmpty()
+    // order: number;
 }

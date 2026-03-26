@@ -27,12 +27,13 @@ export class QuestionBankMapper {
     questions: dto.questions?.map((q) => ({
       id: q.id, // Penting! Bawa ID-nya
       text: q.text,
-      type: q.type,
+      type: String(q.type),
+      category: q.category,
       options: q.options?.map((opt) => ({
         id: opt.id, // Penting! Bawa ID opsi
         label: opt.label,
         score: opt.score,
-        order: opt.order,
+        // order: opt.order || 0,
       })) || [],
     })),
   };

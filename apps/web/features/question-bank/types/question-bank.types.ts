@@ -43,13 +43,18 @@ export interface OptionDetailTypes {
 }
 
 export interface CreateQuestionBankPayload {
-  title: string;          
-  description?: string;   
-  questions: {           
-     text: string;
-     type: "MULTIPLE_CHOICE" | "YES_NO" | "ESSAY" | "SCale";
-     category: string;
-     options?: { label: string; score: number }[];
+    title: string;          
+    description?: string;   
+    questions: {           
+        text: string;
+        type: "MULTIPLE_CHOICE" | "YES_NO" | "ESSAY" | "SCale";
+        category: string;
+        options?: { label: string; score: number }[];
   }[]; 
+}
+
+export interface EditQBPayloadArgs {
+    questionBankId: string;
+    payload: any;
 }
 

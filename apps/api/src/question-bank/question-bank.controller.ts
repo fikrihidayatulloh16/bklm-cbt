@@ -55,7 +55,6 @@ export class QuestionBankController {
     return this.questionBankService.removeOneQuestionBank(questionBankId); // Hapus 'await' yang tidak perlu
   }
 
-
   @Patch(':id')
   @ApiOperation({ summary: 'Mengubah satu question Bank (Surgycal)' })
   async updateQuestionBank(

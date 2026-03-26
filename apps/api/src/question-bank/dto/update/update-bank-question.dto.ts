@@ -22,8 +22,10 @@ export class UpdateBankQuestionDto {
     @IsEnum(QuestionType) // Pastikan Enum diimport
     type: QuestionType;
 
-    // Category DIHAPUS karena Anda bilang 'patent' (tidak boleh diubah).
-    // Backend akan mengabaikan update category demi keamanan.
+    @ApiProperty({ example: 'Pribadi' })
+    @IsString()
+    @IsNotEmpty()
+    category: string;
 
     @ApiProperty({ type: [UpdateBankQuestionOptionDTO] })
     @IsArray()

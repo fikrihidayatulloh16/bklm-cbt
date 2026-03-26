@@ -35,6 +35,15 @@ export class QuestionBankRepository {
 
       // 2. HANDLE NESTED QUESTIONS
       if (questions && questions.length > 0) {
+        const incomingQuestionIds = questions.filter(q => q.id).map(q => q.id);
+        
+        // Sapu bersih soal yang dihapus oleh guru
+        await tx.bankQuestion.deleteMany({
+            where: {
+                question_bank_id: questionBankId,
+                id: { notIn: incomingQuestionIds as string[] }
+            }
+        });
         
         for (const q of questions) {
           
@@ -100,7 +109,7 @@ export class QuestionBankRepository {
               data: {
                 text: q.text,
                 type: q.type as any,
-                category: 'General',
+                category: q.category ||'General',
                 
                 // 👇 PERBAIKAN 3: Pakai snake_case
                 question_bank_id: questionBankId, 
@@ -109,7 +118,7 @@ export class QuestionBankRepository {
                   create: q.options.map(opt => ({
                     label: opt.label,
                     score: opt.score,
-                    order: opt.order
+                    // order: opt.order
                   }))
                 }
               }

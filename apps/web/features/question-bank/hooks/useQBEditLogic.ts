@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm, useFieldArray } from 'react-hook-form';
+import { useRouter } from 'next/navigation';
 // import { zodResolver } from "@hookform/resolvers/zod"; // Sesuaikan import schema Anda
-import { getQBDetail } from '../api/question-bank.api';
+import { editQBDetail, getQBDetail } from '../api/question-bank.api';
 import { groupQuestionsByCategory } from '../utils/question-transformer.util';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { questionBankFormSchema, type QuestionBankFormValues } from "../schemas/question-bank.schema"; // Sesuaikan path
@@ -10,6 +11,8 @@ import { useDisclosure } from "@nextui-org/react";
 
 export const useQBEditLogic = (bankId: string) => {
     const { isOpen, onOpen, onOpenChange } = useDisclosure();
+    const router = useRouter();
+    const queryClient = useQueryClient();
 
     // 4. Handle Tambah Kategori dari Modal
         const handleAddCategoryFromModal = (categoryName: string, questions: any[]) => {
@@ -81,6 +84,26 @@ export const useQBEditLogic = (bankId: string) => {
         }
     }, [groupedDetail, form]);
 
+    // 2. MUTATION (PATCH Data) 🚀
+    const editMutation = useMutation({
+        mutationFn: editQBDetail, // 👈 Panggil fungsi API yang sudah diperbaiki
+        onSuccess: () => {
+            // Jika sukses:
+            // a. Bersihkan cache lama agar data terbaru di-fetch ulang jika user kembali ke halaman detail
+            queryClient.invalidateQueries({ queryKey: ['question-bank-detail', bankId] });
+            
+            // b. Tampilkan pesan sukses (opsional, jika pakai library toast)
+            // toast.success("Instrumen berhasil diperbarui!");
+            
+            // c. Pindah halaman
+            router.push(`/question-bank`); // Atau kembali ke halaman detailnya
+        },
+        onError: (error) => {
+            console.error("Gagal update instrumen:", error);
+            // toast.error("Terjadi kesalahan saat menyimpan data.");
+        }
+    });
+
     const onSubmit = async (formData: QuestionBankFormValues) => {
         // 1. Bongkar (Flatten) sections kembali menjadi array of questions
         // Gunakan flatMap untuk melebur array 2 dimensi menjadi 1 dimensi
@@ -105,18 +128,10 @@ export const useQBEditLogic = (bankId: string) => {
             questions: flatQuestions
         };
 
-        
-
-        // (Opsional) Console log dulu sebelum menembak API untuk memastikan bentuknya
-        console.log("PAYLOAD SIAP KIRIM:", payload);
-
-        try {
-            // await updateQuestionBankAPI(bankId, payload);
-            // showToast sukses...
-            // router.push('/question-bank')
-        } catch (error) {
-            // handle error...
-        }
+        editMutation.mutate({ 
+            questionBankId: bankId, 
+            payload: payload 
+        });
     };
 
     return {
@@ -133,5 +148,6 @@ export const useQBEditLogic = (bankId: string) => {
             onOpen,
             onOpenChange
         },
+        isSubmitting: editMutation.isPending,
     };
 };

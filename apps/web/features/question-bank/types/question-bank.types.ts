@@ -1,3 +1,4 @@
+//apps/web/features/question-bank/types/question-bank.types.ts
 export interface QuestionBankListType {
     id: string;
     title: string;
@@ -30,7 +31,7 @@ export interface QuestionBankDetailType {
 export interface QuestionDetailType {
   id: string;
   text: string;
-  type: string;
+  type: "MULTIPLE_CHOICE" | "YES_NO" | "ESSAY";
   category: string;
   options: OptionDetailTypes[];
 }

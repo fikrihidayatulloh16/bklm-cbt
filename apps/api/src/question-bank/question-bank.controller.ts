@@ -9,7 +9,7 @@ import { Logger } from '@nestjs/common';
 import { QuestionBankMapper } from './mapper/question-bank.mapper';
 
 @ApiTags('Bank Soal (Guru)')
-@UseGuards(AuthGuard('jwt'))
+// @UseGuards(AuthGuard('jwt'))
 @Controller('question-bank')
 export class QuestionBankController {
   private readonly logger = new Logger(QuestionBankController.name);

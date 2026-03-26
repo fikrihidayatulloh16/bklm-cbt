@@ -1,8 +1,23 @@
-// lib/schemas/question-form.schema.ts
+//apps/web/features/question-bank/schemas/question-bank.schema.ts
 import { z } from "zod";
+
+const optionSchema = z.object({
+  id: z.string().optional(), // 👈 WAJIB DITAMBAHKAN UNTUK EDIT
+  label: z.string(),
+  score: z.number()
+});
 
 // Schema untuk SATU Soal
 export const questionItemSchema = z.object({
+  id: z.string().optional(), // 👈 PENTING UNTUK EDIT
+  text: z.string().min(1, "Pertanyaan wajib diisi"),
+  type: z.enum(["MULTIPLE_CHOICE", "YES_NO", "ESSAY"]),
+  // Opsi boleh kosong jika Essay
+  options: z.array(optionSchema).optional()
+});
+
+// Schema untuk SATU Soal
+export const questionBankEditFormSchema = z.object({
   text: z.string().min(1, "Pertanyaan wajib diisi"),
   type: z.enum(["MULTIPLE_CHOICE", "YES_NO", "ESSAY"]),
   // Opsi boleh kosong jika Essay

@@ -10,7 +10,7 @@ import { AssessmentExportService } from './assessment.export.service';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 
 @ApiTags('Assessment (Guru)')
-// @UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard('jwt'))
 @Controller('assessments')
 export class AssessmentController {
   constructor(

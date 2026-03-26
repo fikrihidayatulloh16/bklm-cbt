@@ -6,8 +6,17 @@ import { QuestionCard } from '@/features/question-bank/components/QuestionCard';
 import { Spinner, Button, Divider } from '@nextui-org/react';
 import { ArrowLeft, Trash, Edit } from 'lucide-react';
 import NextLink from "next/link";
+// import { useRouter } from 'next/router';
+import { useParams, useRouter } from 'next/navigation';
 
 export default function QuestionBankDetailPage() {
+
+  const router = useRouter()
+
+  // 2. Ambil ID dari URL menggunakan useParams
+  const params = useParams();
+  const questionBankId = params.id as string;
+  
   
   const { 
     isLoading, 
@@ -49,7 +58,7 @@ export default function QuestionBankDetailPage() {
             </Button>
             
             {/* Tombol Edit */}
-            <Button color="primary" variant="flat" startContent={<Edit size={18} />}>
+            <Button color="primary" variant="flat" startContent={<Edit size={18}  />} onPress={() => router.push(`/question-bank/edit/${qbDetail.id}`)}>
                 Edit Soal
             </Button>
         </div>

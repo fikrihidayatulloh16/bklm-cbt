@@ -12,6 +12,8 @@ async function bootstrap() {
     logger: WinstonModule.createLogger(winstonConfig),
   });
 
+  app.setGlobalPrefix('api');
+
   app.enableCors({
     origin: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',

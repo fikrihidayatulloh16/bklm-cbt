@@ -1,4 +1,4 @@
-name: Monorepo Self-Hosted Deploy
+name: Monorepo Self-Hosted Deploy (Docker)
 
 on:
   # push:
@@ -14,81 +14,41 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      
-      - name: Deploy Local Script
+      # Setup Node.js TIDAK LAGI DIBUTUHKAN di sini karena sudah ditangani di dalam Dockerfile!
+
+      - name: Deploy & Build via Docker
         run: |
           TARGET_DIR="/var/www/bklm-cbt"
           
-          echo "📂 Copying Files..."
+          echo "📂 Copying Files to Target Directory..."
           rsync -av --delete \
             --exclude '.git' \
             --exclude '.github' \
             --exclude '.env' \
-            --exclude 'node_modules' \
-            --exclude 'apps/*/node_modules' \
             --exclude 'db_data' \
             ./ $TARGET_DIR/
           
           cd $TARGET_DIR
           
-          # ============================================
-          # PERUBAHAN DI SINI: HAPUS SUDO DARI DOCKER
-          # ============================================
+          echo "📄 Syncing .env to containers..."
+          # Pastikan .env utama di $TARGET_DIR sudah ada dan benar
+          cp .env apps/api/.env || true
+          cp .env apps/web/.env || true
           
-          echo "🐳 Mengecek Konfigurasi Database..."
-          # HAPUS 'sudo' di sini 👇
-          docker compose up -d --remove-orphans
+          echo "🐳 Build & Restart Docker Containers..."
+          # 🚨 INI ADALAH INTI DARI SEGALANYA
+          # --build akan memaksa Docker membaca ulang kode baru Anda dan menjalankan npm run build di dalam container
+          docker compose up -d --build --remove-orphans
           
-          echo "⏳ Menunggu Database (10s)..."
-          sleep 10
+          echo "⏳ Menunggu API Container Booting & Prisma Migrate (15s)..."
+          sleep 15
           
-          echo "📄 Syncing .env..."
-          cp .env apps/api/.env
-          cp .env apps/web/.env
-          
-          echo "🛠️ Build API..."
-          cd apps/api
-          npm install --production=false --legacy-peer-deps
-          npx prisma generate
-          npx prisma db push
-          npm run build
-          cd ../..
-          
-          echo "🛠️ Build WEB..."
-          cd apps/web
-          npm install --production=false --legacy-peer-deps
-          npm run build
-          cd ../..
+          echo "🚀 Checking API Health via Nginx/Docker..."
+          # Karena Nginx sekarang memegang port 80, kita test ke localhost:80/api/health
+          # Atau test langsung ke container api internal jika Anda mengekspos port sementara
+          curl --fail --max-time 10 http://localhost/api/health || echo "⚠️ Health Check Failed (Check docker logs instrumen-api)"
 
-          echo "🚀 Restart PM2..."
-          # HAPUS 'npm install -g pm2' (Install manual saja sekali di VPS)
-          # Pastikan user fikri16 bisa menjalankan pm2 tanpa sudo
-          pm2 reload ecosystem.config.js || pm2 start ecosystem.config.js
-          pm2 save
-
-          # 3. Tunggu sebentar (5 detik) agar NestJS sempat booting dan menulis log
-          sleep 5
-
-          # 4. Tampilkan Status (Pastikan status 'online')
-          pm2 status
-
-          # 5. [SOLUSI] Baca File Log Langsung (Bypass CLI PM2)
-          # Ini membaca 30 baris terakhir dari file fisik di harddisk.
-          # Pastikan path ini sesuai dengan lokasi log PM2 Anda (biasanya di ~/.pm2/logs/)
-          echo "📄 Reading latest logs..."
-          tail -n 30 /home/fikri16/.pm2/logs/bklm-api-out.log || echo "⚠️ Log file not found, skipping..."
-
-          # 6. [REKOMENDASI] Health Check via CURL
-          # Ini jauh lebih akurat daripada baca log. Kalau ini sukses, berarti server PASTI jalan.
-          echo "🚀 Checking API Health..."
-          curl --fail --max-time 10 http://localhost:3001/api/health || echo "⚠️ Health Check Failed (Check logs manually)"
-
+          # (Opsional) Restart promtail jika Anda sudah menyalakannya
           docker restart bklm_promtail
-
-          
 
           echo "✅ DEPLOY SUCCESSFUL!"

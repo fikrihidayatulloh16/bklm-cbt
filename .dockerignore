@@ -1,0 +1,27 @@
+# 1. Folder Database & Log (Penyebab utama error Anda)
+db_data
+pgdata_clean
+monitoring
+logs
+*.log
+
+# 2. Folder Dependencies Lokal (Biar Docker install sendiri yang baru)
+node_modules
+apps/api/node_modules
+apps/web/node_modules
+
+# 3. Hasil Build Lokal (Biar Docker build dari nol)
+dist
+.next
+apps/api/dist
+apps/web/.next
+
+# 4. File Environment (Keamanan)
+.env
+.env.*
+!.env.example
+
+# 5. Git & Konfigurasi OS
+.git
+.github
+.DS_Store

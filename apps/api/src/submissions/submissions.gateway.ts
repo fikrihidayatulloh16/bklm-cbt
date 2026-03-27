@@ -1,10 +1,12 @@
+// apps/api/src/submissions/submissions.gateway.ts
 import { WebSocketGateway, WebSocketServer, OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 
 @WebSocketGateway({
   cors: {
-    // ✅ Ganti '*' dengan true (mengizinkan origin manapun tapi dengan credentials)
-    // atau isi spesifik url frontend: "http://localhost:3001"
+    // 🚨 1. TAMBAHKAN PATH INI: Memaksa Socket.io pindah ke bawah payung /api
+    path: '/api/socket.io',
+    
     origin: true, 
     methods: ["GET", "POST"],
     credentials: true,

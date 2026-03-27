@@ -46,8 +46,8 @@ services:
           memory: 128M # Redis sangat ringan
         reservations:
           memory: 64M
-    # ports:
-    #   - 6379:6379
+    ports:
+      - 6379:6379
     volumes:
       # ✅ PERBAIKAN: Gunakan folder mount agar data redis juga aman
       - ./db_data/redis:/data
@@ -64,6 +64,16 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    environment:
+      # 🚨 INI DIA MASTERPIECE-NYA:
+      # Kita mengubah host menjadi 'postgres_db', tapi password-nya 
+      # kita tarik secara dinamis dari file .env!
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres_db:5432/${POSTGRES_DB}?schema=public
+      
+      # Menimpa localhost menjadi nama container Redis
+      - REDIS_HOST=redis
+    ports:
+      - "3000:3000"
     depends_on:
       - postgres_db
       - redis

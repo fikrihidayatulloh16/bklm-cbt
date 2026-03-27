@@ -4,11 +4,7 @@ import { io, Socket } from "socket.io-client";
 // 1. Ambil URL API dari environment
 const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api";
 
-// 2. KECERDASAN BUATAN UNTUK HOST:
-// Jika apiUrl berawalan 'http' (Misal: http://localhost:3000/api saat koding lokal)
-//    -> Kita potong dan ambil 'http://localhost:3000' saja sebagai host-nya.
-// Jika apiUrl HANYA '/api' (Saat di VPS/Docker dengan Nginx)
-//    -> Kita jadikan 'undefined' agar Socket.io otomatis menggunakan domain VPS saat ini.
+// 2. KECERDASAN BUATAN UNTUK HOST
 const SOCKET_HOST = apiUrl.startsWith("http") 
   ? new URL(apiUrl).origin 
   : undefined;
@@ -16,20 +12,27 @@ const SOCKET_HOST = apiUrl.startsWith("http")
 let socket: Socket;
 
 export const getSocket = (): Socket => {
+  // Hanya buat socket dan pasang telinga (listener) JIKA socket belum ada
   if (!socket) {
     socket = io(SOCKET_HOST, {
-      
-      // Path ini tetap absolut dan konsisten di semua environment!
       path: '/api/socket.io', 
-      
-      transports: ["polling", "websocket"], 
+      transports: ["websocket"], 
       withCredentials: true,
-      
-      // (Opsional) Konfigurasi stabilitas yang baik untuk Production
       reconnectionAttempts: 7,
       reconnectionDelay: 1000,
-      autoConnect: false,
+      autoConnect: false, // Ingat: Kita harus memanggil socket.connect() secara manual nanti
+    });
+
+    // 🚨 PINDAHKAN KE SINI: Pastikan listener hanya dipasang satu kali
+    socket.on("connect", () => {
+      console.log("✅ [SOCKET] Berhasil terhubung ke Backend! ID:", socket.id);
+    });
+
+    socket.on("connect_error", (error) => {
+      console.log("❌ [SOCKET] Gagal terhubung!");
+      console.dir(error); 
     });
   }
+  
   return socket;
 };

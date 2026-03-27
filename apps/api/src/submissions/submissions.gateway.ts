@@ -3,16 +3,18 @@ import { WebSocketGateway, WebSocketServer, OnGatewayConnection, OnGatewayDiscon
 import { Server, Socket } from 'socket.io';
 
 @WebSocketGateway({
+  path: '/api/socket.io',
+
   cors: {
     // 🚨 1. TAMBAHKAN PATH INI: Memaksa Socket.io pindah ke bawah payung /api
     path: '/api/socket.io',
-    
+
     origin: true, 
     methods: ["GET", "POST"],
     credentials: true,
   },
   // ✅ Tambahkan ini agar transport websocket diizinkan eksplisit
-  transports: ['websocket', 'polling'], 
+  transports: ['websocket'], 
 })
 export class SubmissionsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   
@@ -21,6 +23,9 @@ export class SubmissionsGateway implements OnGatewayConnection, OnGatewayDisconn
 
   handleConnection(client: Socket) {
     console.log(`✅ Client Connected: ${client.id}`);
+    console.log(`🟢 [SOCKET] Client mencoba masuk...`);
+    console.log(`🟢 [SOCKET] ID: ${client.id}`);
+    console.log(`🟢 [SOCKET] Handshake Auth:`, client.handshake.auth);
   }
 
   handleDisconnect(client: Socket) {

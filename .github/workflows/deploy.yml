@@ -29,6 +29,13 @@ jobs:
             ./ $TARGET_DIR/
           
           cd $TARGET_DIR
+
+          # 1. Buat .env di root untuk Docker Compose
+          echo "${{ secrets.PROD_ENV_FILE }}" > /var/www/bklm-cbt/.env
+          
+          # 2. (Opsional) Jika aplikasi api dan web juga butuh file .env di foldernya masing-masing saat build:
+          cp /var/www/bklm-cbt/.env /var/www/bklm-cbt/apps/api/.env
+          cp /var/www/bklm-cbt/.env /var/www/bklm-cbt/apps/web/.env.production
           
           echo "📄 Syncing .env to containers..."
           # Pastikan .env utama di $TARGET_DIR sudah ada dan benar

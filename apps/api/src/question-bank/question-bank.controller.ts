@@ -23,9 +23,9 @@ export class QuestionBankController {
     @User('id') user_id: string
 ) {
     // Validasi Keberadaan User Id
-    if (!user_id) {
-      throw new UnauthorizedException('User token invalid or missing');
-    }
+    // if (!user_id) {
+    //   throw new UnauthorizedException('User token invalid or missing');
+    // }
     
     const result = await this.questionBankService.createQuestionBank(dto, user_id)
     return {

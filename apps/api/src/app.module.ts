@@ -29,8 +29,7 @@ import { WorkersModule } from './workers/workers.module';
         throttlers: [
           {
             ttl: 60000, // 60 detik
-            limit: 10000,  // 10 request
-            // limit: 150,  // 10 request
+            limit: 150,  // 10 request
           },
         ],
         // 👇 KITA HUBUNGKAN KE REDIS DOCKER

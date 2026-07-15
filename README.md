@@ -148,7 +148,7 @@ For future reference: How to run this project locally.
 ### 2. Environment Setup
 Copy the example env file:
 
-```Bash
+``` Bash
 cp .env.example .env
 # Update DATABASE_URL and REDIS_HOST inside .env
 ```
@@ -156,9 +156,9 @@ cp .env.example .env
 ### 3. Start Infrastructure (DB & Redis)
 Don't install Postgres manually. Use the docker-compose file:
 
-```Bash
+``` Bash
 # Starts Postgres and Redis in background
-docker-compose up -d
+docker compose up -d postgres_db redis
 ```
 
 ### 4. Database Migration

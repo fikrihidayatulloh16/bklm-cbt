@@ -78,6 +78,7 @@ export default function ExamPage() {
                     <div className="text-center">
                         <h1 className="text-2xl font-bold">{exam.title}</h1>
                         <p className="text-default-500">Durasi: {exam.duration / 60000} Menit</p>
+                        {/* Countdown di form Registrasi */}
                     </div>
                     
                     <div className="space-y-4">
@@ -158,36 +159,44 @@ export default function ExamPage() {
   return (
     <div className="max-w-4xl mx-auto w-full p-4 md:p-6 flex flex-col h-screen">
       {/* HEADER */}
-      <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-xl shadow-sm border border-default-200">
-        <div>
-            <h1 className="font-bold text-lg md:text-xl truncate max-w-[200px] md:max-w-md">{exam.title}</h1>
-            <div className="flex items-center gap-2 text-sm text-default-500 mt-1">
-                <span className="hidden md:inline">Soal {currentStep + 1} / {questions.length}</span>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 bg-white p-4 rounded-xl shadow-sm border border-default-200">
+        
+        {/* Kiri: Informasi Peserta */}
+        {/* flex-1 dan min-w-0 sangat penting agar truncate bisa bekerja di dalam flex container */}
+        <div className="flex-1 min-w-0 w-full">
+            <h1 className="font-bold text-lg md:text-xl truncate">{exam.title}</h1>
+            <div className="flex items-center gap-2 text-sm text-default-500 mt-1 mb-2 md:mb-0">
+                <span className="inline">Soal {currentStep + 1} / {questions.length}</span>
                 <Progress size="sm" value={progress} color="success" className="w-24 md:w-32" aria-label="Exam Progress" />
             </div>
-            <br />
-            <h2 className="font-semibold  md:text-xl truncate max-w-[200px] md:max-w-md">Nama Peserta: {studentIdentity.name}</h2>
-            <h2 className=" md:text-xl truncate max-w-[200px] md:max-w-md">Kelas: {studentIdentity.className}</h2>
+            
+            {/* Dipisahkan margin atas sedikit agar lebih rapi */}
+            <div className="mt-2 md:mt-3">
+                <h2 className="font-semibold text-sm md:text-base truncate">Nama Peserta: {studentIdentity.name}</h2>
+                <h2 className="text-sm md:text-base truncate">Kelas: {studentIdentity.className}</h2>
+            </div>
         </div>
 
-        <div className="ml-auto"> 
-        {/* Menggunakan deadLine dari Hook */}
-        {deadLine ? (
-        <Countdown 
-            date={deadLine} 
-            renderer={countdownRenderer} 
-            onComplete={() => {
-                alert("Waktu Habis! Mengirim jawaban...");
-                handleSubmitExam(); 
-            }} 
-        />
-        ) : (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 text-gray-400 font-mono font-bold text-lg md:text-xl animate-pulse">
-            <Clock size={20} />
-            --:--:--
+        {/* Kanan: Countdown */}
+        {/* shrink-0 mencegah timer menyusut atau terdorong, self-end membuatnya rata kanan di mobile */}
+        <div className="shrink-0 self-start md:self-auto"> 
+            {deadLine ? (
+                <Countdown 
+                    date={deadLine} 
+                    renderer={countdownRenderer} 
+                    onComplete={() => {
+                        alert("Waktu Habis! Mengirim jawaban...");
+                        handleSubmitExam(); 
+                    }} 
+                />
+            ) : (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 text-gray-400 font-mono font-bold text-lg md:text-xl animate-pulse">
+                    {/* Pastikan icon Clock sudah di-import */}
+                    <Clock size={20} />
+                    --:--:--
+                </div>
+            )}
         </div>
-        )}
-    </div>
       </div>
 
       {/* SOAL CARD */}

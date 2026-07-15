@@ -3,13 +3,14 @@ import { CreateSubmissionDto } from './dto/create-submission.dto';
 import { UpdateSubmissionDto } from './dto/update-submission.dto';
 import { StartSubmissionDTO } from './dto/start-submission.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { SaveAnswerDTO } from './dto/save-answers,dto';
+import { SaveAnswerDTO, SyncAnswerDto } from './dto/save-answers,dto';
 import { SubmissionRepository } from './repository/submissions.repository';
 import { AssessmentRepository } from 'src/assessment/repository/assessment.repository';
 import { AnswerRepository } from './repository/answer.repository';
 import { QuestionRepository } from './repository/question.repository';
 import { error } from 'console';
 import { SubmissionsGateway } from './submissions.gateway';
+import { RedisBufferService } from 'src/shared/redis/redis.buffer.service';
 
 @Injectable()
 export class SubmissionsService {
@@ -20,6 +21,7 @@ export class SubmissionsService {
     private answerRepo: AnswerRepository,
     private questionRepo: QuestionRepository,
     private readonly submissionsGateway: SubmissionsGateway,
+    private readonly redisBuffer: RedisBufferService,
   ) {}
 
   // Pastikan DTO Anda menerima 'class_name' (String), bukan 'class_id'
@@ -127,64 +129,58 @@ export class SubmissionsService {
         // Kirim sisa milidetik (opsional, untuk validasi logic)
         remaining_ms: remainingMs 
     };
-}
-
-  // submissions.service.ts
+  }
 
   async saveAnswer(submissionId: string, dto: SaveAnswerDTO) {
-    // [OPTIMASI QUERY 1 & 3] 
-    // Ambil Submission SEKALIGUS Deadline Assessment-nya
-    // Pastikan repo Anda support include/select assessment
+    // 1. Ambil Submission SEKALIGUS Deadline Assessment (Optimasi Query)
     const submission = await this.submissionRepo.findSubmissionNAssessmentDeadline(submissionId); 
     
-    // Validasi dasar
     if (!submission) throw new NotFoundException("Submission tidak ditemukan");
     if (submission.status === 'FINISHED') throw new ForbiddenException("Ujian sudah ditutup.");
 
-    // [QUERY 2] Validasi Soal (Wrong Room Prevention) - Ini Oke dipertahankan demi keamanan
+    // 2. Validasi Soal (Wrong Room Prevention)
     const question = await this.questionRepo.findUniqueQuestion(dto.question_id);
     if (!question) throw new NotFoundException("Pertanyaan tidak valid");
     if (question.assessment_id !== submission.assessment_id) {
         throw new BadRequestException("Pertanyaan ini bukan bagian dari ujian ini!");
     }
 
-    // [VALIDASI WAKTU]
+    // 3. Validasi Waktu
     const now = new Date();
-    // Kita ambil expired_at dari relasi submission -> assessment (hasil optimasi query 1)
-    // Pastikan repository Anda melakukan JOIN/INCLUDE ke tabel assessment
     const expiredAt = submission.assessment?.expired_at; 
 
     if (!expiredAt) {
-         // Safety check jika data assessment korup/tidak terload
-         console.error(`Assessment ID ${submission.assessment_id} tidak punya expired_at`);
-         throw new BadRequestException('Konfigurasi waktu ujian invalid');
+        console.error(`Assessment ID ${submission.assessment_id} tidak punya expired_at`);
+        throw new BadRequestException('Konfigurasi waktu ujian invalid');
     }
 
-    // Grace Period: Toleransi 2 menit untuk latensi internet siswa
     const GRACE_PERIOD_MS = 2 * 60 * 1000;
-
     if (now.getTime() > (expiredAt.getTime() + GRACE_PERIOD_MS)) {
-         // 🛑 STOP DISINI!
-         // Jangan panggil this.finish() disini. Itu tugas Frontend atau Lazy Close.
-         // Tugas kita disini hanya MENOLAK jawaban baru.
-         this.finish(submissionId)
+         this.finish(submissionId);
          throw new ForbiddenException("Waktu ujian telah habis! Jawaban tidak tersimpan.");
     }
 
-    // [QUERY 3 - FINAL] Simpan Jawaban
+    // 🚀 [OPTIMASI UTAMA]: Alihkan Tembakan dari PostgreSQL ke Redis
     try {
-        return await this.answerRepo.upsertAnswer(
-            submissionId,
-            dto
-        );
+        const redisKey = `cbt:answers:${submissionId}`;
+        const redisValue = {
+          text_value: dto.text_value,
+          numeric_value: dto.numeric_value,
+          option_id: dto.option_id,
+        };
+
+        // Simpan ke Redis (Selesai dalam hitungan mikrodetik, DB bernapas lega)
+        await this.redisBuffer.setHash(redisKey, dto.question_id, redisValue);
+
+        // Kembalikan struktur data simulated agar tidak merusak kontrak dengan Frontend
+        return {
+          submission_id: submissionId,
+          ...dto
+        };
     } catch (error) {
-        // Error handling Foreign Key
-        if (error.code === 'P2003' || error.message?.includes('Foreign key constraint')) {
-             throw new BadRequestException("Pilihan jawaban tidak valid.");
-        }
-        throw error;
+        throw new BadRequestException("Gagal mengamankan jawaban ke buffer.");
     }
-}
+  }
 
   async finish(submissionId: string) {
     // 1. Ambil Data Submission
@@ -192,20 +188,41 @@ export class SubmissionsService {
     if (!submission) throw new ForbiddenException('Submission tidak ditemukan');
     if (submission.status === 'FINISHED') throw new BadRequestException(`Submission sudah selesai.`);
 
+    // 🔄 🔥 [PENYELAMAT INTEGRITAS DATA]: Paksa Sinkronisasi Instan Khusus Siswa Ini
+    // Kita panen hanya kunci milik submission ini saja dari Redis
+    const bufferedData = await this.redisBuffer.harvestPattern(`cbt:answers:${submissionId}`);
+    
+    if (bufferedData.length > 0) {
+      const answersToSync: SyncAnswerDto[] = [];
+      
+      for (const item of bufferedData) {
+        for (const [questionId, rawJsonStr] of Object.entries(item.data)) {
+          const answerObj = JSON.parse(rawJsonStr);
+          answersToSync.push({
+            submission_id: submissionId,
+            question_id: questionId,
+            text_value: answerObj.text_value,
+            numeric_value: answerObj.numeric_value,
+            option_id: answerObj.option_id,
+          });
+        }
+      }
+      
+      // Tembak langsung secara massal lewat komitmen repository baru Anda
+      await this.answerRepo.bulkUpsertAnswers(answersToSync);
+    }
+
     // 2. Ambil Deadline Assessment
-    // Pastikan repository ini juga mengambil 'expired_at'
     const assessment = await this.assessmentrepo.findOneAssessmentById(submission.assessment_id);
     if (!assessment?.expired_at) throw new ForbiddenException('Deadline ujian belum diatur.');
 
-    // 3. LOGIKA WAKTU & KELENGKAPAN
+    // 3. LOGIKA WAKTU & KELENGKAPAN (Sekarang 100% Valid karena data dari Redis sudah di-flush ke DB)
     const now = new Date();
-    // Gunakan ">" (Lewat waktu), JANGAN "==" (Sama persis)
     const isTimeUp = now.getTime() > assessment.expired_at.getTime();
 
-    // HANYA jika waktu BELUM habis, kita cek apakah semua soal sudah dijawab
     if (!isTimeUp) {
         const totalAnswered = await this.answerRepo.totalAnswered(submissionId);
-        const totalQuestion = await this.questionRepo.totalAnswered(submission.assessment_id); // Asumsi ini fungsi hitung total soal
+        const totalQuestion = await this.questionRepo.totalAnswered(submission.assessment_id); 
         
         if (totalAnswered < totalQuestion) {
             const sisa = totalQuestion - totalAnswered;
@@ -213,18 +230,12 @@ export class SubmissionsService {
         }
     }
 
-    // 4. HITUNG SKOR (Logic Utama)
-    // Kita ambil Full Data (Jawaban + Opsi + Score-nya)
+    // 4. HITUNG SKOR (Aman karena database sudah up-to-date)
     const submissionWithAnswer = await this.submissionRepo.findOneIdSubmissionWithAnswer(submissionId);
-    
     if (!submissionWithAnswer) throw new NotFoundException('Gagal memuat data jawaban.');
 
     let totalScore = 0;
-    
-    // Loop jawaban yang ada
-    for (const ans of submissionWithAnswer.answer || []) { // Pastikan pakai 'answers' (plural/singular sesuaikan backend)
-        // Karena kita sudah tidak simpan score di tabel Answer,
-        // Kita WAJIB ambil score dari relasi Option
+    for (const ans of submissionWithAnswer.answer || []) { 
         if (ans.option) {
              totalScore += ans.option.score; 
         }
@@ -233,18 +244,14 @@ export class SubmissionsService {
     console.log(`[Finish] Submission ${submissionId} Finished. Score: ${totalScore}`);
 
     const socketPayload = {
-        id: submissionId,                 // ID untuk mencari baris di tabel
-        status: 'FINISHED',               // Status baru
-        score: totalScore,                        // Nilai akhir (Ambil dari hasil hitungan logic Anda)
-        submitted_at: new Date(),         // Waktu selesai
-        // Data pelengkap (opsional jika frontend butuh nama lagi)
-        // student_name: submission.student.name, 
+        id: submissionId,
+        status: 'FINISHED',
+        score: totalScore,
+        submitted_at: new Date(),
     };
 
-    // 3. EMIT EVENT
-    const submisionfinish_socket = this.submissionsGateway.notifySubmissionFinished(socketPayload);
-
-    // 5. UPDATE STATUS & SCORE
+    // 5. EMIT EVENT & UPDATE STATUS AKHIR
+    this.submissionsGateway.notifySubmissionFinished(socketPayload);
     return await this.submissionRepo.updateStatusFinishSubmission(submissionId, totalScore);
   }
 

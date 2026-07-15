@@ -79,7 +79,7 @@ export default function AssessmentCardContent({
                                 />
                             ) : (
                                 <div className="font-mono text-lg font-bold">
-                                    {assessmentDuration} Menit
+                                    --:--:--
                                 </div>
                             )}
                         </div>

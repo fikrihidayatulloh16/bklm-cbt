@@ -1,0 +1,39 @@
+Fase 1: Persiapan Panggung (Database Setup)
+1. Buat Satu Ujian Aktif (Assessment)
+Anda tidak perlu membuat ini lewat coding. Cukup masuk ke dashboard Admin/Guru di aplikasi web Anda (seperti saat pemakaian normal), lalu:
+
+Buat satu ujian baru (misal: "Simulasi Beban 1000 Siswa").
+
+Tambahkan setidaknya 1 Soal Pilihan Ganda.
+
+Terbitkan (Publish) ujian tersebut agar memiliki expired_at yang valid di masa depan (misalnya, set waktu ujian untuk 2 jam ke depan).
+
+Catat 2 hal dari database Anda: question_id dan salah satu option_id dari soal tersebut.
+
+2. Siapkan 1.000 Tiket Siswa (Submissions Seeder)
+Kita butuh 1.000 baris di tabel Submission yang statusnya IN_PROGRESS dan terhubung ke ujian yang baru Anda buat.
+Cara paling efisien adalah membuat script kecil menggunakan Prisma (di luar aplikasi NestJS) untuk menyuntikkan 1.000 data ini secara paksa ke PostgreSQL, lalu menyimpan daftar ID-nya ke dalam file .json.
+
+Fase 2: Pembuatan Jembatan Data (File JSON)
+K6 tidak bisa langsung membaca PostgreSQL. Jadi, kita harus menyediakan file submissions.json yang berisi daftar ID siswa yang sah.
+Bentuk file-nya kurang lebih seperti ini:
+
+JSON
+[
+  { "submission_id": "sub-asli-001" },
+  { "submission_id": "sub-asli-002" },
+  ...sampai 1000
+]
+Fase 3: Modifikasi Skrip K6 (Membaca JSON)
+Skrip K6 kita ubah sedikit agar ia membaca file submissions.json tadi. K6 memiliki fitur bernama SharedArray yang sangat ringan di RAM meskipun membaca jutaan baris data.
+
+Nantinya, Robot K6 ke-1 akan mengambil submission_id urutan 1, Robot K6 ke-2 mengambil urutan 2, dan seterusnya. Mereka akan menggunakan question_id dan option_id asli yang sudah Anda catat di Fase 1.
+
+Fase 4: Eksekusi & Pemantauan (The Stress Test)
+Saat K6 mulai dijalankan, Anda membuka 3 jendela terminal:
+
+Terminal K6: Memantau jumlah request yang berhasil masuk.
+
+Terminal NestJS: Melihat apakah ada error dari validasi atau API yang crash.
+
+Database Client (DBeaver/PgAdmin) atau Terminal Log Worker: Memantau saat Cron Job menyala di menit ke-00. Anda akan melihat log yang sangat memuaskan: [AssessmentSyncWorker] ✅ Tersinkronisasi: 1000 jawaban dari Redis ke Database Utama.

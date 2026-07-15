@@ -7,6 +7,7 @@ import { QuestionRepository } from './repository/question.repository';
 import { AnswerRepository } from './repository/answer.repository';
 import { AssessmentModule } from 'src/assessment/assessment.module';
 import { SubmissionsGateway } from './submissions.gateway';
+import { SyncAnswerDto } from './dto/save-answers,dto';
 
 
 @Module({

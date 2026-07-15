@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service";
-import { SaveAnswerDTO } from "../dto/save-answers,dto";
+import { SaveAnswerDTO, SyncAnswerDto } from "../dto/save-answers,dto";
 
 @Injectable()
 export class AnswerRepository {
@@ -48,27 +48,58 @@ export class AnswerRepository {
 
     // Di dalam AnswerRepository
     async upsertAnswer(submission_id, dto: SaveAnswerDTO) {
-    return this.prisma.answer.upsert({
-        where: {
-        // Pastikan di schema.prisma Anda punya @@unique([submission_id, question_id])
-        submission_id_question_id: { 
+        return this.prisma.answer.upsert({
+            where: {
+            // Pastikan di schema.prisma Anda punya @@unique([submission_id, question_id])
+            submission_id_question_id: { 
+                submission_id: submission_id,
+                question_id: dto.question_id
+            }
+            },
+            update: {
+            option_id: dto.option_id,
+            text_value: dto.text_value,
+            numeric_value: dto.numeric_value,
+            },
+            create: {
             submission_id: submission_id,
-            question_id: dto.question_id
-        }
-        },
-        update: {
-        option_id: dto.option_id,
-        text_value: dto.text_value,
-        numeric_value: dto.numeric_value,
-        },
-        create: {
-        submission_id: submission_id,
-        question_id: dto.question_id,
-        option_id: dto.option_id,
-        text_value: dto.text_value,
-        numeric_value: dto.numeric_value,
-        }
-    });
+            question_id: dto.question_id,
+            option_id: dto.option_id,
+            text_value: dto.text_value,
+            numeric_value: dto.numeric_value,
+            }
+        });
+    }
+
+    async bulkUpsertAnswers(answers: SyncAnswerDto[]): Promise<void> {
+        if (answers.length === 0) return;
+
+        const prismaOperations = answers.map((ans) =>
+        this.prisma.answer.upsert({
+            where: {
+            // Prisma otomatis mengenali composite key dari schema
+            submission_id_question_id: {
+                submission_id: ans.submission_id,
+                question_id: ans.question_id,
+            },
+            },
+            update: {
+            text_value: ans.text_value,
+            numeric_value: ans.numeric_value,
+            option_id: ans.option_id,
+            },
+            create: {
+            submission_id: ans.submission_id,
+            question_id: ans.question_id,
+            text_value: ans.text_value,
+            numeric_value: ans.numeric_value,
+            option_id: ans.option_id,
+            },
+        })
+        );
+
+        // Kirim seluruh operasi dalam satu kedipan ke PostgreSQL
+        await this.prisma.$transaction(prismaOperations);
     }
 
     async getGroupAllAnswerByQuestionId(assessmentId: string) {

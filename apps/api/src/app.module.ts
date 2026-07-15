@@ -9,9 +9,12 @@ import { QuestionBankModule } from './question-bank/question-bank.module';
 import { SubmissionsModule } from './submissions/submissions.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'; // Import
+import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerStorageRedisService } from 'nestjs-throttler-storage-redis'; // Opsional jika mau simpan hitungan di Redis
 import { ClientLoggerModule } from './client-logger/client-logger.module';
+import { RedisBufferModule } from './shared/redis/redis-buffer.module';
+import { WorkersModule } from './workers/workers.module';
 
 @Module({
   imports: [
@@ -26,7 +29,8 @@ import { ClientLoggerModule } from './client-logger/client-logger.module';
         throttlers: [
           {
             ttl: 60000, // 60 detik
-            limit: 150,  // 10 request
+            limit: 10000,  // 10 request
+            // limit: 150,  // 10 request
           },
         ],
         // 👇 KITA HUBUNGKAN KE REDIS DOCKER
@@ -38,7 +42,17 @@ import { ClientLoggerModule } from './client-logger/client-logger.module';
         }),
       }),
     }),
-    PrismaModule, AssessmentModule, UsersModule, AuthModule, QuestionBankModule, SubmissionsModule, ClientLoggerModule],
+    PrismaModule, 
+    AssessmentModule, 
+    UsersModule, 
+    AuthModule, 
+    QuestionBankModule, 
+    SubmissionsModule, 
+    ClientLoggerModule,
+    ScheduleModule.forRoot(),
+    RedisBufferModule,
+    WorkersModule
+  ],
   controllers: [AppController],
   providers: [
     {

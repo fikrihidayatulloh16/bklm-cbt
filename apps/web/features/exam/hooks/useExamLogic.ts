@@ -38,11 +38,7 @@ export interface StudentIdentity {
 
 // Opsi Kelas (Export agar bisa dipakai di Dropdown UI)
 export const CLASS_OPTIONS = [
-    "X - IPA 1",
-    "X - IPA 2",
-    "X - IPS 1",
-    "X - IPS 2",
-    "XI - IPA 1",
+    "IX - A",
 ];
 
 export type ExamStep = 'LOADING' | 'IDENTITY' | 'EXAM' | 'FINISHED' | 'ERROR';

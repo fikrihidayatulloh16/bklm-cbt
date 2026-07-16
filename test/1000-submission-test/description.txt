@@ -1,39 +1,65 @@
-Fase 1: Persiapan Panggung (Database Setup)
-1. Buat Satu Ujian Aktif (Assessment)
-Anda tidak perlu membuat ini lewat coding. Cukup masuk ke dashboard Admin/Guru di aplikasi web Anda (seperti saat pemakaian normal), lalu:
+Mendokumentasikan prosedur pengujian adalah langkah wajib seorang Arsitek Sistem. Ini adalah "Buku Pintar" (Playbook) Anda untuk mengulang pengujian beban di masa depan tanpa harus meraba-raba kembali.
 
-Buat satu ujian baru (misal: "Simulasi Beban 1000 Siswa").
+Berikut adalah SOP (Standard Operating Procedure) Load Testing BKLM CBT dari awal hingga akhir.
 
-Tambahkan setidaknya 1 Soal Pilihan Ganda.
+Fase 1: Persiapan Lingkungan (Instalasi Alat)
+Anda membutuhkan K6 sebagai mesin penembak (load generator). Karena Anda menggunakan WSL/Ubuntu/Debian Linux, jalankan perintah ini di terminal Anda untuk menginstalnya:
 
-Terbitkan (Publish) ujian tersebut agar memiliki expired_at yang valid di masa depan (misalnya, set waktu ujian untuk 2 jam ke depan).
+Bash
+sudo gpg -k
+sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+sudo apt-get update
+sudo apt-get install k6
+(Catatan: Anda tidak perlu menginstal Node.js atau Prisma lagi karena K6 berjalan mandiri, dan proyek NestJS Anda sudah memiliki Prisma).
 
-Catat 2 hal dari database Anda: question_id dan salah satu option_id dari soal tersebut.
+Fase 2: Persiapan Data (Seeding & JSON)
+Kita tidak bisa memukul API dengan data kosong. Kita harus menyuntikkan data siswa fiktif ke PostgreSQL.
 
-2. Siapkan 1.000 Tiket Siswa (Submissions Seeder)
-Kita butuh 1.000 baris di tabel Submission yang statusnya IN_PROGRESS dan terhubung ke ujian yang baru Anda buat.
-Cara paling efisien adalah membuat script kecil menggunakan Prisma (di luar aplikasi NestJS) untuk menyuntikkan 1.000 data ini secara paksa ke PostgreSQL, lalu menyimpan daftar ID-nya ke dalam file .json.
+1. Matikan Pelindung Sementara
+Buka file app.module.ts (atau di mana pun Anda memasang @nestjs/throttler). Longgarkan batas rate limiting sementara agar K6 tidak diblokir:
 
-Fase 2: Pembuatan Jembatan Data (File JSON)
-K6 tidak bisa langsung membaca PostgreSQL. Jadi, kita harus menyediakan file submissions.json yang berisi daftar ID siswa yang sah.
-Bentuk file-nya kurang lebih seperti ini:
+TypeScript
+// Contoh: Ubah limit menjadi 10.000 selama testing
+@Throttle({ default: { limit: 10000, ttl: 60000 } })
+2. Buat Skrip Seeder
+Buat atau cari file bernama seed-loadtest.js di root folder proyek NestJS Anda (sejajar dengan package.json). Isi dengan script ini:
 
-JSON
-[
-  { "submission_id": "sub-asli-001" },
-  { "submission_id": "sub-asli-002" },
-  ...sampai 1000
-]
-Fase 3: Modifikasi Skrip K6 (Membaca JSON)
-Skrip K6 kita ubah sedikit agar ia membaca file submissions.json tadi. K6 memiliki fitur bernama SharedArray yang sangat ringan di RAM meskipun membaca jutaan baris data.
+3. Eksekusi Seeder
+Jalankan file tersebut di terminal:
 
-Nantinya, Robot K6 ke-1 akan mengambil submission_id urutan 1, Robot K6 ke-2 mengambil urutan 2, dan seterusnya. Mereka akan menggunakan question_id dan option_id asli yang sudah Anda catat di Fase 1.
+Bash
+node seed-loadtest.js
+Hasil: Akan muncul file baru bernama submissions.json di folder yang sama. File ini berisi daftar UUID valid yang siap ditembakkan oleh robot.
 
-Fase 4: Eksekusi & Pemantauan (The Stress Test)
-Saat K6 mulai dijalankan, Anda membuka 3 jendela terminal:
+Fase 3: Persiapan Skenario (Skrip K6)
+Buat atau cari file bernama load-test.js di folder yang sama (sejajar dengan submissions.json). Ini adalah otak dari pasukan robot Anda yang akan menjawab soal dan menekan finish.
 
-Terminal K6: Memantau jumlah request yang berhasil masuk.
+Fase 4: Eksekusi (Membombardir Server)
+Pastikan database PostgreSQL dan Redis Anda menyala (via Docker).
 
-Terminal NestJS: Melihat apakah ada error dari validasi atau API yang crash.
+Nyalakan server NestJS Anda di terminal pertama:
 
-Database Client (DBeaver/PgAdmin) atau Terminal Log Worker: Memantau saat Cron Job menyala di menit ke-00. Anda akan melihat log yang sangat memuaskan: [AssessmentSyncWorker] ✅ Tersinkronisasi: 1000 jawaban dari Redis ke Database Utama.
+Bash
+npm run start:dev
+Buka terminal kedua (di folder proyek), lalu lepaskan tembakan:
+
+Bash
+k6 run load-test.js
+Fase 5: Membaca Papan Hasil (Metrik Kunci)
+Setelah 1 menit, K6 akan berhenti dan menampilkan papan skor. Fokus pada 2 blok ini:
+
+Tingkat Keberhasilan (Checks):
+
+Plaintext
+✓ status is 201
+✓ finish is 200
+Jika ada kegagalan tinggi (checks failed), pastikan Anda melihat pesannya (mungkin waktu ujian habis, atau terblokir Throttler). Kegagalan karena siswa yang sama menekan iterasi berulang saat statusnya sudah FINISHED adalah hal wajar dalam K6.
+
+Kecepatan Respon (HTTP Req Duration):
+
+Plaintext
+http_req_duration..............: avg=9.63ms ... max=910.44ms p(95)=28.66ms
+Angka rata-rata (avg) harus di bawah 50ms untuk sistem berbasis Redis, membuktikan bahwa API Anda menangani ribuan request secara instan.
+
+Pembersihan: Jangan lupa kembalikan konfigurasi @nestjs/throttler Anda ke nilai normal untuk keamanan rilis produksi Anda.

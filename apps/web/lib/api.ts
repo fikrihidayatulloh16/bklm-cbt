@@ -1,3 +1,4 @@
+// apps/web/lib/api.ts
 import axios from 'axios';
 import Cookies from 'js-cookie';
 
@@ -75,18 +76,18 @@ api.interceptors.response.use(
 
 // --- Helper Function ---
 function sendReportToBackend(path: string | undefined, duration: number) {
-    // Ambil info koneksi user (experimental API, perlu safety check)
-    const nav = navigator as any;
-    const connection = nav.connection || nav.mozConnection || nav.webkitConnection;
-    const effectiveType = connection ? connection.effectiveType : 'unknown';
+    // // Ambil info koneksi user (experimental API, perlu safety check)
+    // const nav = navigator as any;
+    // const connection = nav.connection || nav.mozConnection || nav.webkitConnection;
+    // const effectiveType = connection ? connection.effectiveType : 'unknown';
 
-    // ✅ ERROR 2 FIXED: Menggunakan loggerApi yang sudah didefinisikan di atas
-    loggerApi.post('/client-log', {
-        path: path || 'unknown-path',
-        duration: duration,
-        connectionType: effectiveType 
-    // ✅ ERROR 3 FIXED: Memberikan tipe 'any' pada error catch
-    }).catch((err: any) => console.error("Gagal kirim log metrics:", err));
+    // // ✅ ERROR 2 FIXED: Menggunakan loggerApi yang sudah didefinisikan di atas
+    // loggerApi.post('/client-log', {
+    //     path: path || 'unknown-path',
+    //     duration: duration,
+    //     connectionType: effectiveType 
+    // // ✅ ERROR 3 FIXED: Memberikan tipe 'any' pada error catch
+    // }).catch((err: any) => console.error("Gagal kirim log metrics:", err));
 }
 
 export default api;

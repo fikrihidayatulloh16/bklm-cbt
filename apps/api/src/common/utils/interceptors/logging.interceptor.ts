@@ -4,58 +4,62 @@ import {
   ExecutionContext,
   CallHandler,
   Logger,
+  HttpException,
 } from '@nestjs/common';
-import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { Observable, throwError } from 'rxjs';
+import { tap, catchError } from 'rxjs/operators';
 
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {
-  // Kita beri context 'HTTP' agar di log terlihat rapi
   private readonly logger = new Logger('HTTP');
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    // 1. Ambil Data Request Masuk
     const ctx = context.switchToHttp();
     const req = ctx.getRequest();
+    const res = ctx.getResponse(); // Ditambahkan untuk mengambil statusCode sukses
+
     const method = req.method;
     const url = req.url;
-    const userAgent = req.get('user-agent') || '';
-    // const ip = req.headers['cf-connecting-ip'] || 
-    //        req.headers['x-forwarded-for'] || 
-    //        req.connection.remoteAddress;
+    // const userAgent = req.get('user-agent') || ''; // Bisa diaktifkan jika butuh
 
-    // 👇 LOGIKA IP CLOUDFLARE
-    // Ambil IP asli walaupun lewat proxy
+    // Logika IP Cloudflare (Sudah Bagus)
     const rawIp = req.headers['cf-connecting-ip'] || req.headers['x-forwarded-for'] || req.ip;
-    // Kadang x-forwarded-for isinya banyak "ip1, ip2, ip3", kita ambil yang pertama
     const ip = Array.isArray(rawIp) ? rawIp[0] : rawIp?.split(',')[0] || req.ip;
 
-    // Catat waktu mulai (untuk hitung durasi/performance)
     const now = Date.now();
 
-    // 2. Proses Request & Tunggu Selesai
-    return next.handle().pipe(
-      tap(() => {
-        // 3. Request Selesai, Hitung Durasi
-        const duration = Date.now() - now;
+    // Persiapan Auth (Sudah Bagus)
+    const user = req.user ? `${req.user.id} (${req.user.email})` : 'Guest';
 
-        // PERSIAPAN AUTH (Nanti otomatis terisi kalau JWT sudah jalan)
-        const user = req.user ? `${req.user.id} (${req.user.email}) (${req.user.role})` : 'Guest';
- 
+    return next.handle().pipe(
+      // TAP: HANYA BERJALAN JIKA REQUEST SUKSES (200/201)
+      tap(() => {
+        const duration = Date.now() - now;
+        const statusCode = res.statusCode;
         
-        // Ambil User ID jika sudah login (dari JWT nanti)
-        // const userId = req.user?.id || 'Guest'; 
+        // PERBAIKAN 1: Format menggunakan Template Literal (String) agar rapi
+        this.logger.log(`✅ [${method}] ${url} - ${statusCode} - ${ip} - ${user} +${duration}ms`);
+      }),
+
+      // CATCHERROR: HANYA BERJALAN JIKA REQUEST DITOLAK/GAGAL (400, 429, 403, 500)
+      catchError((error) => {
+        const duration = Date.now() - now;
         
-        // 4. Tulis ke Log (JSON Format via Winston)
-        this.logger.log(`Incoming Request`, {
-          method,
-          url,
-          ip,
-          user,
-          duration: `${duration}ms`,
-          userAgent,
-          // user: userId, // Aktifkan nanti kalau Auth sudah jalan
-        });
+        // Ambil status HTTP asli, jika bukan HTTP error, anggap 500 (Internal Server Error)
+        const statusCode = error instanceof HttpException ? error.getStatus() : 500;
+        const errorMessage = error.message || 'Internal server error';
+
+        // PERBAIKAN 2: Cetak Error berdasarkan level parahnya
+        if (statusCode >= 500) {
+          // Error 500 dicetak MERAH (Crash / Bug Code)
+          this.logger.error(`❌ [${method}] ${url} - ${statusCode} - ${ip} - ${user} +${duration}ms - ${errorMessage}`, error.stack);
+        } else {
+          // Error 4xx (429 Throttle, 400 Bad Request) dicetak KUNING/WARN
+          this.logger.warn(`🚨 [${method}] ${url} - ${statusCode} - ${ip} - ${user} +${duration}ms - ${errorMessage}`);
+        }
+
+        // Lempar kembali errornya agar Frontend tetap menerima pesan penolakan
+        return throwError(() => error);
       }),
     );
   }

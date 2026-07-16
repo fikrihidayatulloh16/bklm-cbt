@@ -6,7 +6,11 @@
 *(Tempat untuk tugas darurat yang tiba-tiba muncul dan menahan tugas utama)*
 - [ ] 
 
+### Menerapkan Observabilitas Grafana dengan proper way
 
+**konsep**
+- dashboard harus bisa memantau seluruh log aktivitas agar error bisa dilihat seperti apakah di 429
+- 
 
 ---
 

@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { Observable, throwError } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
+// import { v4 as uuidv4 } from 'uuid'; // Fallback tidak perlu UUID berat, kita pakai Date.now() saja untuk lokal
 
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {
@@ -16,51 +17,90 @@ export class LoggingInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const ctx = context.switchToHttp();
     const req = ctx.getRequest();
-    const res = ctx.getResponse(); // Ditambahkan untuk mengambil statusCode sukses
+    const res = ctx.getResponse();
 
     const method = req.method;
     const url = req.url;
-    // const userAgent = req.get('user-agent') || ''; // Bisa diaktifkan jika butuh
 
-    // Logika IP Cloudflare (Sudah Bagus)
+    // --- 1. TANGKAP REQUEST ID DARI NGINX ---
+    // Nginx mengirimkan header dengan format huruf kecil (x-request-id)
+    const requestId = req.headers['x-request-id'] || `dev-${Date.now()}`;
+
+    // --- 2. Logika IP Cloudflare ---
     const rawIp = req.headers['cf-connecting-ip'] || req.headers['x-forwarded-for'] || req.ip;
     const ip = Array.isArray(rawIp) ? rawIp[0] : rawIp?.split(',')[0] || req.ip;
 
     const now = Date.now();
 
-    // Persiapan Auth (Sudah Bagus)
+    // --- 3. Persiapan Auth ---
     const user = req.user ? `${req.user.id} (${req.user.email})` : 'Guest';
 
     return next.handle().pipe(
-      // TAP: HANYA BERJALAN JIKA REQUEST SUKSES (200/201)
+      // TAP: SUKSES (200/201)
       tap(() => {
         const duration = Date.now() - now;
-        const statusCode = res.statusCode;
         
-        // PERBAIKAN 1: Format menggunakan Template Literal (String) agar rapi
-        this.logger.log(`✅ [${method}] ${url} - ${statusCode} - ${ip} - ${user} +${duration}ms`);
+        // 👇 UBAH STRING MENJADI JSON OBJECT
+        this.logger.log({
+          action: 'request_in', // Penanda bahwa ini adalah log request API
+          req_id: requestId,
+          method: method,
+          url: url,
+          status: res.statusCode,
+          ip: ip,
+          user: user,
+          duration_ms: duration,
+        });
       }),
 
-      // CATCHERROR: HANYA BERJALAN JIKA REQUEST DITOLAK/GAGAL (400, 429, 403, 500)
+      // CATCHERROR: GAGAL (4xx / 5xx)
       catchError((error) => {
         const duration = Date.now() - now;
-        
-        // Ambil status HTTP asli, jika bukan HTTP error, anggap 500 (Internal Server Error)
         const statusCode = error instanceof HttpException ? error.getStatus() : 500;
         const errorMessage = error.message || 'Internal server error';
 
-        // PERBAIKAN 2: Cetak Error berdasarkan level parahnya
+        // 👇 BUAT OBJECT ERROR
+        const errorLog = {
+          action: 'request_error',
+          req_id: requestId,
+          method: method,
+          url: url,
+          status: statusCode,
+          ip: ip,
+          user: user,
+          duration_ms: duration,
+          error_msg: errorMessage,
+        };
+
         if (statusCode >= 500) {
-          // Error 500 dicetak MERAH (Crash / Bug Code)
-          this.logger.error(`❌ [${method}] ${url} - ${statusCode} - ${ip} - ${user} +${duration}ms - ${errorMessage}`, error.stack);
+          this.logger.error(errorLog, error.stack);
         } else {
-          // Error 4xx (429 Throttle, 400 Bad Request) dicetak KUNING/WARN
-          this.logger.warn(`🚨 [${method}] ${url} - ${statusCode} - ${ip} - ${user} +${duration}ms - ${errorMessage}`);
+          this.logger.warn(errorLog);
         }
 
-        // Lempar kembali errornya agar Frontend tetap menerima pesan penolakan
         return throwError(() => error);
       }),
     );
   }
 }
+
+//                              =======================
+//                                    JIKA ADA GRPC
+//                              =======================
+
+// const type = context.getType(); // Bisa berisi 'http', 'rpc' (gRPC), atau 'graphql'
+
+// if (type === 'http') {
+//    // ... logika HTTP yang kita buat tadi
+// } else if (type === 'rpc') {
+//    // Logika gRPC
+//    const rpcContext = context.switchToRpc();
+//    const data = rpcContext.getData(); // Payload gRPC
+   
+//    this.logger.log({
+//       action: 'grpc_request',
+//       service: context.getClass().name,
+//       method: context.getHandler().name,
+//       // Metadata/Header gRPC diambil dengan cara berbeda, bukan req.headers
+//    });
+// }

@@ -1,19 +1,38 @@
+# monitoring/promtail-config.yaml
 server:
   http_listen_port: 9080
   grpc_listen_port: 0
 
 positions:
-  filename: tmp/positions.yaml
+  filename: /tmp/positions.yaml # Tambahkan '/' di depan tmp agar aman
 
 clients:
-  - url: http://loki:3100/loki/api/v1/push
+  - url: http://loki:3100/loki/api/v1/push # Pastikan service Loki di compose Anda bernama 'loki'
 
 scrape_configs:
-- job_name: bklm_logs
-  static_configs:
-    - targets:
-        - localhost
+  # ==========================================
+  # JOB 1: Membaca File Log NestJS (Lama)
+  # ==========================================
+  - job_name: bklm_api_file
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: nestjs_api_file
+          __path__: /var/log/app/*.log
 
-      labels:
-        job: nestjs_api #label untuk mempermudah dicari di grafana
-        __path__: /var/log/app/*.log
+  # ==========================================
+  # JOB 2: Membaca SEMUA Container Docker (Baru & Ultimate)
+  # ==========================================
+  - job_name: docker_containers
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s # Radar akan menyapu kontainer baru setiap 5 detik
+    relabel_configs:
+      # Tangkap nama container (misal: bklm-cbt-nginx-1)
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*)'
+        target_label: 'container'
+      # Tangkap apakah ini log output biasa atau error (stdout/stderr)
+      - source_labels: ['__meta_docker_container_log_stream']
+        target_label: 'stream'

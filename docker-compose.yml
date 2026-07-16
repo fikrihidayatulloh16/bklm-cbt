@@ -129,9 +129,11 @@ services:
         reservations:
           memory: 64M
     volumes: 
-      - ./monitoring/promtail-config.yaml:/etc/promtail/config.yml
+      - ./monitoring/promtail-config.yaml:/etc/promtail/config.yml:ro
       # Mounting logs agar bisa dibaca
-      - ./apps/api/logs:/var/log/app
+      - ./apps/api/logs:/var/log/app:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
     command: -config.file=/etc/promtail/config.yml
     depends_on:
       - loki
@@ -145,8 +147,8 @@ services:
           memory: 256M # Grafana butuh RAM untuk merender UI Dashboard
         reservations:
           memory: 128M
-    # ports:
-    #   - 3002:3000
+    ports:
+      - 3002:3000
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
     volumes:

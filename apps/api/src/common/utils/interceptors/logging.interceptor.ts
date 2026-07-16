@@ -41,8 +41,8 @@ export class LoggingInterceptor implements NestInterceptor {
         const duration = Date.now() - now;
         
         // 👇 UBAH STRING MENJADI JSON OBJECT
-        this.logger.log({
-          action: 'request_in', // Penanda bahwa ini adalah log request API
+        const logData = JSON.stringify({
+          action: 'request_in',
           req_id: requestId,
           method: method,
           url: url,
@@ -51,6 +51,7 @@ export class LoggingInterceptor implements NestInterceptor {
           user: user,
           duration_ms: duration,
         });
+        this.logger.log(logData);
       }),
 
       // CATCHERROR: GAGAL (4xx / 5xx)
@@ -60,7 +61,7 @@ export class LoggingInterceptor implements NestInterceptor {
         const errorMessage = error.message || 'Internal server error';
 
         // 👇 BUAT OBJECT ERROR
-        const errorLog = {
+        const errorLog = JSON.stringify({
           action: 'request_error',
           req_id: requestId,
           method: method,
@@ -70,7 +71,7 @@ export class LoggingInterceptor implements NestInterceptor {
           user: user,
           duration_ms: duration,
           error_msg: errorMessage,
-        };
+        });
 
         if (statusCode >= 500) {
           this.logger.error(errorLog, error.stack);

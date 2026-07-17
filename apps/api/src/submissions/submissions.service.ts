@@ -65,7 +65,7 @@ export class SubmissionsService {
 
     //Memastikan Bahwa Assessment dibuka atau belum kadaluwarsa
     if (!assessment.expired_at) {
-      throw new ForbiddenException('Assessment ini Tidak Dibuka, silahkan hubungi Guru yang bersangkutan')
+      throw new ForbiddenException('Assessment ini Tidak/Belum Dibuka, silahkan hubungi/Tunggu Guru yang bersangkutan')
     }
 
     const deadLine = assessment.expired_at.getTime()

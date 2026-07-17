@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useDisclosure } from "@nextui-org/react"; // Hanya hook ini yang butuh diimport dari UI lib
 import api from "@/lib/api";
 import { showToast } from "@/components/ui/toast/toast-trigger";
+import axios from "axios";
 
 // --- 1. DEFINISI TIPE DATA (Export agar bisa dipakai di Page) ---
 
@@ -299,13 +300,33 @@ export const useExamLogic = () => {
         setStep('EXAM'); 
 
     } catch (error: any) {
-        console.error("Start Error:", error);
-        showToast({
-          type: "danger",
-          message: "Gagal",
-          description: "Gagal memulai ujian..",
-        });
-        setStep('IDENTITY'); 
+      // 1. Ekstrak pesan dari Backend (NestJS) jika ada
+      let errorMessage = "Gagal memulai ujian. Silakan coba lagi."; // Fallback default
+      
+      if (axios.isAxiosError(error)) {
+        // Jika error berasal dari response HTTP (NestJS merespons 4xx / 5xx)
+        if (error.response?.data?.message) {
+          // NestJS terkadang mengembalikan array jika gagal validasi (class-validator)
+          const backendMsg = error.response.data.message;
+          errorMessage = Array.isArray(backendMsg) ? backendMsg[0] : backendMsg;
+        } 
+        // Jika error karena Nginx mati atau internet terputus
+        else if (error.message === 'Network Error') {
+          errorMessage = "Tidak ada koneksi ke server. Periksa jaringan Anda.";
+        }
+      } else if (error instanceof Error) {
+        // Error murni dari Javascript di browser
+        errorMessage = error.message;
+      }
+
+      // 2. Tampilkan pesan yang sudah dinamis ke Toast
+      showToast({
+        type: "danger",
+        message: "Gagal Masuk",
+        description: errorMessage, // 👈 Tidak lagi hardcode!
+      });
+
+      setStep('IDENTITY'); 
     }
   };
 

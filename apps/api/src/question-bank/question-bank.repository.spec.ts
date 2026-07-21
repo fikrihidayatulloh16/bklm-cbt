@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { QuestionBankRepository } from './repository/question-bank.repository.ts'; 
+import { QuestionBankRepository } from './repository/question-bank.repository.js'; 
 import { PrismaService } from '../prisma/prisma.service';
 
 describe('QuestionBankRepository', () => {

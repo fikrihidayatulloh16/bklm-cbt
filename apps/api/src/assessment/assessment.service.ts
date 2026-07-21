@@ -1,6 +1,6 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateAssessmentFromBankDto } from './dto/create/create-assessment-from-bank.dto';
-import { QuestionBankRepository } from 'src/question-bank/repository/question-bank.repository.ts';
+import { QuestionBankRepository } from 'src/question-bank/repository/question-bank.repository';
 import { AssessmentMapper } from './mapper/assessment.mapper';
 import { AssessmentRepository } from './repository/assessment.repository';
 import { SubmissionRepository } from 'src/submissions/repository/submissions.repository';

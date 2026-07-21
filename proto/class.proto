@@ -1,0 +1,39 @@
+syntax = "proto3";
+package class.v1;
+
+service ClassService {
+  rpc CreateClass (CreateClassRequest) returns (CreateClassResponse);
+  rpc GetClassesBySchool (GetClassesBySchoolRequest) returns (GetClassesBySchoolResponse);
+}
+
+// ==========================================
+// Create Class
+// ==========================================
+
+message CreateClassRequest {
+  string level = 1;
+  string name = 2;
+  string school_id = 3;
+}
+
+message CreateClassResponse {
+  string id = 1;
+  string level = 2;
+  string name = 3;
+  string school_id = 4;
+}
+
+message GetClassesBySchoolRequest {
+  string school_id = 1;
+}
+
+message GetClassesBySchoolResponse {
+  repeated Class classes = 1;
+}
+
+message Class {
+  string id = 1;
+  string level = 2;
+  string name = 3;
+  string school_id = 4;
+}

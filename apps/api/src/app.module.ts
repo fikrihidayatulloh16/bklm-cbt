@@ -12,6 +12,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ClientLoggerModule } from './client-logger/client-logger.module';
 import { RedisBufferModule } from './shared/redis/redis-buffer.module';
 import { WorkersModule } from './workers/workers.module';
+import { ClassModule } from './class/class.module';
 
 // import { ThrottlerStorageRedisService } from 'nestjs-throttler-storage-redis'; // Opsional jika mau simpan hitungan di Redis
 // import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'; // Import
@@ -55,7 +56,8 @@ import { WorkersModule } from './workers/workers.module';
     ClientLoggerModule,
     ScheduleModule.forRoot(),
     RedisBufferModule,
-    WorkersModule
+    WorkersModule,
+    ClassModule,
   ],
   controllers: [AppController],
   providers: [

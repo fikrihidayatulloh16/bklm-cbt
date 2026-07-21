@@ -1,12 +1,12 @@
 //prisma/schema.prisma
 
 generator client {
-    provider = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-    provider    = "postgresql"
-    url         = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // ===================================
@@ -14,7 +14,7 @@ datasource db {
 // ===================================
 
 enum UserRole {
-  TEACHER       // FIX: Uppercase biar konsisten dengan enum lain
+  TEACHER // FIX: Uppercase biar konsisten dengan enum lain
   SCHOOL_ADMIN
   SUPER_ADMIN
 }
@@ -36,7 +36,6 @@ enum Gender {
   FEMALE
 }
 
-
 enum UserStatus {
   FREE
   INVITED
@@ -45,9 +44,9 @@ enum UserStatus {
 
 enum QuestionType {
   YES_NO
-  MULTIPLE_CHOICE 
-  SCALE           
-  ESSAY           
+  MULTIPLE_CHOICE
+  SCALE
+  ESSAY
 }
 
 enum SubmissionStatus {
@@ -62,14 +61,14 @@ enum SubmissionStatus {
 model User {
   id            String     @id @default(uuid())
   name          String
-  password_hash String?    // Nullable (aman untuk Google Auth)
+  password_hash String? // Nullable (aman untuk Google Auth)
   email         String     @unique
   role          UserRole
   status        UserStatus @default(FREE)
   google_id     String?    @unique
 
-  school_id     String?
-  school        School?    @relation(fields: [school_id], references: [id])
+  school_id String?
+  school    School? @relation(fields: [school_id], references: [id])
 
   assessment    Assessment[]
   questionBanks QuestionBank[]
@@ -80,29 +79,31 @@ model School {
   name         String
   subscription SubscriptionStatus @default(FREE)
 
-  User         User[]
-  assessment   Assessment[]
-  class        Class[]
+  User       User[]
+  assessment Assessment[]
+  class      Class[]
 }
 
 model Class {
-  id        String @id @default(uuid())
-  level     String
-  name      String
+  id    String @id @default(uuid())
+  level String
+  name  String
 
   school_id String
   school    School @relation(fields: [school_id], references: [id], onDelete: Cascade)
 
-  student   Student[]
+  student Student[]
+
+  sessions AssessmentSession[]
 
   @@unique([level, name, school_id])
 }
 
 model Student {
-  id       String @id @default(uuid())
-  name     String
-  gender   Gender
-  
+  id     String @id @default(uuid())
+  name   String
+  gender Gender
+
   class_id String
   class    Class  @relation(fields: [class_id], references: [id])
 
@@ -117,129 +118,150 @@ model Assessment {
   assessment_status AssessmentStatus @default(DRAFT)
   description       String?          @db.Text
   created_at        DateTime         @default(now())
-  expired_at        DateTime?        
+  expired_at        DateTime?
   duration          Int              @default(0)
 
-  user_id           String
-  user              User             @relation(fields: [user_id], references: [id])
+  user_id String
+  user    User   @relation(fields: [user_id], references: [id])
 
-  school_id         String?
-  school            School?           @relation(fields: [school_id], references: [id], onDelete: Cascade)
+  school_id String?
+  school    School? @relation(fields: [school_id], references: [id], onDelete: Cascade)
 
   questions         Question[]
   submissions       Submission[]
+  AssessmentSession AssessmentSession[]
+}
+
+// JADWAL PELAKSANAAN (Sesi Ujian)
+model AssessmentSession {
+  id         String   @id @default(uuid())
+  name       String // Contoh: "Sesi Pagi X RPL" atau "Susulan X TKJ"
+  start_time DateTime
+  end_time   DateTime // Ketika waktu ini terlewati, sesi otomatis tertutup
+
+  assessment_id String
+  assessment    Assessment @relation(fields: [assessment_id], references: [id], onDelete: Cascade)
+
+  // Relasi: Sesi ini dibuka untuk kelas mana saja? (Many-to-Many)
+  classes Class[]
+
+  submissions Submission[]
 }
 
 model Question {
-  id            String       @id @default(uuid())
-  text          String       @db.Text
-  category      String
-  order         Int          @default(1)
-  type          QuestionType @default(MULTIPLE_CHOICE)
+  id       String       @id @default(uuid())
+  text     String       @db.Text
+  category String
+  order    Int          @default(1)
+  type     QuestionType @default(MULTIPLE_CHOICE)
 
   assessment_id String
-  assessment    Assessment   @relation(fields: [assessment_id], references: [id], onDelete: Cascade)
+  assessment    Assessment @relation(fields: [assessment_id], references: [id], onDelete: Cascade)
 
   // FIX: Uncomment ini (Wajib ada karena QuestionOption merujuk kesini)
-  options       QuestionOption[]
-  
-  answer        Answer[]
+  options QuestionOption[]
+
+  answer Answer[]
 }
 
 model QuestionOption {
-  id          String   @id @default(uuid())
-  label       String   @db.Text 
-  score       Int      
-  order       Int      @default(1)
+  id    String @id @default(uuid())
+  label String @db.Text
+  score Int
+  order Int    @default(1)
 
   question_id String
   question    Question @relation(fields: [question_id], references: [id], onDelete: Cascade)
 
   // FIX: Tambahkan relasi balik ini agar 'Answer' bisa merujuk ke 'option_id'
-  answers     Answer[] 
+  answers Answer[]
 }
 
 model QuestionBank {
-  id          String         @id @default(uuid())
-  title       String         
+  id          String  @id @default(uuid())
+  title       String
   description String?
-  shared      Boolean       @default(false)
+  shared      Boolean @default(false)
 
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
-  deleted_at  DateTime?
-  
-  author_id   String
-  author      User     @relation(fields: [author_id], references: [id])
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  deleted_at DateTime?
 
-  questions   BankQuestion[]
+  author_id String
+  author    User   @relation(fields: [author_id], references: [id])
+
+  questions BankQuestion[]
 }
 
 model BankQuestion {
-  id               String       @id @default(uuid())
-  text             String
-  category         String
-  type             QuestionType @default(MULTIPLE_CHOICE)
-  order            Int @default(1)
+  id       String       @id @default(uuid())
+  text     String
+  category String
+  type     QuestionType @default(MULTIPLE_CHOICE)
+  order    Int          @default(1)
 
   question_bank_id String
   question_bank    QuestionBank @relation(fields: [question_bank_id], references: [id])
 
-  options          BankQuestionOption[]
+  options BankQuestionOption[]
 }
 
 model BankQuestionOption {
-  id               String       @id @default(uuid())
-  label            String       @db.Text 
-  score            Int      
+  id    String @id @default(uuid())
+  label String @db.Text
+  score Int
 
   bank_question_id String
   bank_question    BankQuestion @relation(fields: [bank_question_id], references: [id], onDelete: Cascade)
 }
 
 model Answer {
-  id            String   @id @default(uuid())
+  id            String  @id @default(uuid())
   numeric_value Int?
-  text_value    String?  @db.Text
+  text_value    String? @db.Text
 
-  question_id   String
-  question      Question @relation(fields: [question_id], references: [id], onDelete: Cascade)
-  
+  question_id String
+  question    Question @relation(fields: [question_id], references: [id], onDelete: Cascade)
+
   submission_id String
   submission    Submission @relation(fields: [submission_id], references: [id], onDelete: Cascade)
 
   // Opsi yang dipilih (khusus Pilihan Ganda/Skala)
-  option_id     String?    
-  option        QuestionOption? @relation(fields: [option_id], references: [id])
+  option_id String?
+  option    QuestionOption? @relation(fields: [option_id], references: [id])
 
+  @@unique([submission_id, question_id])
   @@index([question_id])
   @@index([submission_id])
-  @@unique([submission_id, question_id])
 }
 
 model Submission {
-  id              String   @id @default(uuid())
-  score           Int      @default(0)
-  status          SubmissionStatus @default(IN_PROGRESS)
-  started_at      DateTime @default(now())
-  submitted_at    DateTime?
-  finish_method   String?
+  id            String           @id @default(uuid())
+  score         Int              @default(0)
+  status        SubmissionStatus @default(IN_PROGRESS)
+  started_at    DateTime         @default(now())
+  submitted_at  DateTime?
+  finish_method String?
 
   //Snashot student data
-  student_name      String
-  class_name        String
-  gender            String
+  student_name String
+  class_name   String
+  gender       String
 
-  assessment_id  String
-  assessment     Assessment @relation(fields: [assessment_id], references: [id], onDelete: Cascade)
+  assessment_id String
+  assessment    Assessment @relation(fields: [assessment_id], references: [id], onDelete: Cascade)
+
+  // Relasi ke Sesi Pelaksanaan (Krusial: Siswa ini ikut ujian di sesi yang mana?)
+  session_id String?
+  session    AssessmentSession? @relation(fields: [session_id], references: [id], onDelete: Cascade)
 
   // student_id     String?
   // student        Student? @relation(fields: [student_id], references: [id], onDelete: Cascade)
 
-  answer         Answer[]
+  answer Answer[]
+  // @@index([student_id])
 
   @@index([assessment_id, submitted_at])
-  // @@index([student_id])
 }
 
 // model QuestionOption {

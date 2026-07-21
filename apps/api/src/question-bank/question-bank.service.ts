@@ -3,7 +3,7 @@ import { CreateQuestionBankDto } from './dto/create/create-question-bank.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateBankQuestionDto } from './dto/create/create-bankquestion.dto';
 import { QuestionBankMapper } from './mapper/question-bank.mapper';
-import { QuestionBankRepository } from './repository/question-bank.repository.ts';
+import { QuestionBankRepository } from './repository/question-bank.repository';
 import { error } from 'console';
 import { UpdateQuestionBankParams } from './helper/interfaces/question-bank.interface';
 // import { UpdateQuestionBankDto } from './dto/update-question-bank.dto';

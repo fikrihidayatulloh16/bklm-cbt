@@ -1,0 +1,26 @@
+syntax = "proto3";
+package session.v1;
+
+service AssessmemntSessionService {
+    rpc CreateAssessmentSession 
+}
+
+message CreateAssessmentSessionRequest {
+    string id = 1;
+    string name = 2;  
+    string start_time = 3;
+    string end_time = 4;
+
+    string assessment_id = 5;
+    ClassList class = 6;
+
+    submissions Submission[]
+
+}
+
+message ClassList {
+    string id = 1;
+    string level = 2;
+    string name = 3;
+    string school_id = 4
+}

@@ -4,19 +4,49 @@
 
 ## 🚨 [URGENT/INTERRUPT] 
 *(Tempat untuk tugas darurat yang tiba-tiba muncul dan menahan tugas utama)*
-- [ ] 
 
-### Menerapkan Observabilitas Grafana dengan proper way
 
-**konsep**
-- dashboard harus bisa memantau seluruh log aktivitas agar error bisa dilihat seperti apakah di 429
-- 
 
 ---
 
 ## 🚧 [IN PROGRESS] 
 
+### Implementation Plan: Automated Test & gRPC Pagination (Assessment Service)
 
+#### 1. Objektif
+Melakukan refaktor pada `AssessmentService` untuk mendukung Paginasi pada endpoint `GET /api/assessments` (mengatasi masalah *loading* lambat akibat 1000 data dari *load-test*). 
+Pengembangan wajib menggunakan pendekatan **Test-Driven Development (TDD)** dan isolasi *database* sebelum ekspansi ke protokol gRPC.
+
+#### 2. Fase 1: Isolasi Infrastruktur Tes (Selesai)
+- Menambahkan `postgres_test_db` di `docker-compose.local`.
+- Menggunakan port `5433` (menghindari bentrok dengan DB utama).
+- Membuat *volume* mandiri `db_data/postgres_test` agar data produksi/development aman.
+- Menyiapkan file `.env.test` khusus untuk Prisma (menunjuk ke port 5433).
+
+#### 3. Fase 2: Definisi Kontrak TDD (Red Phase)
+- **Aksi:** Menulis tes E2E di `test/assessment.e2e-spec.ts`.
+- **Target:** Endpoint harus merespons dengan format standar industri, bukan sekadar *Array*.
+  ```json
+  {
+    "data": [ { "id": "...", "title": "..." } ],
+    "meta": { "total": 1000, "page": 1, "limit": 10, "lastPage": 100 }
+  }
+
+Status Harapan: Eksekusi npm run test:e2e wajib gagal (merah) pada tahap ini karena kode asli belum diubah.
+
+4. Fase 3: Implementasi Paginasi (Green Phase)
+Aksi: Modifikasi AssessmentService menggunakan skip dan take pada Prisma.
+
+Validasi: Jalankan ulang E2E test hingga hijau (sukses).
+
+Catatan: Perubahan ini adalah Breaking Change. Frontend (Next.js/NextUI) harus disesuaikan agar mengekstrak data dari response.data.data.
+
+5. Fase 4: Integrasi gRPC
+Membuat AssessmentGrpcController.
+
+Menggunakan AssessmentService yang sama (karena sudah tervalidasi oleh tes E2E menghasilkan output data & meta yang solid).
+
+Tes komunikasi gRPC dari client (Postman/gRPCui) ke server.
 ---
 
 ## 🚧 [UPCOMING] 

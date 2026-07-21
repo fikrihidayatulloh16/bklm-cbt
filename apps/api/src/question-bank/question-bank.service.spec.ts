@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { QuestionBankService } from './question-bank.service';
 // Import Repository Class Anda (bukan Prisma lagi)
-import { QuestionBankRepository } from './repository/question-bank.repository.ts';
+import { QuestionBankRepository } from './repository/question-bank.repository';
 
 // 1. Kita buat "Stuntman" untuk Repository
 const mockRepo = {

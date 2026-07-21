@@ -13,10 +13,12 @@ import { ClientLoggerModule } from './client-logger/client-logger.module';
 import { RedisBufferModule } from './shared/redis/redis-buffer.module';
 import { WorkersModule } from './workers/workers.module';
 import { ClassModule } from './class/class.module';
+import { GlobalCacheModule } from './common/cache/cache.module';
 
 // import { ThrottlerStorageRedisService } from 'nestjs-throttler-storage-redis'; // Opsional jika mau simpan hitungan di Redis
 // import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'; // Import
 // import { APP_GUARD } from '@nestjs/core';
+import { AssessmentSessionModule } from './assessment-session/assessment-session.module';
 
 @Module({
   imports: [
@@ -58,6 +60,8 @@ import { ClassModule } from './class/class.module';
     RedisBufferModule,
     WorkersModule,
     ClassModule,
+    AssessmentSessionModule,
+    GlobalCacheModule,
   ],
   controllers: [AppController],
   providers: [

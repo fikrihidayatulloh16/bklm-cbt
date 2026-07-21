@@ -2,7 +2,7 @@
 
 import React from "react";
 // 1. Import Logic Hook
-import { useExamLogic, CLASS_OPTIONS } from "@/features/exam/hooks/useExamLogic"; 
+import { useExamLogic, LEVEL_OPTIONS, GROUP_OPTIONS } from "@/features/exam/hooks/useExamLogic"; 
 
 import { 
   Button, Card, CardBody, Progress, RadioGroup, Radio, 
@@ -25,6 +25,8 @@ export default function ExamPage() {
     answers, 
     currentStep, 
     activeQuestion,
+    // className,
+    selectedLevel,
     deadLine, // Pastikan ini direturn di useExamLogic
     
     // Actions
@@ -33,6 +35,8 @@ export default function ExamPage() {
     handleStartExam,
     handleAnswer,
     handleSubmitExam,
+    // setclassName,
+    setSelectedLevel,
     
     // Modal
     isConfirmOpen,
@@ -89,21 +93,43 @@ export default function ExamPage() {
                             onValueChange={setStudentName} // Sudah dimapping
                         />
                         
-                        {/* UPDATE SELECT KELAS */}
+                        {/* 1. DROPDOWN TINGKAT KELAS */}
+                        <Select 
+                            label="Tingkat" 
+                            placeholder="Pilih Tingkat" 
+                            variant="bordered"
+                            selectedKeys={selectedLevel ? [selectedLevel] : []}
+                            onChange={(e) => {
+                                setSelectedLevel(e.target.value);
+                                setclassName(""); // Wajib! Reset kelas jika siswa iseng mengganti tingkat di tengah jalan
+                            }}
+                        >
+                            {LEVEL_OPTIONS.map((level) => (
+                                <SelectItem key={level} value={level}>
+                                    {level}
+                                </SelectItem>
+                            ))}
+                        </Select>
+
+                        {/* 2. DROPDOWN NAMA KELAS (Bergantung pada Tingkat) */}
                         <Select 
                             label="Kelas" 
-                            placeholder="Pilih Kelas" 
+                            placeholder={selectedLevel ? `Pilih Kelas ${selectedLevel}` : "Pilih Tingkat dulu"} 
                             variant="bordered"
-                            startContent={<School size={18} className="text-default-400" />}
+                            isDisabled={!selectedLevel} // Terkunci jika tingkat belum dipilih
+                            startContent={<School size={18} className={selectedLevel ? "text-default-400" : "text-default-200"} />}
                             selectedKeys={className ? [className] : []}
                             onChange={(e) => setclassName(e.target.value)}
                         >
-                            {/* Menggunakan CLASS_OPTIONS dari Hook atau konstanta file ini */}
-                            {CLASS_OPTIONS.map((name) => (
-                                <SelectItem key={name} value={name}>
-                                    {name}
-                                </SelectItem>
-                            ))}
+                            {/* Merakit string kelas secara on-the-fly, misal "VII - A" */}
+                            {GROUP_OPTIONS.map((group) => {
+                                const fullClassName = `${selectedLevel} - ${group}`;
+                                return (
+                                    <SelectItem key={fullClassName} value={fullClassName}>
+                                        {fullClassName}
+                                    </SelectItem>
+                                );
+                            })}
                         </Select>
 
                         <RadioGroup 

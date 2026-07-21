@@ -38,10 +38,9 @@ export interface StudentIdentity {
   gender: string;
 }
 
-// Opsi Kelas (Export agar bisa dipakai di Dropdown UI)
-export const CLASS_OPTIONS = [
-    "IX - A",
-];
+// Konstanta Hardcode (Bisa dihapus nanti jika API Kelas sudah jadi)
+export const LEVEL_OPTIONS = ["VII", "VIII", "IX"];
+export const GROUP_OPTIONS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
 
 export type ExamStep = 'LOADING' | 'IDENTITY' | 'EXAM' | 'FINISHED' | 'ERROR';
 
@@ -72,6 +71,11 @@ export const useExamLogic = () => {
   
   const [timeLeft, setTimeLeft] = useState<number>(0); 
   const [deadLine, setDeadLine] = useState<Date | null>(null); 
+
+  const [className, setclassName] = useState("");
+  
+  // State baru khusus untuk menampung dropdown pertama
+  const [selectedLevel, setSelectedLevel] = useState("");
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -400,7 +404,10 @@ export const useExamLogic = () => {
     deadLine,
     
     // Constant Data untuk UI
-    classOptions: CLASS_OPTIONS, // Kembalikan ini agar UI bisa render dropdown
+    className,
+    setclassName,
+    selectedLevel,
+    setSelectedLevel, // Kembalikan ini agar UI bisa render dropdown
 
     timeLeftString: formatTime(timeLeft), 
     isCriticalTime: timeLeft < 60, 

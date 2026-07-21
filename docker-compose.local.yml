@@ -1,4 +1,29 @@
 services:
+  postgres_test_db:
+    image: postgres:15-alpine
+    container_name: bklm-test-postgredb
+    restart: always
+    env_file:
+      - .env 
+    environment:
+      # KIRI: Format mutlak PostgreSQL | KANAN: Variabel dari .env Anda
+      POSTGRES_USER: ${POSTGRES_TEST_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_TEST_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_TEST_DB}
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+        reservations:
+          memory: 256M
+    ports:
+      # Host port (5433) diarahkan ke Container port (5432)
+      - "5433:5432"
+    volumes:
+      # ✅ PERBAIKAN: Gunakan folder khusus '_test' agar tidak merusak DB utama
+      - ./db_data/postgres_test:/var/lib/postgresql/data
+
   postgres_db:
     image: postgres:15-alpine
     container_name: bk-assessment-db

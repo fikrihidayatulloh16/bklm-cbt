@@ -23,7 +23,9 @@ import { AssessmentSessionModule } from './assessment-session/assessment-session
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true, envFilePath: '.env',// Biar bisa dibaca di semua module (Auth, User, dll)
+      envFilePath: process.env.NODE_ENV === 'test' ? '.env.test' : '.env',
+      isGlobal: true,
+      // isGlobal: true, envFilePath: '.env',// Biar bisa dibaca di semua module (Auth, User, dll)
     }),
     
     // 👇 THROTTLER DINONAKTIFKAN SEMENTARA (DIBUAT KOMENTAR)

@@ -16,6 +16,10 @@ describe('ClassModule (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+
+    // Ambil URL, tapi sembunyikan passwordnya agar aman
+    const dbUrl = process.env.DATABASE_URL || '';
+    console.log(' di test🔥 CONNECTED TO DB:', dbUrl.replace(/:[^:@]+@/, ':***@'));
     
     // Aktifkan validasi DTO global untuk tes ini
     app.useGlobalPipes(new ValidationPipe()); 

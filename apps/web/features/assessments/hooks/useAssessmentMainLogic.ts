@@ -64,7 +64,6 @@ export const useAssessmentMainLogic = () => {
     // Kita pastikan return array kosong agar UI tidak crash saat .map()
     const assessmentsList = Array.isArray(data?.assessments) ? data.assessments : [];
     const questionBankOptions = Array.isArray(data?.banks) ? data.banks : [];
-    console.log('di maain logic:',assessmentsList);
     
 
     // 4. MUTATION (Create Logic)

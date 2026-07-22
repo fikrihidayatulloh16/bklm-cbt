@@ -14,7 +14,6 @@ handleOpenCreateModal: () => void;
 
 export const AssessmentCardList = ({isLoading, assessmentsList, handleOpenCreateModal}:AssessmentCardListProps) => {
 const router = useRouter()
-console.log('di assessmentCardList',assessmentsList);
 
 
 

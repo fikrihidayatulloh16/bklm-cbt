@@ -9,7 +9,6 @@ const ENDPOINTS = {
 
 export const getAssessmentDashboard = async (): Promise<DashboardStats> => {
     const data = await api.get(ENDPOINTS.ASSESSMENTDASHBOARD);
-    console.log('getAssessmentDashboard',data.data);
     
     return data.data;
 }

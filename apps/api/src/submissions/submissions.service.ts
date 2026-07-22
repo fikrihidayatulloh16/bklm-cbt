@@ -214,6 +214,7 @@ export class SubmissionsService {
 
     // 2. Ambil Deadline Assessment
     const assessment = await this.assessmentrepo.findOneAssessmentById(submission.assessment_id);
+    
     if (!assessment?.expired_at) throw new ForbiddenException('Deadline ujian belum diatur.');
 
     // 3. LOGIKA WAKTU & KELENGKAPAN (Sekarang 100% Valid karena data dari Redis sudah di-flush ke DB)
@@ -224,6 +225,7 @@ export class SubmissionsService {
         const totalAnswered = await this.answerRepo.totalAnswered(submissionId);
         const totalQuestion = await this.questionRepo.totalAnswered(submission.assessment_id); 
         
+        // Validasi apakah sudah kemunculan soal di submission sama dengan total question
         if (totalAnswered < totalQuestion) {
             const sisa = totalQuestion - totalAnswered;
             throw new BadRequestException(`Waktu masih tersedia! Silakan lengkapi ${sisa} soal lagi.`);
@@ -240,8 +242,6 @@ export class SubmissionsService {
              totalScore += ans.option.score; 
         }
     }
-
-    console.log(`[Finish] Submission ${submissionId} Finished. Score: ${totalScore}`);
 
     const socketPayload = {
         id: submissionId,

@@ -4,10 +4,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { AppModule } from './../src/app.module';
 import { PrismaService } from './../src/prisma/prisma.service';
+import { ICacheRepository, I_CACHE_REPOSITORY } from 'src/common/cache/cache.repository.port';
 
 describe('AssessmentSessionModule (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
+  let cacheRepository: ICacheRepository;
 
   // Konstanta ID untuk Master Data
   const schoolId = 'school-session-test';
@@ -28,6 +30,7 @@ describe('AssessmentSessionModule (e2e)', () => {
     await app.init();
 
     prisma = app.get<PrismaService>(PrismaService);
+    cacheRepository = app.get(I_CACHE_REPOSITORY);
   });
 
   afterAll(async () => {
@@ -37,6 +40,7 @@ describe('AssessmentSessionModule (e2e)', () => {
   beforeEach(async () => {
     // 1. TEARDOWN: Hapus dari tabel paling "anak" ke tabel "induk"
     await prisma.assessmentSession.deleteMany();
+    await cacheRepository.invalidateByPattern('sessions:active:*');
     await prisma.assessment.deleteMany();
     await prisma.class.deleteMany();
     await prisma.user.deleteMany();
@@ -156,6 +160,25 @@ describe('AssessmentSessionModule (e2e)', () => {
         .expect(200);
 
       expect(resRPL2.body.data.length).toBe(0);
+    });
+
+    it('Harus mengembalikan sesi dari Cache (200) pada pemanggilan kedua', async () => {
+      // 1. Panggilan Pertama (Cache Miss -> Ambil dari DB -> Simpan ke Redis)
+      const responseSatu = await request(app.getHttpServer())
+        .get(`/assessment-sessions/class/${classRPL1}/active`)
+        .expect(200);
+
+      // 2. Panggilan Kedua (Seharusnya Cache Hit -> Ambil dari Redis)
+      const responseDua = await request(app.getHttpServer())
+        .get(`/assessment-sessions/class/${classRPL1}/active`)
+        .expect(200);
+
+      // 3. Verifikasi: Data dari cache harus 100% sama persis dengan data dari DB
+      expect(responseDua.body.data).toEqual(responseSatu.body.data);
+      expect(responseDua.body.status).toBe('success');
+      
+      // Catatan: Jika Anda melihat terminal saat tes ini berjalan, 
+      // Anda harus melihat log "🐢 Cache miss" diikuti oleh "⚡ Cache hit".
     });
   });
 });

@@ -1,13 +1,19 @@
-import { Injectable, Logger } from '@nestjs/common';
+// apps/api/src/common/cache/redis-cache.adapter.ts
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import Redis from 'ioredis';
 import { ICacheRepository } from './cache.repository.port';
 
 @Injectable()
-export class RedisCacheAdapter implements ICacheRepository {
+export class RedisCacheAdapter implements ICacheRepository, OnModuleDestroy {
   private readonly logger = new Logger(RedisCacheAdapter.name);
 
   // Redis instance akan disuntikkan via Dependency Injection
   constructor(private readonly redisClient: Redis) {}
+
+  async onModuleDestroy() {
+    this.logger.log('🔌 Memutus koneksi Redis...');
+    await this.redisClient.quit(); // Putuskan koneksi dengan aman
+  }
 
   async getObj<T>(key: string): Promise<T | null> {
     try {

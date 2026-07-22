@@ -96,8 +96,6 @@ export const useExamLogic = () => {
             // --- SKENARIO RESTORE ---
             const res = await api.get(`/submissions/${savedSubmissionId}`); 
             const data = res.data.data || res.data; 
-
-            console.log('awal',data);
             
 
             // --- 🛡️ VALIDASI TAMBAHAN (GUARD CLAUSE) ---
@@ -209,7 +207,7 @@ export const useExamLogic = () => {
           const res = await api.get(`/exam/${examId}`);
           const data = res.data.data || res.data;
 
-          console.log('get exam=', data);
+
           
           
           setExam(data);
@@ -336,7 +334,7 @@ export const useExamLogic = () => {
 
   const handleAnswer = async (questionId: string, optionId: string, numeric_value?: number) => {
     setAnswers(prev => ({ ...prev, [questionId]: optionId }));
-    console.log(numeric_value);
+
 
     if (submissionId) {
         try {

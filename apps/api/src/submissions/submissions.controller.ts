@@ -29,8 +29,8 @@ export class SubmissionsController {
   }
 
   @Get(':assessment_id/timeleft')
-  async getTimeLeft(@Param('id') assessment_id: string) {
-    return await this.submissionsService.getTimer(assessment_id)
+  async getTimeLeft(@Param('assessment_id') assessment_id: string) {
+    return await this.submissionsService.getTimer(assessment_id);
   }
 
   @Put(':id/answer')
@@ -38,7 +38,6 @@ export class SubmissionsController {
   async saveAnswer(
     @Param('id') id: string,
     @Body() saveAnswer: SaveAnswerDTO) {
-      console.log('id=', id, 'saveaanswer=', saveAnswer);
       
     const result = await this.submissionsService.saveAnswer(id, saveAnswer)
      return {

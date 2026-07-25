@@ -2,44 +2,75 @@ import { Injectable } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 import { PrismaService } from "src/prisma/prisma.service";
 import { StartSubmissionDTO } from "../dto/start-submission.dto";
+import { ISubmissionRepository } from "../ports/submission.repository.port";
+import { SubmissionDomain } from "../submission.domain";
+import { SubmissionMapper } from "../mapper/submission.mapper";
 
 @Injectable()
-export class SubmissionRepository {
+export class SubmissionPrismaRepository implements ISubmissionRepository {
     constructor(private prisma: PrismaService) {}
 
-    async createSubmission(dto: StartSubmissionDTO, assessment_id) {
-        
-        return await this.prisma.submission.create({
+    async findDomainByStudent(assessmentId: string, studentName: string, className: string): Promise<SubmissionDomain | null> {
+    // 💡 Ini adalah query bawaan dari kode lama Anda
+    const existing = await this.prisma.submission.findFirst({
+      where: {
+        assessment_id: assessmentId,
+        student_name: studentName,
+        class_name: className,
+      },
+    });
+
+    if (!existing) return null;
+
+    // Mapper: Mengubah format Database (Prisma) menjadi format Bisnis (Domain)
+    return new SubmissionDomain(
+      existing.id,
+      existing.assessment_id,
+      existing.student_name,
+      existing.class_name,
+      existing.status as 'IN_PROGRESS' | 'FINISHED',
+    //   existing.session_id // Pastikan skema prisma Anda punya session_id
+    );
+  }
+
+    async createSubmission(
+        assessmentId: string, 
+        studentName: string, 
+        className: string, 
+        gender: string
+    ): Promise<SubmissionDomain> {
+        const record = await this.prisma.submission.create({
             data: {
-                assessment_id: assessment_id,
-                
-                student_name: dto.student_name,
-                gender: dto.gender,
-                
-                // PERUBAHAN DISINI: Ambil langsung dari DTO
-                class_name: dto.class_name, 
-                
-                score: 0
+            assessment_id: assessmentId,
+            student_name: studentName,
+            gender: gender,
+            class_name: className, 
+            score: 0
             }
-        }) 
+        });
+        return SubmissionMapper.toDomain(record);
     }
 
-    async updateStatusFinishSubmission(submissionId: string, totalScore: number) {
-        return await this.prisma.submission.update({
-        where: { id: submissionId },
-          data: {
-            score: totalScore,
-            status: 'FINISHED',
-            submitted_at: new Date(),
-          }
-      })
+    // async findDomainByStudent
+
+    async updateStatusFinishSubmission(submissionId: string, totalScore: number): Promise<SubmissionDomain> {
+        const record = await this.prisma.submission.update({
+            where: { id: submissionId },
+                data: {
+                score: totalScore,
+                status: 'FINISHED',
+                submitted_at: new Date(),
+            }
+        })
+        return SubmissionMapper.toDomain(record); 
     }
 
-    async findSubmissionById(submissionId) {
-        return await this.prisma.submission.findUnique({
-        where: { id: submissionId },
-        select : { assessment_id: true, status: true },
-      })
+    async findSubmissionById(submissionId): Promise<SubmissionDomain> {
+        const record = await this.prisma.submission.findUnique({
+            where: { id: submissionId },
+            select : { assessment_id: true, status: true },
+        })
+        return SubmissionMapper.toDomain(record);
     }
 
     async findExistingStudent(assessmentId, studentName, className) {
@@ -52,8 +83,8 @@ export class SubmissionRepository {
         })
     }
 
-    async findOneIdSubmissionWithAnswer(submissionId) {
-            return await this.prisma.submission.findUnique({
+    async findOneIdSubmissionWithAnswer(submissionId): Promise<SubmissionDomain> {
+        const record = await this.prisma.submission.findUnique({
             where: { id: submissionId },
             include: { 
                 answer:  {
@@ -62,10 +93,12 @@ export class SubmissionRepository {
                 },
                 
             }
-      })}
+        })
+            return SubmissionMapper.toDomain(record)
+    }
 
-      async findOneSubmissionWithQuestion(submissiondId: string) {
-        return await this.prisma.submission.findUnique({
+      async findOneSubmissionWithQuestion(submissiondId: string): Promise<SubmissionDomain> {
+        const record = await this.prisma.submission.findUnique({
             where: { id: submissiondId },
             include: {
             // 👇 WAJIB ADA: Agar jawaban siswa ikut terambil
@@ -83,6 +116,7 @@ export class SubmissionRepository {
             }
             },
         })
+        return SubmissionMapper.toDomain(record) ;
       }
 
     async findStudentAnswerDetails(submissionId: string) {
@@ -128,18 +162,20 @@ export class SubmissionRepository {
     }
 
     // submission.repository.ts
-    async findSubmissionNAssessmentDeadline(id: string) {
-    return this.prisma.submission.findUnique({
-        where: { id },
-        include: {
-        assessment: { // <--- WAJIB INCLUDE INI
-            select: {
-                id: true,
-                expired_at: true // Ambil deadline-nya sekalian
+    async findSubmissionNAssessmentDeadline(id: string): Promise<SubmissionDomain> {
+        const record = await this.prisma.submission.findUnique({
+            where: { id },
+            include: {
+                assessment: { // <--- WAJIB INCLUDE INI
+                    select: {
+                        id: true,
+                        expired_at: true // Ambil deadline-nya sekalian
+                    }
+                }
             }
-        }
-        }
-    });
+        });
+
+        return SubmissionMapper.toDomain(record)
     }
 
     // async updateAnswer()

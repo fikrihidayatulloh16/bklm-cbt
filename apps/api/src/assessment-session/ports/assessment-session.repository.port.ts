@@ -6,4 +6,6 @@ export abstract class IAssessmentSessionRepository {
   
   // Endpoint Read-Heavy (Nanti bisa di-cache pakai Redis)
   abstract findActiveSessionsByClass(classId: string): Promise<AssessmentSessionDomain[]>;
+
+  abstract findSessionByAssessmentId(AssessmentId: string): Promise<AssessmentSessionDomain | null>;
 }

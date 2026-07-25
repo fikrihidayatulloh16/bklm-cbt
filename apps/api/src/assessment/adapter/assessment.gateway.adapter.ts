@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ISessionGateway, SessionValidationInfo } from '../ports/session.gateway.port';
+import { ISessionGateway, SessionValidationInfo } from '../port/assessment.gateway.port';
 import { AssessmentSessionService } from '../../assessment-session/assessment-session.service'; // Panggil service aslinya
 
 @Injectable()

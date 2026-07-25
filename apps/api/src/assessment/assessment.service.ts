@@ -1,10 +1,11 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateAssessmentFromBankDto } from './dto/create/create-assessment-from-bank.dto';
 import { QuestionBankRepository } from 'src/question-bank/repository/question-bank.repository';
 import { AssessmentMapper } from './mapper/assessment.mapper';
 import { AssessmentRepository } from './repository/assessment.repository';
-import { SubmissionRepository } from 'src/submissions/repository/submissions.repository';
+import { SubmissionPrismaRepository } from 'src/submissions/repository/submissions.repository';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { I_SESSION_GATEWAY, ISessionGateway } from './port/assessment.gateway.port';
 import * as ExcelJS from 'exceljs';
 
 @Injectable()
@@ -13,7 +14,10 @@ export class AssessmentService {
     private prisma: PrismaService,
     private questionBankRepo: QuestionBankRepository,
     private assessmentRepo: AssessmentRepository,
-    private submissionsRepo: SubmissionRepository,
+    private submissionsRepo: SubmissionPrismaRepository,
+
+    @Inject(I_SESSION_GATEWAY) 
+    private readonly sessionGateway: ISessionGateway,
   ) {}
 
   async getDashboardStats(user_id) {
@@ -105,7 +109,10 @@ export class AssessmentService {
     const updatePromises = stuckSubmissions.map(async (sub) => {
       
       // Tentukan deadline (Prioritas: User deadline -> Global expired_at)
-      const deadline = sub.assessment.expired_at;
+      const getSession = await this.sessionGateway.getSession(assessmentId);
+      if (!getSession) {throw new BadRequestException('Sesi tidak ditemukan')}
+
+      const deadline = getSession?.endTime;
 
       if (!deadline) {
         throw new BadRequestException(`expired_at yang dimasukkan:${deadline}`)       
@@ -182,22 +189,27 @@ export class AssessmentService {
       throw new NotFoundException(`Assessment dengan ID ${id} tidak ditemukan`);
     }
 
-    const now = new Date(); // membuat waktu saat ini
+    const now = new Date(); 
+    const getSession = await this.sessionGateway.getSession(id);
+    
+    if (!getSession) {
+        throw new BadRequestException('Sesi tidak ditemukan');
+    }
 
-    if (assessment.expired_at) {
-      // 2. Masuk sini HANYA jika expired_at TIDAK NULL.
-      // TypeScript jadi happy, karena dia tau di dalam blok ini expired_at aman.
-      
-      if (now.getTime() >= assessment.expired_at.getTime()) {
+    const expiredAt = getSession.endTime;
+
+    if (expiredAt) {
+      // ✅ BENAR: Gunakan .getTime() pada objek Date
+      if (now.getTime() >= expiredAt.getTime()) {
           // Update status jadi CLOSED
           await this.assessmentRepo.updateDeadlineAssessment(
               assessment.id, 
-              assessment.expired_at, 
-              'CLOSED' // Update status local variable juga biar return-nya benar
+              expiredAt, 
+              'CLOSED' 
           );
           assessment.assessment_status = 'CLOSED'; 
       }
-  }
+    }
 
     return assessment;
   }

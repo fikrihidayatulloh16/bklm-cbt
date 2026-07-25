@@ -1,4 +1,5 @@
-import { Injectable, Inject, BadRequestException } from '@nestjs/common';
+// apps/api/src/assessment-session/assessment-session.service.ts
+import { Injectable, Inject, BadRequestException, NotFoundException } from '@nestjs/common';
 import { IAssessmentSessionRepository } from './ports/assessment-session.repository.port';
 import { ICacheRepository, I_CACHE_REPOSITORY } from 'src/common/cache/cache.repository.port';
 import { AssessmentSessionDomain } from './entities/assessment-session.domain';
@@ -44,6 +45,30 @@ export class AssessmentSessionService {
 
     // 🔥 KEMURNIAN LEVEL 10: Service melempar objek langsung
     await this.cacheRepo.setObj(cacheKey, data, 60); // TTL 1 menit
+
+    return data;
+  }
+
+  async getSessionByAssessmentId(assessmentId: string): Promise<AssessmentSessionDomain> {
+    // Penamaan kunci cache lebih spesifik agar tidak bentrok
+    const cacheKey = `session:detail:assessment:${assessmentId}`;
+
+    // 1. Coba ambil dari Cache
+    const cached = await this.cacheRepo.getObj<AssessmentSessionDomain>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    // 2. Jika Miss, ambil dari Repo
+    const data = await this.sessionRepo.findSessionByAssessmentId(assessmentId);
+    
+    // Perhatikan: Repo melempar null, Service yang memutuskan melempar Exception
+    if (!data) {
+      throw new NotFoundException('Sesi ujian tidak ditemukan');
+    }
+
+    // 3. Simpan ke Cache (Misal: 1 atau 5 menit)
+    await this.cacheRepo.setObj(cacheKey, data, 60);
 
     return data;
   }

@@ -7,7 +7,7 @@ export interface ISubmissionRepository {
   findDomainByStudent(assessmentId: string, studentName: string, className: string): Promise<SubmissionDomain | null>;
   
   // Menyimpan data baru atau memperbarui data lama
-  save(domain: SubmissionDomain): Promise<SubmissionDomain>;
+  createSubmission(assessmentId: string, studentName: string, className: string, gender: string): Promise<SubmissionDomain>;
 
   findOneSubmissionWithQuestion(submissionId: string) : Promise<SubmissionDomain>;
 

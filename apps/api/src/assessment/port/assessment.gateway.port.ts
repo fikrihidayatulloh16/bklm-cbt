@@ -8,4 +8,5 @@ export interface SessionValidationInfo {
 
 export interface ISessionGateway {
   getSession(assessmentId: string): Promise<SessionValidationInfo | null>;
+  
 }

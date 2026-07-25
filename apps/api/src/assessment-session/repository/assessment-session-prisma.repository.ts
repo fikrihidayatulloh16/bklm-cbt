@@ -54,4 +54,21 @@ export class AssessmentSessionPrismaRepository implements IAssessmentSessionRepo
 
     return sessions.map((session) => AssessmentSessionMapper.toDomain(session));
   }
+
+  async findSessionByAssessmentId(assessmentId: string): Promise<AssessmentSessionDomain | null> {
+    const sessionRecord = await this.prisma.assessmentSession.findFirst({
+      where: {
+        assessment_id: assessmentId // Sesuaikan dengan nama kolom di schema.prisma Anda
+      },
+      include: {
+        classes: true // Sertakan relasi jika Domain Anda membutuhkannya
+      }
+    });
+
+    if (!sessionRecord) return null;
+
+    // 🔥 KEMURNIAN DOMAIN: Transformasi dari Prisma Model ke Domain Model
+    // Gunakan mapper yang sudah Anda buat sebelumnya di proyek ini
+    return AssessmentSessionMapper.toDomain(sessionRecord); 
+  }
 }

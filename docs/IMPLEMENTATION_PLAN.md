@@ -1,6 +1,9 @@
 # Implementation Plan & Dev Log
 
 ## 🚧 [Current State] 
+- sudah selsai buat test e2e submission dan sudah di refactor
+- sudah buat assessment session agar bisa pilih per kelas
+- tapi harus ubah saat publish assessment karena harus milih beberapa kelas sehingga harus rombak lagi yang assessment publish
 
 ## 🚨 [URGENT/INTERRUPT] 
 *(Tempat untuk tugas darurat yang tiba-tiba muncul dan menahan tugas utama)*
@@ -78,7 +81,6 @@ Next.js version: 16.1.1 (Turbopack)
 
 **Langkah-langkah:**
 - [ ] Buat fungsi ...
-
 
 ---
 

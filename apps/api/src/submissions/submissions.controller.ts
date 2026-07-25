@@ -13,9 +13,10 @@ export class SubmissionsController {
   @HttpCode(HttpStatus.CREATED)
   async startSubmission(
     @Body() startSubmission: StartSubmissionDTO,
-    @Param('assessment_id') assessment_id: string,
+    @Param('assessmentId') assessment_id: string,
+    @Param('sessionId') session_id: string,
   ) {
-    const result = await this.submissionsService.startSubmission(startSubmission, assessment_id)
+    const result = await this.submissionsService.startSubmission(startSubmission, assessment_id, session_id)
      return {
       statuscode: HttpStatus.CREATED,
       message: 'Submission successfully initiated',

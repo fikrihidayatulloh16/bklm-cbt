@@ -5,8 +5,9 @@ import { AssessmentMapper } from './mapper/assessment.mapper';
 import { AssessmentRepository } from './repository/assessment.repository';
 import { SubmissionPrismaRepository } from 'src/submissions/repository/submissions.repository';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { I_SESSION_GATEWAY, ISessionGateway } from './port/assessment.gateway.port';
+import { I_SESSION_GATEWAY, ISessionGateway } from './port/session.gateway.port';
 import * as ExcelJS from 'exceljs';
+import { error } from 'console';
 
 @Injectable()
 export class AssessmentService {
@@ -39,7 +40,7 @@ export class AssessmentService {
     return await this.assessmentRepo.createAssessmentFromBank(dto, questionForNewAssessment, user_id);
   }
 
-  async publishAssessment(assessment_id: string) {
+  async publishAssessment(assessment_id: string, classIds: string[]) {
       const assessment = await this.assessmentRepo.findOneAssessmentForExam(assessment_id)
   
       //validasi keberadaaan ujian
@@ -54,8 +55,25 @@ export class AssessmentService {
       //Pembuatan created darui durasi
       const now = new Date();
       const globalDeadLine = new Date(now.getTime() + assessment.duration)
-  
-      return this.assessmentRepo.updateDeadlineAssessment(assessment_id, globalDeadLine, assessment.assessment_status = 'PUBLISHED')
+
+      // 4. Delegasi ke Modul Sesi via Gateway
+      const createSessionAssessment = await this.sessionGateway.createSession({
+        assessmentId: assessment_id,
+        endTime: globalDeadLine,
+        classIds: classIds, // 🔥 Oper kelas yang dipilih guru
+        // schoolId: schoolId  // 🔥 Oper ID sekolah untuk validasi di modul sesi
+      });
+
+      // 5. Update Status Ujian
+      // Catatan: Jika Anda berencana menghapus deadline dari tabel assessment di masa depan, 
+      // cukup gunakan updateStatus('PUBLISHED') saja.
+      await this.assessmentRepo.updateAssessmentStatus(
+          assessment_id, 
+          'PUBLISHED' // 🔥 Kirim langsung string-nya, bukan assignment statement
+      );
+
+      return { message: 'Ujian berhasil di-publish' };
+
     }
 
   async getAnalytics(assessmentId: string, className?: string) {
@@ -202,9 +220,8 @@ export class AssessmentService {
       // ✅ BENAR: Gunakan .getTime() pada objek Date
       if (now.getTime() >= expiredAt.getTime()) {
           // Update status jadi CLOSED
-          await this.assessmentRepo.updateDeadlineAssessment(
+          await this.assessmentRepo.updateAssessmentStatus(
               assessment.id, 
-              expiredAt, 
               'CLOSED' 
           );
           assessment.assessment_status = 'CLOSED'; 

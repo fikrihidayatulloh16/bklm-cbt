@@ -169,7 +169,7 @@ export class SubmissionPrismaRepository implements ISubmissionRepository {
                 assessment: { // <--- WAJIB INCLUDE INI
                     select: {
                         id: true,
-                        expired_at: true // Ambil deadline-nya sekalian
+                        // expired_at: true // Ambil deadline-nya sekalian
                     }
                 }
             }

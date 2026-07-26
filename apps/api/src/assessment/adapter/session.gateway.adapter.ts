@@ -1,5 +1,6 @@
+// apps/api/src/assessment/adapter/session.gateway.adapter.ts
 import { Injectable } from '@nestjs/common';
-import { ISessionGateway, SessionValidationInfo } from '../port/assessment.gateway.port';
+import { ISessionGateway, SessionValidationInfo, CreataeSessionPayload } from '../port/session.gateway.port';
 import { AssessmentSessionService } from '../../assessment-session/assessment-session.service'; // Panggil service aslinya
 
 @Injectable()
@@ -20,5 +21,17 @@ export class SessionServiceAdapter implements ISessionGateway {
       // Gunakan nullish coalescing (??) agar jika undefined, otomatis jadi array kosong
       classIds: sessionData.classIds ?? [], 
     };
+  }
+
+  async createSession(payload: CreataeSessionPayload): Promise<void> {
+    const now = new Date();
+
+    await this.sessionService.createSession({
+      name: 'Sesi Utama Ujian', // Nama default
+      start_time: now.toISOString(),
+      end_time: payload.endTime.toISOString(),
+      assessment_id: payload.assessmentId,
+      class_ids: payload.classIds // 🔥 Alirkan ID kelas ke service sesi
+    });
   }
 }

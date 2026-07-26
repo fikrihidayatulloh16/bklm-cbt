@@ -54,15 +54,15 @@ export class AssessmentRepository {
         };
     }
 
-    // async updateDeadlineAssessment(assessment_id: string, globalDeadLine, assessment_status) {
-    //     return await this.prisma.assessment.update({
-    //         where: { id: assessment_id },
-    //         data: {
-    //             assessment_status: assessment_status,
-    //             expired_at: globalDeadLine
-    //         }
-    //     })
-    // }
+    async updateAssessmentStatus(assessment_id: string, assessment_status) {
+        return await this.prisma.assessment.update({
+            where: { id: assessment_id },
+            data: {
+                assessment_status: assessment_status,
+                // expired_at: globalDeadLine
+            }
+        })
+    }
 
     async getDistinctStudentClass(assessmentId: string) {
         const results = await this.prisma.submission.groupBy({
@@ -136,7 +136,7 @@ export class AssessmentRepository {
     async findDeadlineAssessment(assessmentId: string) {
         return await this.prisma.assessment.findFirst({
             where: { id: assessmentId },
-            select: { expired_at: true, }
+            // select: { expired_at: true, }
         })
     }
 

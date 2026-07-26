@@ -8,6 +8,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { Response } from 'express';
 import { AssessmentExportService } from './assessment.export.service';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { PublishAssessmentDto } from './dto/publish-assessment.dto';
 
 @ApiTags('Assessment (Guru)')
 @UseGuards(AuthGuard('jwt'))
@@ -70,8 +71,27 @@ export class AssessmentController {
   }
 
   @Patch(':id/publish')
-  async publishAssessment(@Param('id') assessmentId: string) {
-    return await this.assessmentService.publishAssessment(assessmentId)
+  async publishAssessment(
+    @Param('id') assessmentId: string,
+    @Body() dto: PublishAssessmentDto,
+    @Req() req: any // Menangkap objek Request (Token JWT)
+  ) {
+    
+    // 💡 Asumsi: Data token JWT Anda (yang berisi user info) diletakkan di req.user
+    // Pastikan 'school_id' atau 'schoolId' sesuai dengan isi payload token/database Anda.
+    const schoolId = req.user.school_id; 
+
+    // Jika sistem Anda belum menerapkan relasi schoolId pada token guru, 
+    // Anda bisa melempar error di sini, atau mengambilnya lewat kueri terpisah.
+    if (!schoolId) {
+       // Opsional: Lempar error jika struktur user tidak punya schoolId
+    }
+
+    // Suntikkan 3 parameter yang diminta oleh Service!
+    return await this.assessmentService.publishAssessment(
+       assessmentId, 
+       dto.classIds, 
+    );
   }
   
   @Get(':id/export-excel')

@@ -41,10 +41,10 @@ describe('POST /submissions/:assessment_id/start (e2e)', () => {
     await seeder.seedMasterData(schoolId, userId);
 
     // 1. Assessment Aktif (Waktu ujian masih berlaku)
-    await seeder.seedAssessment(assessActiveId, userId, schoolId, 'ACTIVE');
+    await seeder.seedAssessment(assessActiveId, userId, schoolId, 10,'PUBLISHED');
     
     // 2. Assessment Basi (Waktu ujian sudah lewat)
-    await seeder.seedAssessment(assessExpiredId, userId, schoolId, 'TIMEOUT');
+    await seeder.seedAssessment(assessExpiredId, userId, schoolId, 10,'CLOSED');
 
     // 3. Siswa yang sudah menyelesaikan ujian di assessment aktif
     await seeder.seedSubmission('sub-start-finished', assessActiveId, 'FINISHED', 'Fikri Selesai');

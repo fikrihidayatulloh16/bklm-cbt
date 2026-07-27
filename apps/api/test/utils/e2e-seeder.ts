@@ -33,14 +33,19 @@ export class E2eSeeder {
     });
   }
 
-  async seedAssessment(id: string, userId: string, schoolId: string, status: 'ACTIVE' | 'TIMEOUT' | 'DRAFT') {
-    // 👇 PERBAIKAN: Deklarasikan tipe data secara eksplisit
-    let expiredAt: Date | null = null; 
+  async seedAssessment(
+    id: string, 
+    userId: string, 
+    schoolId: string, 
+    duration: number, 
+    status: 'CLOSED' | 'DRAFT' | 'PUBLISHED' // 🔥 Tambahkan PUBLISHED
+  ) {
+    let expiredAt: Date | undefined; 
 
-    if (status === 'TIMEOUT') {
+    if (status === 'CLOSED') {
       expiredAt = new Date();
       expiredAt.setMinutes(expiredAt.getMinutes() - 3);
-    } else if (status === 'ACTIVE') {
+    } else if (status === 'PUBLISHED') {
       expiredAt = new Date();
       expiredAt.setHours(expiredAt.getHours() + 2);
     }
@@ -51,9 +56,78 @@ export class E2eSeeder {
         title: `Ujian ${status}`,
         user_id: userId,
         school_id: schoolId,
-        expired_at: expiredAt, 
+        duration: duration, 
+        expired_at: expiredAt,
+        // 🔥 INI YANG LUPA ANDA MASUKKAN SEBELUMNYA!
+        assessment_status: status, 
       }
     });
+  }
+
+  async seedUpdateAssessment(id: string, userId: string, schoolId: string, duration: number, status: 'PUBLISHED' | 'TIMEOUT' | 'DRAFT') {
+      await this.prisma.assessment.update({
+      where: { id: `Ujian ${status}` },
+      data: {
+        id,
+        title: `Ujian ${status}`,
+        user_id: userId,
+        school_id: schoolId,
+        // 🔥 PERBAIKAN 2: Simpan durasi dari parameter ke dalam pangkalan data!
+        duration: duration, 
+        // expired_at: expiredAt, 
+      }
+    });
+    }
+
+  async seedQuestionBank(bankId: string, author_id: string) {
+    await this.prisma.questionBank.create({
+      data: {
+        id: bankId,
+        title: 'Bank Soal Skenario E2E',
+        description: 'Deskripsi bank soal E2E',
+        shared      : true,
+        author_id : author_id,
+      }
+    })
+
+    const questionBankId1 = `${bankId}-qb1`
+    await this.prisma.bankQuestion.create({
+      data: {
+        id: questionBankId1,
+        text: 'Berapa 1 + 1?',
+        category: 'Matematika Dasar',
+        type: 'MULTIPLE_CHOICE',
+        question_bank_id: bankId
+      }
+    })
+
+    const questionBankOptId1 = `${questionBankId1}-qbo01`
+    await this.prisma.bankQuestionOption.create({
+      data: {
+        id: questionBankOptId1,
+        label: 'Dua',
+        score: 10,
+        bank_question_id: questionBankId1
+      }
+    })
+
+    const questionBankOptId2 = `${questionBankId1}-qbo02`
+    await this.prisma.bankQuestionOption.create({
+      data: {
+        id: questionBankOptId2,
+        label: '3',
+        score: 0,
+        bank_question_id: questionBankId1
+      }
+    })
+  }
+
+  async seedQuestiontBank(id: string) {
+
+  }
+
+  async seedQuestiontBankOption(id: string) {
+
   }
 
   async seedQuestion(id: string, assessmentId: string, type: 'YES_NO' | 'MULTIPLE_CHOICE') {

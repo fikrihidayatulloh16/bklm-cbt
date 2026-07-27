@@ -38,7 +38,7 @@ describe('PUT /submissions/:id/answer (e2e)', () => {
     await seeder.seedMasterData(schoolId, userId);
 
     // 1. Data Ujian Aktif (Normal)
-    await seeder.seedAssessment('assess-ans-active', userId, schoolId, 'ACTIVE');
+    await seeder.seedAssessment('assess-ans-active', userId, schoolId, 10, 'PUBLISHED');
     await seeder.seedQuestion('q-valid', 'assess-ans-active', 'MULTIPLE_CHOICE');
     await seeder.seedQuestionOption('opt-valid', 'q-valid', 'Ya', 10);
     
@@ -46,7 +46,7 @@ describe('PUT /submissions/:id/answer (e2e)', () => {
     await seeder.seedSubmission('sub-ans-finished', 'assess-ans-active', 'FINISHED');
 
     // 2. Data Ujian Expired / Timeout
-    await seeder.seedAssessment('assess-ans-timeout', userId, schoolId, 'TIMEOUT');
+    await seeder.seedAssessment('assess-ans-timeout', userId, schoolId, 10,'CLOSED');
     await seeder.seedQuestion('q-nyasar', 'assess-ans-timeout', 'MULTIPLE_CHOICE');
     await seeder.seedQuestionOption('opt-nyasar', 'q-nyasar', 'Ya', 10);
     

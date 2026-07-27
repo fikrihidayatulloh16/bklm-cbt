@@ -32,6 +32,10 @@ export class AssessmentService {
 
     dto.duration = dto.duration * 60000
 
+    if (!dto.duration || dto.duration <= 0) {
+      throw new BadRequestException("durasi wajib ada dan harus lebih dari nol")
+    }
+
     return await this.assessmentRepo.createAssessmentFromBank(dto, questionForNewAssessment, user_id);
   }
 
@@ -40,6 +44,9 @@ export class AssessmentService {
   
       //validasi keberadaaan ujian
       if (!assessment) throw new NotFoundException("Ujian tidak ditemukan");
+
+      // console.log('isi asssessment di service: ', assessment);
+      
 
       //validai durasi ujian
       if (!assessment.duration) throw new BadRequestException("Durasi ujian belum diatur");

@@ -38,7 +38,7 @@ describe('PUT /submissions/:id/finish (e2e)', () => {
     await seeder.seedMasterData(schoolId, userId);
 
     // 1. Data untuk Skenario Aktif & Incomplete
-    await seeder.seedAssessment('assess-active', userId, schoolId, 'ACTIVE');
+    await seeder.seedAssessment('assess-active', userId, schoolId, 10,'PUBLISHED');
     await seeder.seedQuestion('q-finish-1', 'assess-active', 'MULTIPLE_CHOICE');
     await seeder.seedQuestion('q-finish-2', 'assess-active', 'MULTIPLE_CHOICE');
     await seeder.seedQuestionOption('opt-1', 'q-finish-1', 'Ya', 10);
@@ -49,7 +49,7 @@ describe('PUT /submissions/:id/finish (e2e)', () => {
     await seeder.seedSubmission('sub-already-finished', 'assess-active', 'FINISHED');
 
     // 2. Data untuk Skenario Timeout
-    await seeder.seedAssessment('assess-timeout', userId, schoolId, 'TIMEOUT');
+    await seeder.seedAssessment('assess-timeout', userId, schoolId, 10, 'CLOSED');
     await seeder.seedSubmission('sub-timeout', 'assess-timeout', 'IN_PROGRESS');
   });
 

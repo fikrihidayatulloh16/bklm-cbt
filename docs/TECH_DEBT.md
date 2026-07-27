@@ -1,5 +1,30 @@
 # Technical Debt
 
+## perbaiki di fitur force submit PRIORITY CRITICAL
+Observasi Kritis (Sparring Session) untuk forceCloseTimeouts
+Sebelum kita buat pengujiannya, mata sparring saya menangkap satu potensi bom waktu di kode Anda:
+
+TypeScript
+    const updatePromises = stuckSubmissions.map(async (sub) => {
+      const deadline = sub.assessment.expired_at;
+
+      // 🚨 BOM WAKTU DI SINI:
+      if (!deadline) {
+        throw new BadRequestException(`expired_at yang dimasukkan:${deadline}`)       
+      }
+      // ...
+**Kenapa ini bahaya?**
+Anda menggunakan Promise.all(updatePromises). Jika ada 100 siswa yang sedang ujian, dan entah bagaimana ada 1 siswa yang data expired_at-nya null, maka throw new BadRequestException ini akan meledakkan seluruh proses. Ke-99 siswa lainnya akan gagal ditutup paksa!
+
+Saran Perbaikan (Jangan diubah sekarang, tapi pikirkan nanti):
+Daripada throw exception, lebih baik kembalikan undefined atau catat log saja, agar siswa lain tetap bisa diproses:
+
+TypeScript
+if (!deadline) {
+  // Lewati siswa ini, biarkan siswa lain tetap diproses
+  return undefined; 
+}
+
 ## refactor agar clean
 ## Buat automated testing untuk menjaga aplikasi
 ## ubah saat registrasi tombol mulai ujian di nonaktifkan jikaa belum dibuka, kalau bisa tambahkaan menunggu atau antrean, jadi langsung masuk ketika dibukaa 

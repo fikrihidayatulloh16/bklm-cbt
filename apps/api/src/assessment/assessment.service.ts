@@ -16,11 +16,6 @@ export class AssessmentService {
     private submissionsRepo: SubmissionRepository,
   ) {}
 
-  async getDashboardStats(user_id) {
-    // Simpan data Assessment beserta relasi Question & Option secara bersamaan
-    return await this.assessmentRepo.getAssessmentStats(user_id);
-  }
-
   async createFromBank(dto: CreateAssessmentFromBankDto, user_id) {
     const sourceBank = await this.questionBankRepo.findCompleteBank(dto.question_bank_id);
 
@@ -150,6 +145,11 @@ export class AssessmentService {
       message: `Berhasil menutup paksa ${closedCount} siswa yang timeout.`,
       processed: closedCount 
     };
+  }
+
+  async getDashboardStats(user_id) {
+    // Simpan data Assessment beserta relasi Question & Option secara bersamaan
+    return await this.assessmentRepo.getAssessmentStats(user_id);
   }
 
   async findAssessmentResults(assessmentId: string, className?) {

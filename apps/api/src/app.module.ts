@@ -64,6 +64,10 @@ import { AssessmentSessionModule } from './assessment-session/assessment-session
     ClassModule,
     AssessmentSessionModule,
     GlobalCacheModule,
+    ...(process.env.NODE_ENV !== 'test' ? [
+      ScheduleModule.forRoot(),
+      WorkersModule,
+    ] : []),
   ],
   controllers: [AppController],
   providers: [

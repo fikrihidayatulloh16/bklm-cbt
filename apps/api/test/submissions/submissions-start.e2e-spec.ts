@@ -38,16 +38,23 @@ describe('POST /submissions/:assessment_id/start (e2e)', () => {
 
   beforeEach(async () => {
     await seeder.cleanDatabase();
-    await seeder.seedMasterData(schoolId, userId);
+    
+    // 🔥 Pastikan class-1 ikut dibuat
+    await seeder.seedMasterData(schoolId, userId, 'class-1');
 
     // 1. Assessment Aktif (Waktu ujian masih berlaku)
-    await seeder.seedAssessment(assessActiveId, userId, schoolId, 'ACTIVE');
+    // 🔥 Tambahkan ID sesi unik ('ses-start-active'), durasi (90), dan ID Kelas ('class-1')
+    await seeder.seedAssessment(
+        assessActiveId, userId, schoolId, 'ACTIVE', 'ses-start-active', 90, 'class-1'
+    );
     
     // 2. Assessment Basi (Waktu ujian sudah lewat)
-    await seeder.seedAssessment(assessExpiredId, userId, schoolId, 'TIMEOUT');
+    await seeder.seedAssessment(
+        assessExpiredId, userId, schoolId, 'TIMEOUT', 'ses-start-timeout', 90, 'class-1'
+    );
 
     // 3. Siswa yang sudah menyelesaikan ujian di assessment aktif
-    await seeder.seedSubmission('sub-start-finished', assessActiveId, 'FINISHED', 'Fikri Selesai');
+    await seeder.seedSubmission('sub-start-finished', assessActiveId, 'FINISHED', 'ses-start-active');
   });
 
   it('✅ [SUCCESS] GIVEN siswa baru & ujian aktif, WHEN hit endpoint start, THEN return 201 (Created) & cetak submission_id', async () => {

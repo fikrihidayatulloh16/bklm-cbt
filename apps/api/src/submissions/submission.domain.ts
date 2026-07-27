@@ -83,6 +83,13 @@ export class SubmissionDomain {
        // Lempar error khusus agar Service tahu harus melakukan auto-finish
        throw new SubmissionTimeoutError("Waktu ujian telah habis! Jawaban tidak tersimpan.");
     }
+
+    const validSessionEndTime = new Date(sessionEndTime); 
+
+    // Sekarang, gunakan validSessionEndTime untuk validasi, BUKAN sessionEndTime
+    if (currentTime.getTime() > validSessionEndTime.getTime()) {
+         throw new SubmissionDomainError("Waktu ujian telah habis! Jawaban tidak tersimpan.");
+    }
   }
 
   public validateCanFinish(

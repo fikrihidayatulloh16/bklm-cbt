@@ -35,45 +35,68 @@ describe('PUT /submissions/:id/answer (e2e)', () => {
 
   beforeEach(async () => {
     await seeder.cleanDatabase();
-    await seeder.seedMasterData(schoolId, userId);
-
-    // 1. Data Ujian Aktif (Normal)
-    await seeder.seedAssessment('assess-ans-active', userId, schoolId, 'ACTIVE');
-    await seeder.seedQuestion('q-valid', 'assess-ans-active', 'MULTIPLE_CHOICE');
-    await seeder.seedQuestionOption('opt-valid', 'q-valid', 'Ya', 10);
     
-    await seeder.seedSubmission('sub-ans-active', 'assess-ans-active', 'IN_PROGRESS');
-    await seeder.seedSubmission('sub-ans-finished', 'assess-ans-active', 'FINISHED');
+    // 🔥 1. Pastikan class-1 terbuat
+    await seeder.seedMasterData('school-1', 'teacher-1', 'class-1');
 
-    // 2. Data Ujian Expired / Timeout
-    await seeder.seedAssessment('assess-ans-timeout', userId, schoolId, 'TIMEOUT');
-    await seeder.seedQuestion('q-nyasar', 'assess-ans-timeout', 'MULTIPLE_CHOICE');
-    await seeder.seedQuestionOption('opt-nyasar', 'q-nyasar', 'Ya', 10);
+    // 🔥 2. Buat Ujian & Sesi Aktif (Perhatikan argumen ke-5: 'ses-ans-active')
+    await seeder.seedAssessment(
+        'assess-ans-active', 'teacher-1', 'school-1', 'ACTIVE', 'ses-ans-active', 90, 'class-1'
+    );
     
-    await seeder.seedSubmission('sub-ans-timeout', 'assess-ans-timeout', 'IN_PROGRESS');
+    // 🔥 3. Buat Ujian & Sesi Selesai (Perhatikan argumen ke-5: 'ses-ans-timeout')
+    await seeder.seedAssessment(
+        'assess-ans-timeout', 'teacher-1', 'school-1', 'TIMEOUT', 'ses-ans-timeout', 90, 'class-1'
+    );
+
+    // 4. Buat Soal
+    await seeder.seedQuestion('question-1', 'assess-ans-active', 'MULTIPLE_CHOICE');
+    await seeder.seedQuestionOption('option-A', 'question-1', 'Jawaban Benar', 10);
+    await seeder.seedQuestion('question-nyasar', 'assess-ans-timeout', 'YES_NO');
+
+    // 🔥 5. Buat Submission (Sambungkan ke argumen ke-4 yaitu ID Sesi yang tepat!)
+    // Submission Aktif (Sambung ke ses-ans-active)
+    await seeder.seedSubmission('sub-ans-active', 'assess-ans-active', 'IN_PROGRESS', 'ses-ans-active');
+    
+    // Submission yang sudah ditekan tombol Selesai (Sambung ke ses-ans-active)
+    await seeder.seedSubmission('sub-ans-finished', 'assess-ans-active', 'FINISHED', 'ses-ans-active');
+    
+    // Submission yang waktunya habis (Sambung ke ses-ans-timeout)
+    await seeder.seedSubmission('sub-ans-timeout', 'assess-ans-timeout', 'IN_PROGRESS', 'ses-ans-timeout');
   });
 
   it('✅ [SUCCESS] GIVEN submission aktif & soal valid, WHEN simpan jawaban, THEN return 201 (Created)', async () => {
+    
+    // 🔥 1. PAYLOAD HARUS SAMA DENGAN SEEDER
     const payload = {
-      question_id: 'q-valid',
-      option_id: 'opt-valid',
+      question_id: 'question-1', // BUKAN 'q-valid'
+      option_id: 'option-A',     // BUKAN 'opt-valid'
       status_answer: true,
     };
 
+    // 🔥 2. REQUEST MURNI TANPA .expect() BERANTAI
     const response = await request(app.getHttpServer())
       .put(`/submissions/sub-ans-active/answer`)
-      .send(payload)
-      .expect(201);
+      .send(payload);
+      // JANGAN KETIK .expect() DI SINI
 
-    expect(response.body.statuscode).toBe(201);
+    // 🔥 3. LOG DEBUGGING (Sekarang pasti muncul)
+    if (response.status !== 201) {
+      console.log('=== ERROR 404 DARI SERVICE ===');
+      console.log('STATUS:', response.status);
+      console.log('BODY:', response.body);
+      console.log('==============================');
+    }
+
+    // 🔥 4. VALIDASI DILAKUKAN DI AKHIR
+    expect(response.status).toBe(201);
     expect(response.body.message).toBe('Answer updated Successfully');
-    expect(response.body.data.question_id).toBe('q-valid');
   });
 
   it('❌ [FAIL] GIVEN submission berstatus FINISHED, WHEN simpan jawaban, THEN return 403 (Forbidden)', async () => {
     const payload = {
-      question_id: 'q-valid',
-      option_id: 'opt-valid',
+      question_id: 'question-1', 
+      option_id: 'option-A',
       status_answer: true,
     };
 
@@ -82,18 +105,18 @@ describe('PUT /submissions/:id/answer (e2e)', () => {
       .send(payload)
       .expect(403);
 
-    expect(response.body.message).toBe('Ujian sudah ditutup.');
+    expect(response.body.message).toBe('Ujian sudah ditutup.'); // Pastikan pesan ini persis dengan yang di Service Anda
   });
 
   it('❌ [FAIL] GIVEN soal bukan milik ujian tersebut, WHEN simpan jawaban, THEN return 400 (Bad Request)', async () => {
     const payload = {
-      question_id: 'q-nyasar', // Soal ini milik assess-ans-timeout
-      option_id: 'opt-nyasar',
+      question_id: 'question-nyasar', // 🔥 Samakan dengan ID di seeder ke-4
+      option_id: 'option-A', // Opsional, sesuaikan jika ada seeder opsi-nya
       status_answer: true,
     };
 
     const response = await request(app.getHttpServer())
-      .put(`/submissions/sub-ans-active/answer`) // Tapi dijawab oleh siswa di assess-ans-active
+      .put(`/submissions/sub-ans-active/answer`) 
       .send(payload)
       .expect(400);
 

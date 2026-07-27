@@ -33,13 +33,20 @@ describe('GET /submissions/:assessment_id/timeleft (e2e)', () => {
   });
 
   beforeEach(async () => {
-    await seeder.cleanDatabase();
-    await seeder.seedMasterData(schoolId, userId);
+    // 🔥 Pastikan class-1 ikut dibuat
+    await seeder.seedMasterData(schoolId, userId, 'class-1');
 
     // Siapkan 3 jenis Assessment untuk diuji
-    await seeder.seedAssessment('assess-timer-active', userId, schoolId, 'ACTIVE');
-    await seeder.seedAssessment('assess-timer-timeout', userId, schoolId, 'TIMEOUT');
-    await seeder.seedAssessment('assess-timer-draft', userId, schoolId, 'DRAFT');
+    // 🔥 Berikan ID sesi yang BERBEDA untuk ketiganya, beserta durasi dan ID kelas
+    await seeder.seedAssessment(
+        'assess-timer-active', userId, schoolId, 'ACTIVE', 'ses-timer-active', 90, 'class-1'
+    );
+    await seeder.seedAssessment(
+        'assess-timer-timeout', userId, schoolId, 'TIMEOUT', 'ses-timer-timeout', 90, 'class-1'
+    );
+    await seeder.seedAssessment(
+        'assess-timer-draft', userId, schoolId, 'DRAFT', 'ses-timer-draft', 90, 'class-1'
+    );
   });
 
   it('✅ [SUCCESS] GIVEN assessment aktif, WHEN hit timer, THEN return 200 & sisa waktu valid', async () => {

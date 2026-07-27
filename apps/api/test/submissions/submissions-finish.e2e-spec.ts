@@ -35,22 +35,31 @@ describe('PUT /submissions/:id/finish (e2e)', () => {
 
   beforeEach(async () => {
     await seeder.cleanDatabase();
-    await seeder.seedMasterData(schoolId, userId);
 
-    // 1. Data untuk Skenario Aktif & Incomplete
-    await seeder.seedAssessment('assess-active', userId, schoolId, 'ACTIVE');
+    // 🔥 1. Pastikan class-1 terbuat
+    await seeder.seedMasterData(schoolId, userId, 'class-1');
+
+    // 🔥 2. Data untuk Skenario Aktif & Incomplete (Sesi: 'ses-fin-active')
+    await seeder.seedAssessment(
+        'assess-active', userId, schoolId, 'ACTIVE', 'ses-fin-active', 90, 'class-1'
+    );
     await seeder.seedQuestion('q-finish-1', 'assess-active', 'MULTIPLE_CHOICE');
     await seeder.seedQuestion('q-finish-2', 'assess-active', 'MULTIPLE_CHOICE');
     await seeder.seedQuestionOption('opt-1', 'q-finish-1', 'Ya', 10);
     await seeder.seedQuestionOption('opt-2', 'q-finish-2', 'Ya', 10);
     
-    await seeder.seedSubmission('sub-incomplete', 'assess-active', 'IN_PROGRESS');
-    await seeder.seedSubmission('sub-complete', 'assess-active', 'IN_PROGRESS');
-    await seeder.seedSubmission('sub-already-finished', 'assess-active', 'FINISHED');
+    // Sambungkan submission ke sesi 'ses-fin-active'
+    await seeder.seedSubmission('sub-incomplete', 'assess-active', 'IN_PROGRESS', 'ses-fin-active');
+    await seeder.seedSubmission('sub-complete', 'assess-active', 'IN_PROGRESS', 'ses-fin-active');
+    await seeder.seedSubmission('sub-already-finished', 'assess-active', 'FINISHED', 'ses-fin-active');
 
-    // 2. Data untuk Skenario Timeout
-    await seeder.seedAssessment('assess-timeout', userId, schoolId, 'TIMEOUT');
-    await seeder.seedSubmission('sub-timeout', 'assess-timeout', 'IN_PROGRESS');
+    // 🔥 3. Data untuk Skenario Timeout (Sesi: 'ses-fin-timeout')
+    await seeder.seedAssessment(
+        'assess-timeout', userId, schoolId, 'TIMEOUT', 'ses-fin-timeout', 90, 'class-1'
+    );
+    
+    // Sambungkan submission ke sesi 'ses-fin-timeout'
+    await seeder.seedSubmission('sub-timeout', 'assess-timeout', 'IN_PROGRESS', 'ses-fin-timeout');
   });
 
   it('❌ [FAIL] GIVEN waktu masih ada & jawaban belum lengkap, WHEN finish, THEN return 400', async () => {

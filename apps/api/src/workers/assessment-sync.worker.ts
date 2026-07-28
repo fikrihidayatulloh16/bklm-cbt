@@ -75,3 +75,51 @@ export class AssessmentSyncWorker {
     }
   }
 }
+
+/**
+import { Injectable, Logger } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
+// Import dependencies...
+
+@Injectable()
+export class AssessmentSyncWorker extends BaseRedisSyncWorker<SyncAnswerDto> {
+  protected readonly logger = new Logger(AssessmentSyncWorker.name);
+
+  constructor(
+    redisBuffer: RedisBufferService,
+    private readonly answerRepo: AnswerRepository,
+  ) {
+    super(redisBuffer); // Berikan redisBuffer ke Kelas Induk
+  }
+
+  @Cron(CronExpression.EVERY_MINUTE)
+  async handleAnswerSync() {
+    await this.processSync(
+      'cbt:answers:*', // 1. Pola Key Redis
+      
+      // 2. Fungsi Mapping
+      (rawData) => {
+        const answers: SyncAnswerDto[] = [];
+        for (const item of rawData) {
+          const submissionId = item.key.split(':')[2];
+          for (const [questionId, rawJsonStr] of Object.entries(item.data)) {
+            const answerObj = JSON.parse(rawJsonStr as string);
+            answers.push({
+              submission_id: submissionId,
+              question_id: questionId,
+              ...answerObj,
+            });
+          }
+        }
+        return answers;
+      },
+      
+      // 3. Fungsi Database
+      async (data) => await this.answerRepo.bulkUpsertAnswers(data),
+      
+      // 4. Nama Entitas (Untuk Log)
+      'Jawaban Siswa'
+    );
+  }
+}
+ */

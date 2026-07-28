@@ -1,11 +1,14 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateAssessmentFromBankDto } from './dto/create/create-assessment-from-bank.dto';
 import { QuestionBankRepository } from 'src/question-bank/repository/question-bank.repository';
+import { Assessment } from './entities/assessment.entity';
 import { AssessmentMapper } from './mapper/assessment.mapper';
 import { AssessmentRepository } from './repository/assessment.repository';
 import { SubmissionRepository } from 'src/submissions/repository/submissions.repository';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as ExcelJS from 'exceljs';
+import { I_QUESTION_BANK_GATEWAY, IQuestionBankGateway } from './port/question-bank.gateway.port';
+import { I_ASSESSMENT_REPOSITORY, IAssessmentRepository } from './port/assessment.repository.interface';
 
 @Injectable()
 export class AssessmentService {
@@ -14,24 +17,54 @@ export class AssessmentService {
     private questionBankRepo: QuestionBankRepository,
     private assessmentRepo: AssessmentRepository,
     private submissionsRepo: SubmissionRepository,
+
+    @Inject(I_QUESTION_BANK_GATEWAY)
+    private readonly qbGateway: IQuestionBankGateway,
+
+    @Inject(I_ASSESSMENT_REPOSITORY)
+    private readonly iassessmentRepo: IAssessmentRepository,
   ) {}
 
-  async createFromBank(dto: CreateAssessmentFromBankDto, user_id) {
-    const sourceBank = await this.questionBankRepo.findCompleteBank(dto.question_bank_id);
-
-    if (!sourceBank) {
-      throw new NotFoundException('Question Bank Not Found');
+  async createFromBank(dto: CreateAssessmentFromBankDto, userId: string, schoolId?: string) {
+    // 1. AMBIL BAHAN BAKU (Lewat Gateway)
+    // Walaupun user bisa melihat list bank pakai findAllByUserId di frontend,
+    // Saat create, kita tetap butuh menarik detail 1 bank secara spesifik
+    const bank = await this.qbGateway.findOneQbId(dto.question_bank_id);
+    
+    if (!bank) {
+      throw new NotFoundException('Question Bank tidak ditemukan');
     }
 
-    const questionForNewAssessment = AssessmentMapper.mapFromBankQuestions(sourceBank.questions)
+    console.log('DTO: ', dto);
+    console.log('userid: ', userId);
+    console.log('schoolId: ', schoolId);
+    
 
-    dto.duration = dto.duration * 60000
+    try {
+      // 2. BENTUK DOMAIN (Validasi durasi dll ada di dalam sini)
+      const newAssessment = Assessment.createNew(dto.title, dto.duration, userId, schoolId);
+      
+      // Mapping dari bank ke format soal Assessment
+      const mappedQuestions = AssessmentMapper.mapFromBankQuestions(bank.questions);
+      newAssessment.attachQuestions(mappedQuestions);
 
-    if (!dto.duration || dto.duration <= 0) {
-      throw new BadRequestException("durasi wajib ada dan harus lebih dari nol")
+      console.log('newAssessment: ', newAssessment);
+      
+
+      // 3. SIMPAN KE DB (Prisma akan mengisi UUID secara otomatis)
+      const savedAssessment = await this.iassessmentRepo.createAssessmentFromBank(newAssessment);
+
+      return {
+        message: 'Assessment berhasil dibuat',
+        data: savedAssessment // Bisa dikembalikan langsung ke Controller!
+      };
+
+    } catch (error: any) {
+      if (error.message.includes('DomainError')) {
+        throw new BadRequestException(error.message.replace('DomainError: ', ''));
+      }
+      throw error;
     }
-
-    return await this.assessmentRepo.createAssessmentFromBank(dto, questionForNewAssessment, user_id);
   }
 
   async publishAssessment(assessment_id: string) {

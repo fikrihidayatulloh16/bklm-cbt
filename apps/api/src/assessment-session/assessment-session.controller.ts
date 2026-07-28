@@ -19,7 +19,7 @@ export class AssessmentSessionController {
 
   @Get('class/:classId/active')
   async getActiveSessionsForClass(@Param('classId') classId: string) {
-    const data = await this.sessionService.getActiveSessions(classId);
+    const data = await this.sessionService.getSessionByAssessmentId(classId);
     
     return {
       status: 'success',

@@ -5,7 +5,13 @@ import { QuestionBankRepository } from './repository/question-bank.repository';
 
 @Module({
   controllers: [QuestionBankController],
-  providers: [QuestionBankService, QuestionBankRepository],
-  exports: [QuestionBankRepository]
+  providers: [
+    QuestionBankService, 
+    QuestionBankRepository,
+  ],
+  exports: [
+    QuestionBankRepository,
+    QuestionBankService
+  ]
 })
 export class QuestionBankModule {}

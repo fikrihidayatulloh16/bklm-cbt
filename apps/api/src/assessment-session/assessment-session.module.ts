@@ -20,5 +20,8 @@ import { GlobalCacheModule } from 'src/common/cache/cache.module';
       useClass: AssessmentSessionPrismaRepository,
     },
   ],
+  exports:[
+    AssessmentSessionService,
+  ]
 })
 export class AssessmentSessionModule {}

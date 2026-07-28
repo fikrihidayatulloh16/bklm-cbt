@@ -29,8 +29,8 @@ export class AssessmentSessionService {
     return await this.sessionRepo.create(dto);
   }
 
-  async getActiveSessions(classId: string): Promise<AssessmentSessionDomain[]> {
-    const cacheKey = `sessions:active:class:${classId}`;
+  async getSessionByAssessmentId(assessmentId: string): Promise<AssessmentSessionDomain[]> {
+    const cacheKey = `sessions:active:class:${assessmentId}`;
 
     // 🔥 KEMURNIAN LEVEL 10: Service memanggil objek langsung
     const cached = await this.cacheRepo.getObj<AssessmentSessionDomain[]>(cacheKey);
@@ -40,7 +40,7 @@ export class AssessmentSessionService {
     }
 
     console.log('🐢 Cache miss, mengambil dari database');
-    const data = await this.sessionRepo.findActiveSessionsByClass(classId);
+    const data = await this.sessionRepo.findActiveSessionsByClass(assessmentId);
 
     // 🔥 KEMURNIAN LEVEL 10: Service melempar objek langsung
     await this.cacheRepo.setObj(cacheKey, data, 60); // TTL 1 menit

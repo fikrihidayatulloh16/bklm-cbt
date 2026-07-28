@@ -4,6 +4,7 @@ import { CreateAssessmentDto } from "../dto/create/create-assessment.dto";
 import { Prisma, PrismaClient } from "@prisma/client";
 import { CreateAssessmentFromBankDto } from "../dto/create/create-assessment-from-bank.dto";
 import { connect } from "http2";
+import { Assessment } from "../entities/assessment.entity";
 
 @Injectable()
 export class AssessmentRepository {
@@ -98,40 +99,108 @@ export class AssessmentRepository {
     });
     }
 
-    async createAssessmentFromBank(
-        dto: CreateAssessmentFromBankDto,
-        // Gunakan tipe dari Prisma agar VSCode bisa autocompletion
-        questionsData: Prisma.QuestionCreateWithoutAssessmentInput[], 
-        user_id: string
-    ) {
-        return this.prisma.assessment.create({
-        data: {
-            title: dto.title,
-            description: dto.description,
-            duration: dto.duration,
-            
-            // Relasi ke User (Penulis Soal)
-            user: {
-                connect: { id: user_id }
-            },
-            
-            // Relasi ke Sekolah (Opsional)
-            school: dto.school_id 
-                ? { connect: { id: dto.school_id } } 
-                : undefined,
+    // Fungsi baru ini menggantikan createAssessmentFromBank yang lama
+    async save(assessmentDomain: Assessment): Promise<any> {
 
-            // Relasi Nested Create Questions
-            questions: {
-            create: questionsData // Data yang sudah dimapping di Service
-            }
+    // Gunakan kode andalan Anda, tapi datanya diambil dari Entity!
+    return await this.prisma.assessment.create({
+        data: {
+        title: assessmentDomain.title,
+        
+        // ⚠️ Catatan: Jika description mau dipakai, pastikan Anda 
+        // menambahkannya ke parameter Assessment.createNew di Domain Entity ya!
+        description: assessmentDomain.description, 
+        
+        duration: assessmentDomain.durationMs, // Sudah aman divalidasi oleh Domain
+        
+        user: {
+            connect: { id: assessmentDomain.authorId }
+        },
+        
+        school: assessmentDomain.schoolId 
+            ? { connect: { id: assessmentDomain.schoolId } } 
+            : undefined,
+
+        // Array soal yang sudah di-attach di Service, kita tarik dari Domain
+        questions: {
+            create: assessmentDomain.questions 
+        }
         },
         include: {
-            questions: {
+        questions: {
             include: { options: true }
-            }
         }
-        });
+        }
+    });
     }
+
+    async createAssessmentFromBank(assessment: Assessment) { // 👈 Hanya menerima 1 entitas utuh
+    console.log('======= di assessment prisma repo =======');
+    console.log('Author ID:', assessment.authorId);
+    
+    // 1. Petakan (Map) format pertanyaan dari Domain ke format Prisma Nested Create
+    const questionsData = assessment.questions.map((q) => {
+      let mappedOptions = [];
+
+      // Cek apakah q.options itu ada dan merupakan ARRAY MURNI
+      if (Array.isArray(q.options)) {
+        mappedOptions = q.options.map((opt: any) => ({
+          label: opt.label,
+          score: opt.score,
+        }));
+      } 
+      // Cek apakah q.options sudah berbentuk Prisma Object { create: [...] } akibat Mapper
+      else if (q.options && Array.isArray(q.options.create)) {
+        mappedOptions = q.options.create.map((opt: any) => ({
+          label: opt.label,
+          score: opt.score,
+        }));
+      }
+
+      return {
+        text: q.text,
+        type: q.type,
+        category: q.category,
+        order: q.order || 1, // Beri nilai default jika order kosong
+        options: {
+          create: mappedOptions,
+        },
+      };
+    });
+
+    // 2. Simpan ke database menggunakan Getter dari Domain Entity
+    return this.prisma.assessment.create({
+      data: {
+        title: assessment.title,
+        description: assessment.description,
+        duration: assessment.durationMs, // 👈 Menggunakan Getter durationMs
+        
+        // Relasi ke User (Author)
+        user: {
+          connect: { id: assessment.authorId },
+        },
+
+        // Relasi ke School (Hanya dikoneksikan jika schoolId ada)
+        ...(assessment.schoolId && {
+          school: {
+            connect: { id: assessment.schoolId },
+          },
+        }),
+        
+        // Relasi ke Questions
+        questions: {
+          create: questionsData,
+        },
+      },
+      include: {
+        questions: {
+          include: {
+            options: true,
+          },
+        },
+      },
+    });
+  }
 
     async findDeadlineAssessment(assessmentId: string) {
         return await this.prisma.assessment.findFirst({

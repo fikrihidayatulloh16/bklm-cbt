@@ -1,5 +1,9 @@
 # Technical Debt
 
+## konfirmasi fungsi create sesi PRIORITY CRITICAL
+pastikan saat fungsi Create Sesi dipanggil, Anda sudah memberikan validasi agar tidak ada orang (Admin/Guru) yang tidak sengaja membuat Sesi ke-2 saat Sesi 1 belum selesai.
+(Tapi ini urusan nanti, tidak perlu dipikirkan sekarang agar fokus tidak pecah).
+
 ## perbaiki di fitur force submit PRIORITY CRITICAL
 Observasi Kritis (Sparring Session) untuk forceCloseTimeouts
 Sebelum kita buat pengujiannya, mata sparring saya menangkap satu potensi bom waktu di kode Anda:

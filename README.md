@@ -134,6 +134,20 @@ npx prisma studio
 docker-compose down
 ```
 
+## Automated Test Install
+
+1. Create .env.test in root and in apps/api
+
+2. install dotend.cle
+```Bash
+npm install -D dotenv-cli
+```
+
+3. Install Dependencies
+```Bash
+npm install
+```
+
 ---
 
 ## ⚡ Developer Guide (Getting Started)

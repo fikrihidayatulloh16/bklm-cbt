@@ -20,15 +20,6 @@ export class QuestionBankService {
     return await this.repo.createQuestionBank(dto, userId)
   }
 
-  async updateQuestionBank(questionBankId: string, params: UpdateQuestionBankParams) {
-    // Cek dulu barangnya ada gak (Penting untuk Update)
-    const existing = await this.repo.findOnlyQuestionBank(questionBankId);
-    if (!existing) throw new NotFoundException('Question Bank tidak ditemukan');
-
-    // Panggil Repo untuk melakukan operasi database yang rumit
-    return this.repo.updateWithNestedTransaction(questionBankId, params);
-  }
-
   private ValidateQuestionLogic(questions: CreateBankQuestionDto[]) {
     for (const q of questions) {
       if (q.type == 'MULTIPLE_CHOICE') {
@@ -46,6 +37,15 @@ export class QuestionBankService {
         if ( q.options.length < 2 ) { throw new BadRequestException(`Pertanyaan "${q.text}" minimal punya 2 jawaban skala`) }
       }
     }
+  }
+
+  async updateQuestionBank(questionBankId: string, params: UpdateQuestionBankParams) {
+    // Cek dulu barangnya ada gak (Penting untuk Update)
+    const existing = await this.repo.findOnlyQuestionBank(questionBankId);
+    if (!existing) throw new NotFoundException('Question Bank tidak ditemukan');
+
+    // Panggil Repo untuk melakukan operasi database yang rumit
+    return this.repo.updateWithNestedTransaction(questionBankId, params);
   }
 
   async findAllByAuthor(author_id) {

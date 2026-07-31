@@ -10,16 +10,16 @@ import { AssessmentSessionMapper } from '../mapper/assessment-session.mapper';
 export class AssessmentSessionPrismaRepository implements IAssessmentSessionRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(dto: CreateAssessmentSessionDto): Promise<AssessmentSessionDomain> {
+  async create(dto: AssessmentSessionDomain): Promise<AssessmentSessionDomain> {
     const session = await this.prisma.assessmentSession.create({
       data: {
-        name: dto.name,
-        start_time: new Date(dto.start_time),
-        end_time: new Date(dto.end_time),
-        assessment_id: dto.assessment_id,
+        name: dto._name,
+        start_time: new Date(dto._startTime),
+        end_time: new Date(dto._endTime),
+        assessment_id: dto._assessmentId,
         // Keajaiban Prisma: Mengikat banyak kelas sekaligus!
         classes: {
-          connect: dto.class_ids.map((id) => ({ id })),
+          connect: dto._classIds?.map((id) => ({ id })),
         },
       },
       // Beri tahu Prisma untuk mengembalikan data kelas yang baru saja diikat

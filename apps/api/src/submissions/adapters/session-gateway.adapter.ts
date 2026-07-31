@@ -1,6 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { ISessionGateway, SessionValidationInfo } from '../ports/session.gateway.port';
-import { ICacheRepository, I_CACHE_REPOSITORY } from 'src/common/cache/cache.repository.port';
+import { CacheTTL, ICacheRepository, I_CACHE_REPOSITORY } from 'src/common/cache/cache.repository.port';
 // 💡 Kita import Prisma langsung di sini jika Cache Miss
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -33,7 +33,7 @@ export class SessionGatewayAdapter implements ISessionGateway {
     };
 
     // 3. Simpan di Cache (Misal 5 menit) agar hit startSubmission selanjutnya ngebut!
-    await this.cache.setObj(cacheKey, validationInfo, 5);
+    await this.cache.setObj(cacheKey, validationInfo, CacheTTL.DEFAULT);
 
     return validationInfo;
   }

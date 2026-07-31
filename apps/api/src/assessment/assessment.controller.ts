@@ -8,6 +8,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { Response } from 'express';
 import { AssessmentExportService } from './assessment.export.service';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { PublishAssessmentDto } from './dto/publish-assessment.dto';
 
 @ApiTags('Assessment (Guru)')
 @UseGuards(AuthGuard('jwt'))
@@ -70,8 +71,13 @@ export class AssessmentController {
   }
 
   @Patch(':id/publish')
-  async publishAssessment(@Param('id') assessmentId: string) {
-    return await this.assessmentService.publishAssessment(assessmentId)
+  async publishAssessment(
+    @Param('id') assessmentId: string, 
+    @Body() dto: PublishAssessmentDto // 👈 TAMBAHKAN @Body() DI SINI
+  ) {
+    console.log('Di controller:', dto);
+    
+    return await this.assessmentService.publishAssessment(assessmentId, dto)
   }
   
   @Get(':id/export-excel')

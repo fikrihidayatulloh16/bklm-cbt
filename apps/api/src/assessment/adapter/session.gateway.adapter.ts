@@ -21,21 +21,21 @@ export class SessionServiceAdapter implements ISessionGateway {
 
     // 3. Petakan secara eksplisit dari Domain ke Port
     return {
-      endTime: activeSession.endTime, 
+      endTime: activeSession._endTime, 
       // Satu sesi mencakup banyak kelas, jika kosong jadikan array kosong
-      classIds: activeSession.classIds ?? [], 
+      classIds: activeSession._classIds ?? [], 
     };
   }
 
-  async createSession(payload: CreataeSessionPayload): Promise<void> {
-    const now = new Date();
-
-    await this.sessionService.createSession({
-      name: 'Sesi Utama Ujian', // Nama default
-      start_time: now.toISOString(),
-      end_time: payload.endTime.toISOString(),
-      assessment_id: payload.assessmentId,
-      class_ids: payload.classIds // 🔥 Alirkan ID kelas ke service sesi
-    });
+  async createSession(
+    assessmentId: string,
+    sessionName: string,
+    durationMs: number,
+    classIds: string[]
+  ): Promise<void> {
+    // 🔥 Delegasikan tugas ini ke pemilik aslinya!
+    await this.sessionService.createSession(
+      assessmentId, sessionName, durationMs, classIds
+    );
   }
 }

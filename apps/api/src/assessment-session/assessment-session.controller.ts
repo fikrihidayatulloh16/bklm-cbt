@@ -7,8 +7,13 @@ export class AssessmentSessionController {
   constructor(private readonly sessionService: AssessmentSessionService) {}
 
   @Post()
-  async createSession(@Body() dto: CreateAssessmentSessionDto) {
-    const data = await this.sessionService.createSession(dto);
+  async createSession(@Body() 
+  assessmentId: string,
+  sessionName: string,
+  durationMs: number,
+  classIds: string[]
+  ) {
+    const data = await this.sessionService.createSession(assessmentId, sessionName, durationMs, classIds);
     
     return {
       status: 'success',

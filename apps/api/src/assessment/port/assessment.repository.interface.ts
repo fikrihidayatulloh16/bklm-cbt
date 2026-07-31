@@ -11,4 +11,6 @@ export interface IAssessmentRepository {
   
     // Opsional jika Anda mau memisahkan fungsi create dari bank
     // createFromBank(assessment: Assessment, sourceQuestions: any[]): Promise<void>;
+  findOneAssessmentForExam(id: string): Promise<Assessment | null>;
+  updateStatus(id: string, status: string): Promise<void>;
 }

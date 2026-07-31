@@ -69,12 +69,18 @@ describe('PATCH /assessments/:id/publish (e2e)', () => {
 
   // --- SKENARIO PENGUJIAN ---
 
-  it('1. ❌ HARUS 404 JIKA UJIAN TIDAK DITEMUKAN', async () => {
+  it('TC01. ❌ HARUS 404 JIKA UJIAN TIDAK DITEMUKAN', async () => {
+    const payload = {
+      session_name: 'Sesi TC01'.toString(),
+      class_ids: [CLASS_ID],
+    };
+
     const response = await request(app.getHttpServer())
-      .patch(`/assessments/${RANDOM_UUID}/publish`); // Tidak perlu .send(payload) karena parameter via URL
+      .patch(`/assessments/${RANDOM_UUID}/publish`)
+      .send(payload);
 
     if (response.status !== 404) {
-      console.log('🚨 JARING 404 GAGAL. RESPONS ASLI:');
+      console.log('TC01🚨 JARING 404 GAGAL. RESPONS ASLI:');
       console.log(response.body);
     }
 
@@ -82,12 +88,18 @@ describe('PATCH /assessments/:id/publish (e2e)', () => {
     expect(response.body.message).toBe("Ujian tidak ditemukan");
   });
 
-  it('2. ❌ HARUS 400 JIKA DURASI UJIAN BELUM DIATUR', async () => {
+  it('TC02. ❌ HARUS 400 JIKA DURASI UJIAN BELUM DIATUR', async () => {
+    const payload = {
+      session_name: 'Sesi TC02'.toString(),
+      class_ids: [CLASS_ID],
+    };
+
     const response = await request(app.getHttpServer())
-      .patch(`/assessments/${ID_TANPA_DURASI}/publish`);
+      .patch(`/assessments/${ID_TANPA_DURASI}/publish`)
+      .send(payload);
 
     if (response.status !== 400) {
-      console.log('🚨 JARING 400 GAGAL. RESPONS ASLI:');
+      console.log('TC02 JARING 400 GAGAL. RESPONS ASLI:');
       console.log(response.body);
     }
 
@@ -96,8 +108,14 @@ describe('PATCH /assessments/:id/publish (e2e)', () => {
   });
 
   it('TC03. ❌ HARUS 403 JIKA UJIAN SUDAH DIPUBLISH', async () => {
+    const payload = {
+      session_name: 'Sesi TC03'.toString(),
+      class_ids: [CLASS_ID],
+    };
+
     const response = await request(app.getHttpServer())
-      .patch(`/assessments/${ID_SUDAH_PUBLISH}/publish`);
+      .patch(`/assessments/${ID_SUDAH_PUBLISH}/publish`)
+      .send(payload);
 
     if (response.status !== 403) {
       console.log('TC03 JARING 403 GAGAL. RESPONS ASLI:');
@@ -109,13 +127,19 @@ describe('PATCH /assessments/:id/publish (e2e)', () => {
     expect(response.body.message).toBe("Assessment sudaah di publish, silahkan tunggu hingga selesai"); 
   });
 
-  it('4. ✅ HARUS SUKSES MEMPUBLISH UJIAN', async () => {
+  it('TC04. ✅ HARUS SUKSES MEMPUBLISH UJIAN', async () => {
+    const payload = {
+      session_name: 'Sesi TC04'.toString(),
+      class_ids: [CLASS_ID],
+    };
+
     const response = await request(app.getHttpServer())
-      .patch(`/assessments/${ID_SIAP_PUBLISH}/publish`);
+      .patch(`/assessments/${ID_SIAP_PUBLISH}/publish`)
+      .send(payload);
 
     // Patch di NestJS biasanya mengembalikan 200 secara default (bukan 201)
     if (response.status !== 200) {
-      console.log('🚨 JARING SUKSES GAGAL. RESPONS ASLI:');
+      console.log('TC04🚨 JARING SUKSES GAGAL. RESPONS ASLI:');
       console.log(response.body);
     }
 

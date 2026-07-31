@@ -27,6 +27,19 @@ export class Assessment {
     return new Assessment(title, durationMs, authorId, schoolId);
   }
 
+  public publish() {
+    if (this._status === 'PUBLISHED') {
+      throw new Error("DomainError: Assessment sudah di-publish, silakan tunggu hingga selesai.");
+    }
+    
+    // Sabuk pengaman bisnis ekstra (Opsional tapi sangat direkomendasikan)
+    if (this._questions && this._questions.length === 0) {
+      throw new Error("DomainError: Tidak bisa mem-publish ujian yang belum memiliki soal.");
+    }
+
+    this._status = 'PUBLISHED';
+  }
+
   public attachQuestions(questions: any[]) {
     this._questions = questions;
   }

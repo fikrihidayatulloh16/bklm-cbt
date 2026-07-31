@@ -39,6 +39,28 @@ export class RedisCacheAdapter implements ICacheRepository, OnModuleDestroy {
     }
   }
 
+  async getOrSet<T>(key: string, fetcher: () => Promise<T>, ttlSeconds: number): Promise<T> {
+    // 1. Coba ambil dari Cache
+    const cachedData = await this.getObj<T>(key);
+    
+    if (cachedData !== null && cachedData !== undefined) {
+      this.logger.log(`⚡ CACHE HIT: [${key}]`);
+      return cachedData;
+    }
+
+    // 2. Jika Miss, ambil dari Database menggunakan fungsi callback (fetcher)
+    this.logger.log(`🐢 CACHE MISS: [${key}] -> Mengambil dari database`);
+    const dbData = await fetcher();
+
+    // 3. Simpan ke Cache jika datanya ada (mencegah caching nilai kosong/error jika tidak diinginkan)
+    if (dbData !== null && dbData !== undefined) {
+      await this.setObj(key, dbData, ttlSeconds);
+    }
+
+    // 4. Kembalikan data
+    return dbData;
+  }
+
   async invalidateByPattern(pattern: string): Promise<void> {
     try {
       let deletedCount = 0;

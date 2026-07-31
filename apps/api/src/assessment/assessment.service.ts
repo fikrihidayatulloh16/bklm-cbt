@@ -9,6 +9,9 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import * as ExcelJS from 'exceljs';
 import { I_QUESTION_BANK_GATEWAY, IQuestionBankGateway } from './port/question-bank.gateway.port';
 import { I_ASSESSMENT_REPOSITORY, IAssessmentRepository } from './port/assessment.repository.interface';
+import { I_CACHE_REPOSITORY, ICacheRepository } from 'src/common/cache/cache.repository.port';
+import { I_SESSION_GATEWAY, ISessionGateway } from './port/session.gateway.port';
+import { PublishAssessmentDto } from './dto/publish-assessment.dto';
 
 @Injectable()
 export class AssessmentService {
@@ -23,6 +26,12 @@ export class AssessmentService {
 
     @Inject(I_ASSESSMENT_REPOSITORY)
     private readonly iassessmentRepo: IAssessmentRepository,
+
+    @Inject(I_CACHE_REPOSITORY)
+    private readonly cacheRepo: ICacheRepository, // 👈 Port disuntikkan
+
+    @Inject(I_SESSION_GATEWAY)
+    private readonly sessionGatewsy: ISessionGateway, // 👈 Port disuntikkan
   ) {}
 
   async createFromBank(dto: CreateAssessmentFromBankDto, userId: string, schoolId?: string) {
@@ -54,6 +63,11 @@ export class AssessmentService {
       // 3. SIMPAN KE DB (Prisma akan mengisi UUID secara otomatis)
       const savedAssessment = await this.iassessmentRepo.createAssessmentFromBank(newAssessment);
 
+      // Delete previous cache 
+      if (savedAssessment) {
+        await this.cacheRepo.invalidateByPattern(`assessments:list:user:${userId}*`);
+      }
+
       return {
         message: 'Assessment berhasil dibuat',
         data: savedAssessment // Bisa dikembalikan langsung ke Controller!
@@ -67,27 +81,45 @@ export class AssessmentService {
     }
   }
 
-  async publishAssessment(assessment_id: string) {
-      const assessment = await this.assessmentRepo.findOneAssessmentForExam(assessment_id)
-  
-      //validasi keberadaaan ujian
-      if (!assessment) throw new NotFoundException("Ujian tidak ditemukan");
+  async publishAssessment(assessmentId: string, dto: PublishAssessmentDto) {
+    console.log('assessment service fungsi publish assesment: ');
+    console.log('dto:', dto);
+    console.log('assessmentId: ', assessmentId);
+    
+    
+    const assessment = await this.iassessmentRepo.findOneAssessmentForExam(assessmentId);
+    if (!assessment) throw new NotFoundException("Ujian tidak ditemukan");
 
-      // console.log('isi asssessment di service: ', assessment);
-      
+    try {
+      // 1. DOMAIN LOGIC DIRI SENDIRI: Ubah status Assessment
+      assessment.publish();
 
-      //validai durasi ujian
-      if (!assessment.duration) throw new BadRequestException("Durasi ujian belum diatur");
+      // 2. SIMPAN STATUS ASSESSMENT (Diri Sendiri)
+      await this.iassessmentRepo.updateStatus(assessmentId, assessment.status);
 
-      //validasi publikasi ujian
-      if ( assessment.assessment_status === 'PUBLISHED' ) {throw new ForbiddenException('Assessment sudaah di publish, silahkan tunggu hingga selesai')}
-  
-      //Pembuatan created darui durasi
-      const now = new Date();
-      const globalDeadLine = new Date(now.getTime() + assessment.duration)
-  
-      return this.assessmentRepo.updateDeadlineAssessment(assessment_id, globalDeadLine, assessment.assessment_status = 'PUBLISHED')
+      // 3. MINTA TOLONG TETANGGA BUATKAN SESI (Lewat Gateway/Port)
+      await this.sessionGatewsy.createSession(
+        assessmentId,
+        dto.session_name,
+        assessment.durationMs,
+        dto.class_ids
+      );
+
+      // 4. CACHE INVALIDATION
+      await this.cacheRepo.invalidateByPattern(`assessments:list:user:${assessment.authorId}*`);
+      await this.cacheRepo.invalidateByPattern(`sessions:active:class:${assessment.id}*`);
+
+      return {
+        message: "Ujian berhasil dipublish dan sesi telah dibuka."
+      };
+
+    } catch (error: any) {
+      if (error.message.includes('DomainError')) {
+        throw new BadRequestException(error.message.replace('DomainError: ', ''));
+      }
+      throw error;
     }
+  }
 
   async getAnalytics(assessmentId: string, className?: string) {
     // 1. Ambil Ranking Siswa (Code lama, tetap dipakai)
@@ -186,6 +218,7 @@ export class AssessmentService {
   }
 
   async findAssessmentResults(assessmentId: string, className?) {
+    console.log('fungsi 1 halaman mengambil detail satu assessment');
     return await this.assessmentRepo.findAssessmentResults(assessmentId, className);
   }
 
@@ -216,6 +249,9 @@ export class AssessmentService {
   //mengambil assesment unik dan menghitung jumlah soal dan siswa submit
   async findOneAssessmentWithDetail(id: string) {
     const assessment = await this.assessmentRepo.findOneAssessmentWithDetail(id);
+
+    console.log('fungsi 2 halaman mengambil detail satu assessment');
+    
 
     if (!assessment) {
       // Opsional: Throw error di sini atau di controller jika tidak ketemu return null;

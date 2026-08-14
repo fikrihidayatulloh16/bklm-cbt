@@ -1,40 +1,28 @@
-import { Injectable, Inject } from '@nestjs/common';
+// apps/api/src/submissions/adapters/session-gateway.adapter.ts
+import { Injectable } from '@nestjs/common';
 import { ISessionGateway, SessionValidationInfo } from '../ports/session.gateway.port';
-import { CacheTTL, ICacheRepository, I_CACHE_REPOSITORY } from 'src/common/cache/cache.repository.port';
-// 💡 Kita import Prisma langsung di sini jika Cache Miss
-import { PrismaService } from 'src/prisma/prisma.service';
+import { AssessmentSessionService } from '../../assessment-session/assessment-session.service';
 
 @Injectable()
-export class SessionGatewayAdapter implements ISessionGateway {
-  constructor(
-    @Inject(I_CACHE_REPOSITORY) private readonly cache: ICacheRepository,
-    private readonly prisma: PrismaService
-  ) {}
+export class SessionServiceAdapter implements ISessionGateway {
+  constructor(private readonly sessionService: AssessmentSessionService) {}
 
-  async getSessionForValidation(sessionId: string): Promise<SessionValidationInfo | null> {
-    const cacheKey = `session:validation:${sessionId}`;
+  async getSession(sessionId: string): Promise<SessionValidationInfo | null> {
+    const sessionData = await this.sessionService.getSessionById(sessionId);
 
-    // 1. Coba dari Cache dulu
-    const cached = await this.cache.getObj<SessionValidationInfo>(cacheKey);
-    if (cached) return cached;
+    // 1. Karena kembaliannya Array, kita cek apakah array-nya kosong
+    if (!sessionData) return null;
 
-    // 2. Jika tidak ada di Cache, ambil dari Database
-    // (Perhatikan: Modul Submission HANYA mengambil data yang ia butuhkan)
-    const session = await this.prisma.assessmentSession.findUnique({
-      where: { id: sessionId },
-      include: { classes: true }
-    });
+    // 2. Ambil sesi pertama yang ditemukan dari dalam Array
+    // const session = sessionData[0];
 
-    if (!session) return null;
+    console.log(`submission session gateway \n sessionId: ${sessionId} \n sessiondata: ${sessionData}` );
+    
 
-    const validationInfo: SessionValidationInfo = {
-      endTime: session.end_time,
-      classIds: session.classes.map(c => c.id) // atau c.name tergantung desain Anda
+    return {
+      // 3. Panggil properti TEPAT sesuai yang tertera di Domain Anda (_endTime & _classIds)
+      endTime: new Date(sessionData._endTime),
+      classIds: sessionData._classIds ?? [], 
     };
-
-    // 3. Simpan di Cache (Misal 5 menit) agar hit startSubmission selanjutnya ngebut!
-    await this.cache.setObj(cacheKey, validationInfo, CacheTTL.DEFAULT);
-
-    return validationInfo;
   }
 }

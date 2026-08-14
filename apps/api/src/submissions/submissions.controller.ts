@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, Put } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, Put, ForbiddenException } from '@nestjs/common';
 import { SubmissionsService } from './submissions.service';
 // import { CreateSubmissionDto } from './dto/create-submission.dto';
 import { SaveAnswerDTO } from './dto/save-answers,dto';
@@ -9,18 +9,44 @@ import { Assessment } from 'src/common/decorators/assessment.decorator'
 export class SubmissionsController {
   constructor(private readonly submissionsService: SubmissionsService) {}
 
-  @Post(':assessment_id/start')
+  @Post(':assessmentId/session/:sessionId/start')
   @HttpCode(HttpStatus.CREATED)
   async startSubmission(
     @Body() startSubmission: StartSubmissionDTO,
-    @Param('assessment_id') assessment_id: string,
+    @Param('assessmentId') assessment_id: string,
+    @Param('sessionId') session_id: string,
   ) {
-    const result = await this.submissionsService.startSubmission(startSubmission, assessment_id)
-     return {
-      statuscode: HttpStatus.CREATED,
-      message: 'Submission successfully initiated',
-      data: result
-     }
+    console.log('memasuki endpoint submission start di submission \n', startSubmission, assessment_id, session_id);
+
+    try {
+      console.log('memasuki endpoint submission start di submission');
+      const result = await this.submissionsService.startSubmission(startSubmission, assessment_id, session_id);
+      
+      return {
+        statuscode: HttpStatus.CREATED,
+        message: 'Submission successfully initiated',
+        data: result
+      };
+    } catch (error: any) {
+      // 🔥 TERJEMAHKAN ERROR DOMAIN KE HTTP 403 / 400
+      console.error("🚨 CRASH DI CONTROLLER:", error);
+      if (error.name === 'SubmissionDomainError') {
+        // Karena ini urusan "hak akses" & "waktu habis", 403 Forbidden sangat tepat
+        throw new ForbiddenException(error.message); 
+      }
+      
+      // Jika itu BadRequestException bawaan (dari validasi DTO) atau lainnya, biarkan lewat
+      throw error;
+    }
+    
+    // const result = await this.submissionsService.startSubmission(startSubmission, assessment_id, session_id)
+    //  return {
+    //   statuscode: HttpStatus.CREATED,
+    //   message: 'Submission successfully initiated',
+    //   data: result
+    //  }
+
+     
   }
 
   @Get(':id')
@@ -28,9 +54,17 @@ export class SubmissionsController {
     return await this.submissionsService.getUniqueSubmissionWithQuestions(subMissionId);
   }
 
-  @Get(':assessment_id/timeleft')
-  async getTimeLeft(@Param('assessment_id') assessment_id: string) {
-    return await this.submissionsService.getTimer(assessment_id);
+  @Get(':assessment_id/session/:session_id/timeleft')
+  async getTimer(
+    @Param('assessment_id') assessmentId: string,
+    @Param('session_id') sessionId: string
+  ) {
+    const data = await this.submissionsService.getTimer(assessmentId, sessionId);
+    return {
+      statuscode: 200,
+      message: 'Timer berhasil diambil',
+      data,
+    };
   }
 
   @Put(':id/answer')
@@ -47,14 +81,14 @@ export class SubmissionsController {
      }
   }
 
-  @Put(':id/finish')
+  @Put(':id/session/:session_id/finish')
   @HttpCode(HttpStatus.OK) // Ubah jadi OK (200)
   async finish(
-    @Param('id') id: string
-    // @Body() saveAnswer: SaveAnswerDTO <-- HAPUS INI, finish tidak butuh body
+    @Param('id') id: string,
+    @Param('session_id') sessionId: string
   ) {
     // PANGGIL SERVICE FINISH, BUKAN SAVE ANSWER
-    const result = await this.submissionsService.finish(id);
+    const result = await this.submissionsService.finish(id, sessionId);
     
      return {
       statuscode: HttpStatus.OK,

@@ -1,3 +1,4 @@
+// apps/api/test/assessment-session.e2e-spec.ts
 const request = require('supertest');
 import { describe, it, expect, beforeAll, beforeEach, afterAll } from '@jest/globals';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -84,7 +85,7 @@ describe('AssessmentSessionModule (e2e)', () => {
   });
 
   describe('POST /assessment-sessions', () => {
-    it('Harus berhasil (201) membuat sesi ujian dan mengikatnya ke kelas', async () => {
+    it('TC01 Harus berhasil (201) membuat sesi ujian dan mengikatnya ke kelas', async () => {
       const now = new Date();
       const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
@@ -96,10 +97,18 @@ describe('AssessmentSessionModule (e2e)', () => {
         class_ids: [classRPL1, classRPL2], // Ikat ke 2 kelas sekaligus
       };
 
+      console.log('TC01 PAYLOAD: ', payload);
+      
+
       const response = await request(app.getHttpServer())
         .post('/assessment-sessions')
         .send(payload)
         .expect(201);
+
+      if (response != 201) {
+        console.log('TC01 PAYLOAD: ', payload);
+        console.log('TC01 response: ', response.body);
+      }
 
       expect(response.body.status).toBe('success');
       expect(response.body.data.name).toBe('Sesi Pagi X RPL');
@@ -108,7 +117,7 @@ describe('AssessmentSessionModule (e2e)', () => {
       expect(response.body.data.classIds).toContain(classRPL2);
     });
 
-    it('Harus menolak (400) jika start_time lebih besar dari end_time', async () => {
+    it('TC02 Harus menolak (400) jika start_time lebih besar dari end_time', async () => {
       const now = new Date();
       const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
@@ -120,20 +129,30 @@ describe('AssessmentSessionModule (e2e)', () => {
         class_ids: [classRPL1],
       };
 
+      console.log('TC02 PAYLOAD: ', invalidPayload);
+
       const response = await request(app.getHttpServer())
         .post('/assessment-sessions')
         .send(invalidPayload)
         .expect(400);
+
+      if (response != 400) {
+        console.log('TC02 GAGAL, CAUSE: ', response.body);
+      }
+      
+      
 
       expect(response.body.message).toContain('Waktu mulai harus lebih awal dari waktu selesai');
     });
   });
 
   describe('GET /assessment-sessions/class/:classId/active', () => {
-    it('Harus mengembalikan sesi (200) yang sedang aktif untuk kelas tertentu', async () => {
+    it('TC 03 Harus mengembalikan sesi (200) yang sedang aktif untuk kelas tertentu', async () => {
       const now = new Date();
       const past = new Date(now.getTime() - 10000); // 10 detik lalu
       const future = new Date(now.getTime() + 10000); // 10 detik ke depan
+
+      console.log('01 - membuat session');
 
       // Suntik data sesi aktif secara manual ke database
       await prisma.assessmentSession.create({
@@ -151,8 +170,16 @@ describe('AssessmentSessionModule (e2e)', () => {
         .get(`/assessment-sessions/class/${classRPL1}/active`)
         .expect(200);
 
+      if (resRPL1) {
+        console.log('TC03 GAGAL, STATUS: ', resRPL1.status);
+        console.log('TC03 GAGAL, CAUSE: ', resRPL1.body);
+      }
+
       expect(resRPL1.body.data.length).toBe(1);
       expect(resRPL1.body.data[0].name).toBe('Sesi Sedang Berlangsung');
+
+      console.log('tc03 length: ', resRPL1.body.data.length);
+      
 
       // Tes akses dari RPL 2 (Harus kosong karena tidak diikat ke kelas ini)
       const resRPL2 = await request(app.getHttpServer())
@@ -162,7 +189,7 @@ describe('AssessmentSessionModule (e2e)', () => {
       expect(resRPL2.body.data.length).toBe(0);
     });
 
-    it('Harus mengembalikan sesi dari Cache (200) pada pemanggilan kedua', async () => {
+    it('TC04Harus mengembalikan sesi dari Cache (200) pada pemanggilan kedua', async () => {
       // 1. Panggilan Pertama (Cache Miss -> Ambil dari DB -> Simpan ke Redis)
       const responseSatu = await request(app.getHttpServer())
         .get(`/assessment-sessions/class/${classRPL1}/active`)

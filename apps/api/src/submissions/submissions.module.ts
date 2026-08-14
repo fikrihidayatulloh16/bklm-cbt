@@ -8,14 +8,39 @@ import { AnswerRepository } from './repository/answer.repository';
 import { AssessmentModule } from 'src/assessment/assessment.module';
 import { SubmissionsGateway } from './submissions.gateway';
 import { SyncAnswerDto } from './dto/save-answers,dto';
+import { I_SUBMISSION_REPOSITORY } from './ports/submission.repository.port';
+import { I_SESSION_GATEWAY } from './ports/session.gateway.port';
+import { SessionServiceAdapter } from './adapters/session-gateway.adapter';
+import { AssessmentSessionModule } from 'src/assessment-session/assessment-session.module';
 
 
 @Module({
   imports: [
-    forwardRef(() => AssessmentModule)
+    forwardRef(() => AssessmentModule),
+    AssessmentSessionModule
   ],
   controllers: [SubmissionsController],
-  providers: [SubmissionsService, SubmissionRepository, QuestionRepository, AnswerRepository, SubmissionsGateway],
-  exports: [SubmissionRepository, QuestionRepository, AnswerRepository, SubmissionsGateway]
+  providers: [
+    SubmissionsService, 
+    SubmissionRepository, 
+    QuestionRepository, 
+    AnswerRepository, 
+    SubmissionsGateway,
+    {
+      provide: I_SUBMISSION_REPOSITORY,
+      useClass: SubmissionRepository,
+    },
+    {
+      provide: I_SESSION_GATEWAY,
+      useClass: SessionServiceAdapter
+    },
+  ],
+  exports: [
+    SubmissionsService, 
+    SubmissionRepository, 
+    QuestionRepository, 
+    AnswerRepository, 
+    SubmissionsGateway
+  ]
 })
 export class SubmissionsModule {}

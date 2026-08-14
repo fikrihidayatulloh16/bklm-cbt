@@ -31,27 +31,93 @@ export class AssessmentSessionPrismaRepository implements IAssessmentSessionRepo
     return AssessmentSessionMapper.toDomain(session);
   }
 
-  async findActiveSessionsByClass(classId: string): Promise<AssessmentSessionDomain[]> {
-    const now = new Date();
+  // 🔥 FUNGSI BARU UNTUK MENCARI 1 SESI (PENTING UNTUK START SUBMISSION)
+  async findSessionBySessionId(sessionId: string): Promise<AssessmentSessionDomain | null> {
+    const data = await this.prisma.assessmentSession.findUnique({
+      where: { id: sessionId },
+      include: {
+        classes: true, // 🚨 WAJIB di-include agar tahu sesi ini untuk kelas mana saja
+      },
+    });
 
-    const sessions = await this.prisma.assessmentSession.findMany({
+    if (!data) return null;
+
+    // Mapper: Mengubah dari format Prisma ke format Domain
+    return new AssessmentSessionDomain(
+      data.id,
+      data.name,
+      data.start_time,
+      data.end_time,
+      data.assessment_id,
+      data.classes.map((c) => c.id) // Mengekstrak array of string (classId)
+    );
+  }
+
+  // 🔥 FUNGSI LAMA YANG DIPERBAIKI (Mencari banyak sesi by Assessment)
+  async findActiveSessionsByAssessmentId(assessmentId: string): Promise<AssessmentSessionDomain[]> {
+    const now = new Date();
+    
+    const data = await this.prisma.assessmentSession.findMany({
       where: {
-        // 1. Sesi tersebut harus terkait dengan Class ID ini
-        classes: {
-          some: { id: classId },
+        assessment_id: assessmentId,
+        // (Opsional) Filter hanya sesi yang belum berakhir
+        end_time: {
+          gt: now,
         },
-        // 2. Waktu sekarang harus berada di antara start_time dan end_time
-        start_time: { lte: now },
-        end_time: { gte: now },
       },
       include: {
         classes: true,
       },
-      orderBy: {
-        start_time: 'asc', // Urutkan dari yang paling cepat dimulai
+    });
+
+    return data.map(
+      (session) =>
+        new AssessmentSessionDomain(
+          session.id,
+          session.name,
+          session.start_time,
+          session.end_time,
+          session.assessment_id,
+          session.classes.map((c) => c.id)
+        )
+    );
+  }
+
+  async findActiveSessionsByClassId(classId: string): Promise<AssessmentSessionDomain[]> {
+    const now = new Date();
+
+    const data = await this.prisma.assessmentSession.findMany({
+      where: {
+        // 🔥 MAGIC PRISMA: Cari Sesi yang memiliki kelas dengan ID ini
+        classes: {
+          some: {
+            id: classId,
+          },
+        },
+        // Logika "Sedang Aktif": Sekarang harus lebih besar dari Start, dan kurang dari End
+        start_time: {
+          lte: now,
+        },
+        end_time: {
+          gte: now,
+        },
+      },
+      include: {
+        classes: true, // Sertakan data kelas jika Domain membutuhkannya
       },
     });
 
-    return sessions.map((session) => AssessmentSessionMapper.toDomain(session));
+    // Mapper Prisma ke Domain
+    return data.map(
+      (session) =>
+        new AssessmentSessionDomain(
+          session.id,
+          session.name,
+          session.start_time,
+          session.end_time,
+          session.assessment_id,
+          session.classes.map((c) => c.id)
+        )
+    );
   }
 }

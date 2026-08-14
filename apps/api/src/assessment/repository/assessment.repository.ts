@@ -4,10 +4,11 @@ import { CreateAssessmentDto } from "../dto/create/create-assessment.dto";
 import { Prisma, PrismaClient } from "@prisma/client";
 import { CreateAssessmentFromBankDto } from "../dto/create/create-assessment-from-bank.dto";
 import { connect } from "http2";
-import { Assessment } from "../entities/assessment.entity";
+import { Assessment, AssessmentStatus } from "../entities/assessment.entity";
+import { IAssessmentRepository } from "../port/assessment.repository.interface";
 
 @Injectable()
-export class AssessmentRepository {
+export class AssessmentRepository implements IAssessmentRepository {
     constructor(private prisma: PrismaService) {}
 
     async getAssessmentStats(userId: string) {
@@ -55,15 +56,39 @@ export class AssessmentRepository {
         };
     }
 
-    async updateDeadlineAssessment(assessment_id: string, globalDeadLine, assessment_status) {
-        return await this.prisma.assessment.update({
-            where: { id: assessment_id },
-            data: {
-                assessment_status: assessment_status,
-                expired_at: globalDeadLine
-            }
-        })
-    }
+    // async updateDeadlineAssessment(assessment_id: string, globalDeadLine, assessment_status) {
+    //     return await this.prisma.assessment.update({
+    //         where: { id: assessment_id },
+    //         data: {
+    //             assessment_status: assessment_status,
+    //             expired_at: globalDeadLine
+    //         }
+    //     })
+    // }
+
+    async findOneAssessmentByAssessmentId(id: string): Promise<Assessment | null> {
+    // 1. Prisma mengambil objek mentah
+    const rawData = await this.prisma.assessment.findUnique({
+      where: { id },
+      include: { questions: true }
+      // include: { questions: true } // Aktifkan jika logika publish Anda butuh cek jumlah soal
+    });
+
+    if (!rawData) return null;
+
+    // 2. 🔥 REHIDRASI: Bangkitkan menjadi Class Assessment
+    return Assessment.fromDatabase(
+      rawData.id,
+      rawData.title,
+      rawData.description,
+      rawData.duration, 
+      rawData.user_id,
+      rawData.assessment_status as AssessmentStatus,
+      rawData.school_id || undefined,
+      rawData.questions
+      // rawData.questions // Jika Anda meng-include questions di atas
+    );
+  }
 
     async getDistinctStudentClass(assessmentId: string) {
         const results = await this.prisma.submission.groupBy({
@@ -83,7 +108,7 @@ export class AssessmentRepository {
         return results.map(row => row.class_name);
     }
 
-    async findmanyAnswerByAssessmentIdClassName(assessmentId: string, className?: string) {
+    async findmanyAnswerByAssessmentIdClassName(assessmentId: string, className?: string): Promise<any[]> {
         return await this.prisma.answer.findMany({
         where: {
             submission: { 
@@ -133,8 +158,40 @@ export class AssessmentRepository {
         }
     });
     }
+    async updateStatus(id: string, status: string): Promise<Assessment | null> {
+        // try {
+            // 1. Update ke PostgreSQL via Prisma
+            const updatedData = await this.prisma.assessment.update({
+            where: { id },
+            data: {
+                assessment_status: status as any, // "any" atau sesuaikan dengan enum Prisma Anda
+            },
+            // Ambil sekalian soalnya agar Entitas yang dikembalikan tidak "cacat"
+            include: { questions: true } 
+            });
 
-    async createAssessmentFromBank(assessment: Assessment) { // 👈 Hanya menerima 1 entitas utuh
+            // 2. Rehidrasi kembali menjadi Ksatria Domain
+            return Assessment.fromDatabase(
+            updatedData.id,
+            updatedData.title,
+            updatedData.description,
+            updatedData.duration,
+            updatedData.user_id,
+            updatedData.assessment_status as AssessmentStatus,
+            updatedData.school_id || undefined,
+            updatedData.questions
+            );
+        // } 
+        // catch (error) {
+        //     // Handle jika data tidak ditemukan (Error P2025 dari Prisma)
+        //     if (error.code === 'P2025') {
+        //     return null;
+        //     }
+        //     throw error;
+        // }
+    }
+
+    async createAssessmentFromBank(assessment: Assessment): Promise<Assessment> { // 👈 Hanya menerima 1 entitas utuh
     console.log('======= di assessment prisma repo =======');
     console.log('Author ID:', assessment.authorId);
     
@@ -168,46 +225,44 @@ export class AssessmentRepository {
       };
     });
 
-    // 2. Simpan ke database menggunakan Getter dari Domain Entity
-    return this.prisma.assessment.create({
+    // 1. Simpan hasil kembalian Prisma ke variabel
+    const savedData = await this.prisma.assessment.create({
       data: {
         title: assessment.title,
         description: assessment.description,
-        duration: assessment.durationMs, // 👈 Menggunakan Getter durationMs
-        
-        // Relasi ke User (Author)
-        user: {
-          connect: { id: assessment.authorId },
-        },
-
-        // Relasi ke School (Hanya dikoneksikan jika schoolId ada)
+        duration: assessment.durationMs,
+        user: { connect: { id: assessment.authorId } },
         ...(assessment.schoolId && {
-          school: {
-            connect: { id: assessment.schoolId },
-          },
+          school: { connect: { id: assessment.schoolId } },
         }),
-        
-        // Relasi ke Questions
-        questions: {
-          create: questionsData,
-        },
+        questions: { create: questionsData },
       },
       include: {
         questions: {
-          include: {
-            options: true,
-          },
+          include: { options: true },
         },
       },
     });
+
+    // 2. Rehidrasi data mentah menjadi Domain Entity yang utuh
+    return Assessment.fromDatabase(
+      savedData.id,
+      savedData.title,
+      savedData.description,
+      savedData.duration,
+      savedData.user_id,
+      savedData.assessment_status as AssessmentStatus, // Jangan lupa import tipenya jika perlu
+      savedData.school_id || undefined,
+      savedData.questions
+    );
   }
 
-    async findDeadlineAssessment(assessmentId: string) {
-        return await this.prisma.assessment.findFirst({
-            where: { id: assessmentId },
-            select: { expired_at: true, }
-        })
-    }
+    // async findDeadlineAssessment(assessmentId: string) {
+    //     return await this.prisma.assessment.findFirst({
+    //         where: { id: assessmentId },
+    //         select: { expired_at: true, }
+    //     })
+    // }
 
     async findAllAssessment(user_id) {
         return await this.prisma.assessment.findMany({
@@ -219,7 +274,7 @@ export class AssessmentRepository {
         })
     }
 
-    async findAssessmentResults(assessmentId: string, className?: string) {
+    async findAssessmentResults(assessmentId: string, className?: string): Promise<any> {
     return await this.prisma.assessment.findUnique({
       where: { 
         id: assessmentId,
@@ -245,7 +300,7 @@ export class AssessmentRepository {
     });
     }
 
-    async findOneAssessmentWithDetail(id: string) {
+    async findOneAssessmentWithDetail(id: string): Promise<any> {
         return await this.prisma.assessment.findUnique({
             where: { id },
             include: {
@@ -276,7 +331,7 @@ export class AssessmentRepository {
         })
     }
 
-    async countAllAssessmentQuestionsByUserId(user_id: string) {
+    async countAllAssessmentQuestionsByUserId(user_id: string): Promise<any> {
         return await this.prisma.assessment.findMany({
             where: { user_id: user_id },
             include: {
@@ -291,7 +346,7 @@ export class AssessmentRepository {
         });
     }
 
-    async findAssessmentstatus(assessmentId : string) {
+    async findAssessmentstatus(assessmentId : string): Promise<any> {
         return await this.prisma.assessment.findUnique({
             where: { id: assessmentId },
             select: {assessment_status : true}
@@ -304,25 +359,40 @@ export class AssessmentRepository {
         });
     }
 
-    async findOneAssessmentForExam(id: string) {
-        return await this.prisma.assessment.findUnique({
+    async findOneAssessmentForExam(id: string): Promise<Assessment | null> {
+        // 1. Ambil data mentah dari Prisma
+        const rawData = await this.prisma.assessment.findUnique({
             where: { id },
             include: {
-                // PERBAIKAN: Ganti 'question_bank' menjadi 'questionBank'
-                    questions: {
+                questions: {
                     orderBy: { order: 'asc' },
                     include: {
                         options: {
                             select: {
                                 id: true,
                                 label: true
-                                // score: false (Jangan diambil)
+                                // score: false (Jangan diambil untuk keamanan saat ujian)
                             }
                         }
                     }
                 }
             }
-        })
+        });
+
+        // 2. Jika tidak ketemu, kembalikan null
+        if (!rawData) return null;
+
+        // 3. Jika ketemu, bangkitkan menjadi Domain Entity
+        return Assessment.fromDatabase(
+          rawData.id,
+          rawData.title,
+          rawData.description,
+          rawData.duration,
+          rawData.user_id,
+          rawData.assessment_status as AssessmentStatus,
+          rawData.school_id || undefined,
+          rawData.questions
+        );
     }
 
     async findStudentAnswerDetails(submissionId: string) {

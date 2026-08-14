@@ -12,11 +12,13 @@ import { SessionServiceAdapter } from './adapter/session.gateway.adapter';
 import { I_QUESTION_BANK_GATEWAY } from './port/question-bank.gateway.port';
 import { QuestionBankGatewayAdapter } from './adapter/question-bank.gateway.adapter';
 import { AssessmentSessionModule } from 'src/assessment-session/assessment-session.module';
+import { I_SUBMISSION_GATEWAY } from './port/submission.gateway.port';
+import { SubmissionGatewayAdapter } from './adapter/submission.gateway.adapter';
 
 @Module({
   imports: [
     QuestionBankModule,
-    forwardRef(() => SubmissionsModule),
+    SubmissionsModule,
     AssessmentSessionModule,
   ],
   controllers: [AssessmentController, ExamController],
@@ -35,6 +37,10 @@ import { AssessmentSessionModule } from 'src/assessment-session/assessment-sessi
     {
       provide: I_QUESTION_BANK_GATEWAY,
       useClass: QuestionBankGatewayAdapter
+    },
+    {
+      provide: I_SUBMISSION_GATEWAY,
+      useClass: SubmissionGatewayAdapter,
     },
   ],
   exports: [AssessmentRepository]

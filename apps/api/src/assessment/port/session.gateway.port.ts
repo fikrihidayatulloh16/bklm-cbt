@@ -18,7 +18,7 @@ export interface SessionValidationInfo {
 export interface ISessionGateway {
   getSession(assessmentId: string): Promise<SessionValidationInfo | null>;
   // createSession(payload: CreataeSessionPayload): Promise<void>;
-  createSession(
+  createSessionForPublish(
     assessmentId: string,
     sessionName: string,
     durationMs: number,

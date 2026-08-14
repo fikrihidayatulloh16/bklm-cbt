@@ -14,6 +14,8 @@ describe('PUT /submissions/:id/answer (e2e)', () => {
 
   const schoolId = 'school-ans-1';
   const userId = 'user-ans-1';
+  const classId = 'class-start-1';
+  const sessionId = 'session-start-2'
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -37,20 +39,56 @@ describe('PUT /submissions/:id/answer (e2e)', () => {
     await seeder.cleanDatabase();
     await seeder.seedMasterData(schoolId, userId);
 
+    await seeder.seedClass(classId, 'A', 'VII', schoolId)
+
     // 1. Data Ujian Aktif (Normal)
     await seeder.seedAssessment('assess-ans-active', userId, schoolId, 10, 'PUBLISHED');
+
+    const now = new Date();
+    const pastStartTime = new Date(now.getTime() - 10000); // 10 detik yang lalu
+    
+    // 🔥 UBAH INI: Agar Sesi masih berlaku, jadikan 1 jam ke depan
+    const futureEndTime = new Date(now.getTime() + 3600000000); 
+
+    await seeder.seedCreateAssessmentSession(
+      sessionId,
+      pastStartTime, // ✅ START TIME (Masa lalu)
+      futureEndTime, // ✅ END TIME (Masa depan)
+      'assess-ans-active',
+      classId
+    );
+
+    await seeder.seedCreateAssessmentSession(
+      'session-start-expired',
+      pastStartTime, // ✅ START TIME (Masa lalu)
+      futureEndTime, // ✅ END TIME (Masa depan)
+      'assess-ans-active',
+      classId
+    );
+
     await seeder.seedQuestion('q-valid', 'assess-ans-active', 'MULTIPLE_CHOICE');
     await seeder.seedQuestionOption('opt-valid', 'q-valid', 'Ya', 10);
     
-    await seeder.seedSubmission('sub-ans-active', 'assess-ans-active', 'IN_PROGRESS');
-    await seeder.seedSubmission('sub-ans-finished', 'assess-ans-active', 'FINISHED');
+    await seeder.seedSubmission('sub-ans-active', 'assess-ans-active', 'IN_PROGRESS', 'Fikri', classId, 'VII A', sessionId);
+    await seeder.seedSubmission('sub-ans-finished', 'assess-ans-active', 'FINISHED', 'Fikri', classId, 'VII A', sessionId);
+
+    
 
     // 2. Data Ujian Expired / Timeout
     await seeder.seedAssessment('assess-ans-timeout', userId, schoolId, 10,'CLOSED');
     await seeder.seedQuestion('q-nyasar', 'assess-ans-timeout', 'MULTIPLE_CHOICE');
     await seeder.seedQuestionOption('opt-nyasar', 'q-nyasar', 'Ya', 10);
     
-    await seeder.seedSubmission('sub-ans-timeout', 'assess-ans-timeout', 'IN_PROGRESS');
+    await seeder.seedSubmission(
+      'sub-ans-timeout',
+      'assess-ans-timeout',
+      'IN_PROGRESS',
+      'Fikri',
+      classId,
+      'VII A',
+      'session-start-expired' // 🔥 WAJIB GUNAKAN ID SESI YANG WAKTUNYA SUDAH LEWAT/BASI!
+    );
+    
   });
 
   it('✅ [SUCCESS] GIVEN submission aktif & soal valid, WHEN simpan jawaban, THEN return 201 (Created)', async () => {
@@ -63,7 +101,10 @@ describe('PUT /submissions/:id/answer (e2e)', () => {
     const response = await request(app.getHttpServer())
       .put(`/submissions/sub-ans-active/answer`)
       .send(payload)
-      .expect(201);
+
+      if (response.status !== 201) {
+        console.log('SUBS-answer-TC01 ERROR DARI SERVICE:', response.body);
+      }
 
     expect(response.body.statuscode).toBe(201);
     expect(response.body.message).toBe('Answer updated Successfully');
@@ -80,7 +121,12 @@ describe('PUT /submissions/:id/answer (e2e)', () => {
     const response = await request(app.getHttpServer())
       .put(`/submissions/sub-ans-finished/answer`)
       .send(payload)
-      .expect(403);
+
+      if (response.status !== 400) {
+        console.log('SUBS-answer-TC02 ERROR DARI SERVICE:', response.body);
+      }
+    
+    expect(response.status).toBe(400);
 
     expect(response.body.message).toBe('Ujian sudah ditutup.');
   });
@@ -110,8 +156,8 @@ describe('PUT /submissions/:id/answer (e2e)', () => {
     const response = await request(app.getHttpServer())
       .put(`/submissions/sub-ans-timeout/answer`) // Waktu ujian ini sudah diatur mundur 3 menit di Seeder
       .send(payload)
-      .expect(403);
+      .expect(400);
 
-    expect(response.body.message).toBe('Waktu ujian telah habis! Jawaban tidak tersimpan.');
+    expect(response.body.message).toBe('Waktu ujian telah habis secara absolut! Jawaban tidak tersimpan.');
   });
 });

@@ -40,15 +40,15 @@ export class E2eSeeder {
     duration: number, 
     status: 'CLOSED' | 'DRAFT' | 'PUBLISHED' // 🔥 Tambahkan PUBLISHED
   ) {
-    let expiredAt: Date | undefined; 
+    // let expiredAt: Date | undefined; 
 
-    if (status === 'CLOSED') {
-      expiredAt = new Date();
-      expiredAt.setMinutes(expiredAt.getMinutes() - 3);
-    } else if (status === 'PUBLISHED') {
-      expiredAt = new Date();
-      expiredAt.setHours(expiredAt.getHours() + 2);
-    }
+    // if (status === 'CLOSED') {
+    //   expiredAt = new Date();
+    //   expiredAt.setMinutes(expiredAt.getMinutes() - 3);
+    // } else if (status === 'PUBLISHED') {
+    //   expiredAt = new Date();
+    //   expiredAt.setHours(expiredAt.getHours() + 2);
+    // }
 
     await this.prisma.assessment.create({
       data: {
@@ -57,12 +57,84 @@ export class E2eSeeder {
         user_id: userId,
         school_id: schoolId,
         duration: duration, 
-        expired_at: expiredAt,
+        // expired_at: expiredAt,
         // 🔥 INI YANG LUPA ANDA MASUKKAN SEBELUMNYA!
         assessment_status: status, 
       }
     });
   }
+
+  async seedAssessmentWithQuestion(
+    id: string, 
+    userId: string, 
+    schoolId: string, 
+    duration: number, 
+    status: 'CLOSED' | 'DRAFT' | 'PUBLISHED'
+  ) {
+    // let expiredAt: Date | undefined; 
+
+    // if (status === 'CLOSED') {
+    //   expiredAt = new Date();
+    //   expiredAt.setMinutes(expiredAt.getMinutes() - 3);
+    // } else if (status === 'PUBLISHED') {
+    //   expiredAt = new Date();
+    //   expiredAt.setHours(expiredAt.getHours() + 2);
+    // }
+
+    await this.prisma.assessment.create({
+      data: {
+        id,
+        title: `Ujian ${status}`,
+        user_id: userId,
+        school_id: schoolId,
+        duration: duration, 
+        // expired_at: expiredAt,
+        assessment_status: status, 
+        
+        // 🔥 TAMBAHKAN INI: Bawaan soal palsu agar lolos validasi Domain
+        questions: {
+          create: [
+            {
+              text: 'Berapa 1+1? (Soal Dummy E2E)',
+              type: 'MULTIPLE_CHOICE',
+              category: 'Matematika Dasar',
+              order: 1,
+              options: {
+                create: [
+                  { label: 'A', score: 0 },
+                  { label: 'B', score: 1 }, // Anggap ini jawaban benar
+                ]
+              }
+            }
+          ]
+        }
+        
+      }
+    });
+  }
+
+  async seedCreateAssessmentSession(id: string, past: Date, future: Date, assessmentId: string, classId: string) {
+      await this.prisma.assessmentSession.create({
+        data: {
+          id: id,
+          name: 'Sesi Sedang Berlangsung',
+          start_time: past,
+          end_time: future,
+          assessment_id: assessmentId,
+          classes: { connect: [{ id: classId }] }, // Hanya diikat ke RPL 1
+        },
+    });
+  }
+
+  // await prisma.assessmentSession.create({
+  //       data: {
+  //         name: 'Sesi Sedang Berlangsung',
+  //         start_time: past,
+  //         end_time: future,
+  //         assessment_id: assessmentId,
+  //         classes: { connect: [{ id: classRPL1 }] }, // Hanya diikat ke RPL 1
+  //       },
+  //     });
 
   async seedUpdateAssessment(id: string, userId: string, schoolId: string, duration: number, status: 'PUBLISHED' | 'TIMEOUT' | 'DRAFT') {
       await this.prisma.assessment.update({
@@ -148,15 +220,36 @@ export class E2eSeeder {
     });
   }
 
-  async seedSubmission(id: string, assessmentId: string, status: 'IN_PROGRESS' | 'FINISHED', studentName: string = 'Fikri E2E') {
+  async seedSubmission(
+    id: string, 
+    assessmentId: string, 
+    status: any, 
+    studentName: string, 
+    classId: string,      // <--- Parameter Baru
+    className: string,    // <--- Parameter Baru
+    sessionId: string     // <--- Parameter Baru
+  ) {
     await this.prisma.submission.create({
       data: {
-        id,
+        id: id,
         assessment_id: assessmentId,
+        session_id: sessionId,      // 🔥 WAJIB DISIMPAN
+        status: status,
         student_name: studentName,
-        class_name: 'XII RPL',
-        gender: 'Male',
-        status,
+        class_name: className,      // 🔥 WAJIB DISIMPAN
+        // class_id: classId,       // (Buka komentar ini jika tabel submission punya kolom class_id)
+        gender: 'MALE'
+      }
+    });
+  }
+
+  async seedClass(classId: string, className: string, classLevel: string, schoolId: string) {
+    await this.prisma.class.create({
+      data: {
+        id: classId,
+        name: className,
+        level: classLevel,
+        school_id: schoolId
       }
     });
   }

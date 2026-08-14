@@ -118,7 +118,7 @@ model Assessment {
   assessment_status AssessmentStatus @default(DRAFT)
   description       String?          @db.Text
   created_at        DateTime         @default(now())
-  expired_at        DateTime?
+  //expired_at        DateTime?
   duration          Int              @default(0)
 
   user_id String

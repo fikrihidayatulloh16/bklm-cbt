@@ -19,7 +19,7 @@ import { Server, Socket } from 'socket.io';
 export class SubmissionsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   
   @WebSocketServer()
-  server: Server;
+  server!: Server;
 
   handleConnection(client: Socket) {
     console.log(`✅ Client Connected: ${client.id}`);

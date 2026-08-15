@@ -19,12 +19,15 @@ import { GlobalCacheModule } from './common/cache/cache.module';
 // import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'; // Import
 // import { APP_GUARD } from '@nestjs/core';
 import { AssessmentSessionModule } from './assessment-session/assessment-session.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       envFilePath: process.env.NODE_ENV === 'test' ? '.env.test' : '.env',
       isGlobal: true,
+      
       // isGlobal: true, envFilePath: '.env',// Biar bisa dibaca di semua module (Auth, User, dll)
     }),
     
@@ -64,6 +67,8 @@ import { AssessmentSessionModule } from './assessment-session/assessment-session
     ClassModule,
     AssessmentSessionModule,
     GlobalCacheModule,
+    EventEmitterModule.forRoot(),
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [

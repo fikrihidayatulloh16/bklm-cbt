@@ -11,6 +11,35 @@
 
 ## 🚧 [IN PROGRESS] 
 
+### ADR 001: Frontend Query Key Factory & Global Real-Time WebSocket Invalidation
+
+Fase 1: Membangun Fondasi (Query Key Factory)
+Langkah 1.1: Buat file pusat konstanta untuk Query Keys.
+
+File: src/common/constants/query-keys.constant.ts
+
+Detail: Gunakan objek bertingkat dengan akhiran as const agar dikenali secara presisi oleh TanStack Query.
+
+Langkah 1.2: Migrasikan hooks yang sudah ada (seperti useDashboardLogic.ts) agar menggunakan Query Key Factory yang baru alih-alih string mentah.
+
+Fase 2: Membangun Infrastruktur Real-Time Global
+Langkah 2.1: Buat file kamus Mapper yang menghubungkan event entity dari Backend dengan Query Keys Frontend.
+
+File: src/common/config/realtime-mapper.config.ts
+
+Detail: Petakan entitas (contoh: 'assessments') ke dalam daftar Query Keys yang harus di-invalidate.
+
+Langkah 2.2: Buat Global WebSocket Listener Hook atau komponen pembungkus.
+
+File: src/components/providers/RealtimeSyncProvider.tsx (atau sejenisnya)
+
+Detail: Inisialisasi socket.on('data_updated', ...) satu kali saja di level Root Layout. Tangkap payload, baca kamus Mapper, lalu jalankan queryClient.invalidateQueries().
+
+Fase 3: Integrasi & Verifikasi
+Langkah 3.1: Bungkus aplikasi utama dengan RealtimeSyncProvider (pastikan ia memiliki akses ke userId pengguna yang sedang aktif agar bisa bergabung ke room yang tepat).
+
+Langkah 3.2: Lakukan Manual Testing. Buat perubahan data dari perangkat/tab lain (atau via Backend), dan pastikan UI di Dashboard Anda langsung ter-refresh secara otomatis tanpa perlu refresh browser (F5).
+
 ### Implementation Plan: Automated Test & gRPC Pagination (Assessment Service)
 
 #### 1. Objektif
@@ -84,7 +113,8 @@ Next.js version: 16.1.1 (Turbopack)
 
 ## 🧊 [BACKLOG / PAUSED]
 *(Tugas yang belum mendesak atau sedang ditunda)*
-- [ ] Membuat automated testing untuk setiap fitur hingga edge case.
+- [ ] Optimasi pengambilan soal.
+- [ ] Optimasi Finish dengan Task Queue
 
 ====================================================================
 ## 📚 ARCHIVE & HISTORY (Jangan Dihapus!)

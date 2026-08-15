@@ -1,0 +1,32 @@
+Frontend Query Key Factory & Global Real-Time WebSocket Invalidation
+
+Status: Disetujui (Approved)
+
+Tanggal: 14 Agustus 2026
+
+Kategori: Frontend Architecture / State Management
+
+Konteks & Masalah
+Sebelumnya, pengelolaan query keys di TanStack Query dilakukan secara manual menggunakan string mentah ('dashboard-data'). Hal ini rentan terhadap typo, inkonsistensi, dan menyulitkan pelacakan ketergantungan data.
+
+Selain itu, sinkronisasi data real-time dari Backend (via WebSocket) dilakukan secara sporadis di dalam masing-masing hooks, yang menyebabkan duplikasi kode, potensi memory leak, dan beban mental (cognitive load) yang tinggi bagi developer saat menambah fitur baru.
+
+Keputusan Arsitektur
+Kita memutuskan untuk mengadopsi dua pola desain terpusat:
+
+Query Key Factory: Sentralisasi seluruh kunci TanStack Query menggunakan objek ber-type ketat (as const) yang mendukung IntelliSense (Auto-complete) di IDE, mencegah salah ketik, dan memastikan keselarasan format.
+
+Global Real-Time Listener + Kamus Mapper (Event-Driven Frontend): Memindahkan seluruh logika pendengar WebSocket ke satu titik global di akar aplikasi (Root). Sistem akan menggunakan kamus (mapper) yang menghubungkan entitas Backend (misal: assessments) dengan fungsi Query Key Factory untuk melakukan invalidasi cache secara otomatis.
+
+Konsekuensi (Trade-Off)
+Positif:
+
+Menghilangkan duplikasi kode pendengar WebSocket di setiap komponen.
+
+Mengurangi cognitive load secara drastis; developer tidak perlu memikirkan cara komunikasi real-time saat membuat fitur baru.
+
+Type-safety penuh untuk mencegah typo pada kunci cache.
+
+Negatif:
+
+Membutuhkan satu file konfigurasi terpusat yang harus diperbarui setiap kali ada entitas domain baru yang ditambahkan.

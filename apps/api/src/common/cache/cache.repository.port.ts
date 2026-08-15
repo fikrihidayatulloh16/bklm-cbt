@@ -17,6 +17,8 @@ export interface ICacheRepository {
   /** Menghapus kunci yang cocok dengan pola secara aman menggunakan SCAN */
   invalidateByPattern(pattern: string): Promise<void>;
 
+  invalidateAndNotify(pattern: string, entity: string, entityId: string): Promise<void>; // Fungsi ini akan dijalankan ketika cache invalidasi dilakukan
+
   //Fungsi pamungkas untuk Read-Through Cache
   getOrSet<T>(key: string, fetcher: () => Promise<T>, ttlSeconds: CacheTTL): Promise<T>;
 }

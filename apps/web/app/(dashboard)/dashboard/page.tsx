@@ -3,14 +3,33 @@
 import { Button } from "@nextui-org/react";
 import { PlayCircle, Plus } from "lucide-react";
 
+import Cookies from 'js-cookie';
 import { useDashboardLogic } from "@/features/dashboard/hooks/useDashboardLogic";
 import { AssessmentList } from "@/features/dashboard/components/AssessmentHorizon";
 import { QuestionBankList } from "@/features/dashboard/components/QuestionBankHorizon";
 import { DashboardStatsGrid } from "@/features/dashboard/components/DashboardStats";
+import { useMemo } from "react";
+import { jwtDecode } from "jwt-decode";
 
 export default function DashboardPage() {
+
+  // 1. Ambil dan bongkar token di Client Side
+  const userId = useMemo(() => {
+    const token = Cookies.get('token');
+    if (token) {
+      try {
+        return jwtDecode<{ sub: string }>(token).sub;
+      } catch (e) {
+        return undefined;
+      }
+    }
+    return undefined;
+  }, []);
+
+  if (!userId) return <div>Sesi tidak valid, silakan login kembali.</div>;
+
   // Memanggil Hook Logic
-  const { isLoading, error, dashboardStats, lastAssessments, lastQuestionBanks, } = useDashboardLogic()
+  const { isLoading, error, dashboardStats, lastAssessments, lastQuestionBanks, } = useDashboardLogic(userId)
 
   // Handle State Loading/Error
   if (isLoading) return <div className="p-10 text-center">Memuat data...</div>;

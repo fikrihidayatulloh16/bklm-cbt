@@ -10,13 +10,16 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import * as ExcelJS from 'exceljs';
 import { I_QUESTION_BANK_GATEWAY, IQuestionBankGateway } from './port/question-bank.gateway.port';
 import { I_ASSESSMENT_REPOSITORY, IAssessmentRepository } from './port/assessment.repository.interface';
-import { I_CACHE_REPOSITORY, ICacheRepository } from 'src/common/cache/cache.repository.port';
+import { CacheTTL, I_CACHE_REPOSITORY, ICacheRepository } from 'src/common/cache/cache.repository.port';
 import { I_SESSION_GATEWAY, ISessionGateway } from './port/session.gateway.port';
 import { PublishAssessmentDto } from './dto/publish-assessment.dto';
 import { I_SUBMISSION_GATEWAY, ISubmissionGateway } from './port/submission.gateway.port';
 
 @Injectable()
 export class AssessmentService {
+  private readonly CACHE_LIST = (userId: string) => `assessments:list:user:${userId}`;
+  private readonly CACHE_PATTERN_ALL = (userId: string) => `*:user:${userId}*`;
+
   constructor(
     private prisma: PrismaService,
     private questionBankRepo: QuestionBankRepository,
@@ -49,11 +52,6 @@ export class AssessmentService {
       throw new NotFoundException('Question Bank tidak ditemukan');
     }
 
-    console.log('DTO: ', dto);
-    console.log('userid: ', userId);
-    console.log('schoolId: ', schoolId);
-    
-
     try {
       // 2. BENTUK DOMAIN (Validasi durasi dll ada di dalam sini)
       const newAssessment = Assessment.createNew(dto.title, dto.duration, userId, schoolId);
@@ -70,7 +68,11 @@ export class AssessmentService {
 
       // Delete previous cache 
       if (savedAssessment) {
-        await this.cacheRepo.invalidateByPattern(`assessments:list:user:${userId}*`);
+        await this.cacheRepo.invalidateAndNotify(
+            this.CACHE_PATTERN_ALL(userId), // Hapus semua cache terkait user ini di modul assessment
+            'assessments',                  // Nama Entity yang dibawa ke Frontend
+            userId                          // ID User untuk mencari Room Websocket
+        );
       }
 
       return {
@@ -190,8 +192,19 @@ export class AssessmentService {
   }
 
   // mengambil semua assessment untuk dashboard
-  async findAllAssessmentByIdUser(user_id) {
-    return await this.iassessmentRepo.countAllAssessmentQuestionsByUserId(user_id);
+  async findAllAssessmentByIdUser(userId) {
+
+    return this.cacheRepo.getOrSet(
+      this.CACHE_LIST(userId),
+      async () => {
+        // Ingat! Di dalam findById ini, Prisma WAJIB menggunakan "include: { classes: true }"
+        // agar Domain memiliki array of classId
+        return await this.iassessmentRepo.countAllAssessmentQuestionsByUserId(userId);
+      },
+      CacheTTL.LONG_LIVED // TTL 1 menit
+    );
+
+    // return await this.iassessmentRepo.countAllAssessmentQuestionsByUserId(user_id);
   }
 
   async forceCloseTimeouts(assessmentId: string) {

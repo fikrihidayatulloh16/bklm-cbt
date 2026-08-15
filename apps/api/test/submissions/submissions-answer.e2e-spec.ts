@@ -16,6 +16,7 @@ describe('PUT /submissions/:id/answer (e2e)', () => {
   const userId = 'user-ans-1';
   const classId = 'class-start-1';
   const sessionId = 'session-start-2'
+  let sessionExpiredId = `session-start-expired-${Date.now()}`;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -50,6 +51,8 @@ describe('PUT /submissions/:id/answer (e2e)', () => {
     // 🔥 UBAH INI: Agar Sesi masih berlaku, jadikan 1 jam ke depan
     const futureEndTime = new Date(now.getTime() + 3600000000); 
 
+    const pastEndTime = new Date(now.getTime() - (5 * 60 * 1000));
+
     await seeder.seedCreateAssessmentSession(
       sessionId,
       pastStartTime, // ✅ START TIME (Masa lalu)
@@ -59,9 +62,9 @@ describe('PUT /submissions/:id/answer (e2e)', () => {
     );
 
     await seeder.seedCreateAssessmentSession(
-      'session-start-expired',
+      sessionExpiredId,
       pastStartTime, // ✅ START TIME (Masa lalu)
-      futureEndTime, // ✅ END TIME (Masa depan)
+      pastEndTime, // ✅ END TIME (Masa depan)
       'assess-ans-active',
       classId
     );
@@ -86,7 +89,7 @@ describe('PUT /submissions/:id/answer (e2e)', () => {
       'Fikri',
       classId,
       'VII A',
-      'session-start-expired' // 🔥 WAJIB GUNAKAN ID SESI YANG WAKTUNYA SUDAH LEWAT/BASI!
+      sessionExpiredId // 🔥 WAJIB GUNAKAN ID SESI YANG WAKTUNYA SUDAH LEWAT/BASI!
     );
     
   });

@@ -12,6 +12,8 @@ const SOCKET_HOST = apiUrl.startsWith("http")
 let socket: Socket;
 
 export const getSocket = (): Socket => {
+  const namespaceUrl = SOCKET_HOST ? `${SOCKET_HOST}/volatile` : '/volatile';
+
   // Hanya buat socket dan pasang telinga (listener) JIKA socket belum ada
   if (!socket) {
     socket = io(SOCKET_HOST, {
@@ -26,6 +28,10 @@ export const getSocket = (): Socket => {
     // 🚨 PINDAHKAN KE SINI: Pastikan listener hanya dipasang satu kali
     socket.on("connect", () => {
       console.log("✅ [SOCKET] Berhasil terhubung ke Backend! ID:", socket.id);
+    });
+
+    socket.on("connect", () => {
+      console.log("✅ [SOCKET] Berhasil terhubung ke join_volatile_room");
     });
 
     socket.on("connect_error", (error) => {

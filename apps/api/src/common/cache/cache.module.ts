@@ -2,6 +2,7 @@ import { Module, Global } from '@nestjs/common';
 import Redis from 'ioredis';
 import { I_CACHE_REPOSITORY } from './cache.repository.port';
 import { RedisCacheAdapter } from './redis-cache.adapter';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Global() // Jadikan global agar tidak perlu import di setiap modul
 @Module({
@@ -22,10 +23,10 @@ import { RedisCacheAdapter } from './redis-cache.adapter';
     {
       // Suntikkan REDIS_CLIENT ke dalam RedisCacheAdapter
       provide: I_CACHE_REPOSITORY,
-      useFactory: (redisClient: Redis) => {
-        return new RedisCacheAdapter(redisClient);
+      useFactory: (redisClient: Redis, eventEmitter: EventEmitter2) => {
+        return new RedisCacheAdapter(redisClient, eventEmitter);
       },
-      inject: ['REDIS_CLIENT'],
+      inject: ['REDIS_CLIENT', EventEmitter2],
     },
   ],
   exports: [I_CACHE_REPOSITORY], // Export Port-nya saja, bukan Adapter-nya!

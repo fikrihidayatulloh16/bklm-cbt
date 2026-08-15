@@ -2,13 +2,18 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import Redis from 'ioredis';
 import { ICacheRepository } from './cache.repository.port';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { DataUpdatedEvent } from '../events/volatile.event';
 
 @Injectable()
 export class RedisCacheAdapter implements ICacheRepository, OnModuleDestroy {
   private readonly logger = new Logger(RedisCacheAdapter.name);
 
   // Redis instance akan disuntikkan via Dependency Injection
-  constructor(private readonly redisClient: Redis) {}
+  constructor(
+    private readonly redisClient: Redis,
+    private eventEmitter: EventEmitter2
+  ) {}
 
   async onModuleDestroy() {
     this.logger.log('🔌 Memutus koneksi Redis...');
@@ -84,5 +89,17 @@ export class RedisCacheAdapter implements ICacheRepository, OnModuleDestroy {
     } catch (error) {
       this.logger.warn(`Cache INVALIDATE Error [${pattern}]: ${(error as Error).message}`);
     }
+  }
+
+  async invalidateAndNotify(pattern: string, entity: string, entityId: string): Promise<void> {
+    this.logger.log(`memasuki fungsi invalidateAndNotify dengan pattern: ${pattern}, entity: ${entity}, entityid: ${entityId} `);
+    // 1. Bersihkan Redis
+    await this.invalidateByPattern(pattern);
+    
+    // 2. Teriak ke seluruh NestJS bahwa data berubah!
+    this.eventEmitter.emit(
+      'volatile.data_updated', 
+      new DataUpdatedEvent(entity, entityId)
+    );
   }
 }

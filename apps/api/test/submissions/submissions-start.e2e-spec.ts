@@ -17,6 +17,7 @@ describe('POST /submissions/:assessment_id/session/session_id/start (e2e)', () =
   const sessionId = 'session-start-2'
   const assessActiveId = 'assess-start-active';
   const assessExpiredId = 'assess-start-expired';
+  let sessionExpiredId = `session-start-expired-${Date.now()}`;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -77,7 +78,7 @@ describe('POST /submissions/:assessment_id/session/session_id/start (e2e)', () =
 
     // (Opsional) Buat Sesi Basi untuk assessExpiredId jika Anda membutuhkannya untuk TC03
     await seeder.seedCreateAssessmentSession(
-      'session-start-expired',
+      sessionExpiredId,
       new Date(now.getTime() - 100000),
       new Date(now.getTime() - 50000), // Sudah lewat
       assessExpiredId,
@@ -143,7 +144,7 @@ describe('POST /submissions/:assessment_id/session/session_id/start (e2e)', () =
     };
 
     const response = await request(app.getHttpServer())
-      .post(`/submissions/${assessExpiredId}/session/session-start-expired/start`) // Menggunakan assessment timeout
+      .post(`/submissions/${assessExpiredId}/session/${sessionExpiredId}/start`) // Menggunakan assessment timeout
       .send(payload);
     console.log('SUBS START TC03 RESPONSE: ', response.body);
 

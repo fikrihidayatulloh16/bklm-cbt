@@ -19,8 +19,9 @@ export default function TopNavbar() {
     { name: "Dashboard", href: "/dashboard" },
     { name: "Assessment", href: "/assessments" },
     { name: "Bank Soal", href: "/question-bank" },
-    { name: "Data Siswa", href: "/students" },
-    { name: "Nilai & Laporan", href: "/reports" },
+    { name: "Daftar Kelas", href: "/question-bank" },
+    // { name: "Data Siswa", href: "/students" },
+    // { name: "Nilai & Laporan", href: "/reports" },
   ];
 
   const handleLogout = () => {

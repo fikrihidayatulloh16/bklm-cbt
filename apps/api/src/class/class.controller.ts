@@ -1,7 +1,9 @@
-import { Controller, Post, Get, Body, Param } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, UseGuards } from '@nestjs/common';
 import { ClassService } from './class.service';
 import { CreateClassDto } from './class.dto';
+import { AuthGuard } from '@nestjs/passport';
 
+@UseGuards(AuthGuard('jwt'))
 @Controller('classes')
 export class ClassController {
   constructor(private readonly classService: ClassService) {}
@@ -9,6 +11,8 @@ export class ClassController {
   @Post()
   async createClass(@Body() createClassDto: CreateClassDto) {
     // Kontroler hanya mengirim DTO ke Service dan mengembalikan respons
+    console.log("di class controller: ", createClassDto);
+    
     const result = await this.classService.createClass(createClassDto);
     return {
       status: 'success',

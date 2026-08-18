@@ -3,6 +3,7 @@ import TopNavbar from "@/components/layout/TopNavbar"; // Import Navbar Baru
 import { jwtDecode } from 'jwt-decode';
 import { cookies } from 'next/headers';
 import { RealtimeSyncProvider } from "@/components/providers/RealtimeSyncProvider";
+import { getServerSession } from "@/lib/auth/session";
 
 export default async function DashboardLayout({
   children,
@@ -12,16 +13,10 @@ export default async function DashboardLayout({
 }) {
   const cookieStore = await cookies();
   const tokenString = cookieStore.get('token')?.value;
-  let userId = '';
+  const session = await getServerSession();
 
-  if (tokenString) {
-    try {
-      const decoded = jwtDecode<{ sub: string }>(tokenString);
-      userId = decoded.sub; // Ini "e81d484d-91c4-..."
-    } catch (error) {
-      console.error("Gagal mendecode JWT di Layout");
-    }
-  }
+
+  const testingSchoolId = "school-bklm-default-001";
   return (
     <div className="min-h-screen bg-gray-200">
       
@@ -31,7 +26,7 @@ export default async function DashboardLayout({
 
       {/* 2. Wrapper Konten Utama */}
       {/* md:ml-64 artinya: Di HP margin kiri 0, di Laptop margin kiri 64 (sebesar sidebar) */}
-      <RealtimeSyncProvider userId={userId}>
+      <RealtimeSyncProvider userId={session?.userId} schoolId={session?.schoolId || undefined}>
       <main className="md:ml-64 min-h-screen flex flex-col">
         
         {/* 3. Navbar (Selalu muncul di atas) */}

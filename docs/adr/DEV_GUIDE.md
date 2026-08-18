@@ -1,11 +1,12 @@
-import { Injectable, ConflictException, Inject } from '@nestjs/common';
-import { IClassRepository } from './class.repository.port';
-import { CreateClassDto } from './class.dto';
-import { ClassDomain } from './class.domain';
-import { CacheTTL, I_CACHE_REPOSITORY, ICacheRepository } from 'src/common/cache/cache.repository.port';
 
+
+## Cache
+
+### Backend
+```TS
 @Injectable()
 export class ClassService {
+  // 🔥 Konsep Cache: Daftar  INI adalah milik yang id me-request.
   private readonly CACHE_LIST = (schoolId: string) => `classes:list:school:${schoolId}`;
   private readonly CACHE_PATTERN_ALL = (schoolId: string) => `*:school:${schoolId}*`;
 
@@ -18,19 +19,18 @@ export class ClassService {
   ) {}
 
   async createClass(dto: CreateClassDto): Promise<ClassDomain> {
-    // 1. Simpan ke database dulu!
-    const newClass = await this.classRepository.create(dto);
+    // Logika bisnis bisa diletakkan di sini.
+    // Contoh: Memastikan kombinasi level, nama, dan sekolah tidak ganda
+    // (Bisa mengandalkan Exception handling dari Prisma, atau melakukan pencarian spesifik terlebih dahulu).
 
-    // 2. Jika berhasil, baru hancurkan cache dan teriak ke Websocket
-    if (newClass) {
-      await this.cacheRepo.invalidateAndNotify(
-          this.CACHE_PATTERN_ALL(dto.schoolId), 
-          'classes',                  // Entity
-          dto.schoolId               // 🚨 PERHATIAN: Ini jadi ID Room (Baca poin 3 di bawah)
-      );
-    }
 
-    return newClass;
+    await this.cacheRepo.invalidateAndNotify(
+        this.CACHE_PATTERN_ALL(dto.school_id), // Hapus semua cache terkait user ini di modul assessment
+        'classes',                  // Nama Entity yang dibawa ke Frontend
+        dto.school_id                          // ID User untuk mencari Room Websocket
+    );
+
+    return this.classRepository.create(dto);
   }
 
   async getClassesBySchool(schoolId: string): Promise<ClassDomain[]> {
@@ -46,3 +46,6 @@ export class ClassService {
     );
   }
 }
+```
+
+### Frontend

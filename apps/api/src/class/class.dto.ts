@@ -14,5 +14,5 @@ export class CreateClassDto {
 
   @IsString()
   @IsNotEmpty({ message: 'School ID wajib diisi' })
-  school_id!: string; 
+  schoolId!: string; 
 }

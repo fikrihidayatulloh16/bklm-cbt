@@ -80,6 +80,8 @@ Tes komunikasi gRPC dari client (Postman/gRPCui) ke server.
 
 ## 🚧 [UPCOMING] 
 
+### Mengecek dulu aapakah user tertaut di sekolah atau tidak 
+
 ### Mengatasi Masalah ketika dua user yang sama sedang progress
 **Konsep/Problem:** - Ketika saya coba mengerjakan dengan nama budi setiawan di browser A tapi belum di submit lalu pindah ke browser lain dengan assessment belum selesai dan nama yang sama loading terus, harusnya muncul error atau gagal login. namun ketika sudah selesai atau di submit baru muncul error.
 

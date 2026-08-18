@@ -19,8 +19,8 @@ export default function Sidebar() {
         <Link href="/question-bank" className="p-3 hover:bg-gray-800 rounded-lg flex gap-3 items-center transition-colors">
             <span>📝</span> Bank Soal
         </Link>
-        <Link href="/students" className="p-3 hover:bg-gray-800 rounded-lg flex gap-3 items-center transition-colors">
-            <span>👥</span> Data Siswa
+        <Link href="/classes" className="p-3 hover:bg-gray-800 rounded-lg flex gap-3 items-center transition-colors">
+            <span>👥</span> Daftar Kelas
         </Link>
         <Link href="#" className="p-3 hover:bg-gray-800 rounded-lg flex gap-3 items-center transition-colors mt-auto text-red-400">
             <span>🚪</span> Logout

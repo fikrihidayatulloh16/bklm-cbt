@@ -26,10 +26,10 @@ export default function DashboardPage() {
     return undefined;
   }, []);
 
-  if (!userId) return <div>Sesi tidak valid, silakan login kembali.</div>;
+  // if (!userId) return <div>Sesi tidak valid, silakan login kembali.</div>;
 
   // Memanggil Hook Logic
-  const { isLoading, error, dashboardStats, lastAssessments, lastQuestionBanks, } = useDashboardLogic(userId)
+  const { isLoading, error, dashboardStats, lastAssessments, lastQuestionBanks, } = useDashboardLogic(userId!)
 
   // Handle State Loading/Error
   if (isLoading) return <div className="p-10 text-center">Memuat data...</div>;

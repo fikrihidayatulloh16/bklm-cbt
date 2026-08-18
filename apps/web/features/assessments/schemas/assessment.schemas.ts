@@ -34,13 +34,13 @@ export type AssessmentFormValues = {
 
 // Schema Detail Assessment
 export const AssessmentDetailSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  description: z.string().nullable().transform((v) => v ?? ""),
-  assessment_status: z.string(), // "DRAFT" | "PUBLISHED"
-  created_at: z.string().or(z.date()),
- expired_at: z.string().or(z.date()).nullable(),
-  duration: z.number(), // dalam menit
+    id: z.string(),
+    title: z.string(),
+    description: z.string().nullable().transform((v) => v ?? ""),
+    assessment_status: z.string(), // "DRAFT" | "PUBLISHED"
+    created_at: z.string().or(z.date()),
+    // expired_at: z.string().or(z.date()).nullable(),
+    duration: z.number(), // dalam menit
 });
 
 // Schema untuk Class List (Array of Strings)

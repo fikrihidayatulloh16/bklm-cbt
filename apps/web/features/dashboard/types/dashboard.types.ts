@@ -1,3 +1,6 @@
+// apps/web/features/dashboard/types/dashboard.types.ts
+import { z } from "zod";
+
 export interface DashboardStats {
     totalAssessment: number;
     totalQuestion: number;

@@ -21,6 +21,7 @@ import { GlobalCacheModule } from './common/cache/cache.module';
 import { AssessmentSessionModule } from './assessment-session/assessment-session.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { NotificationsModule } from './notifications/notifications.module';
+import { SchoolsModule } from './schools/schools.module';
 
 @Module({
   imports: [
@@ -69,6 +70,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     GlobalCacheModule,
     EventEmitterModule.forRoot(),
     NotificationsModule,
+    SchoolsModule,
   ],
   controllers: [AppController],
   providers: [

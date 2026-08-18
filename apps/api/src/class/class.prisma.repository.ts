@@ -15,7 +15,11 @@ export class ClassPrismaRepository implements IClassRepository {
         data: {
           level: dto.level,
           name: dto.name,
-          school_id: dto.school_id,
+          school: {
+            connect: {
+              id: dto.schoolId // 👈 Pastikan di sini pakai camelCase sesuai DTO Anda!
+            }
+          }
         },
       });
       

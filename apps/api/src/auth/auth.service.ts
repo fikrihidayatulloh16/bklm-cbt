@@ -37,7 +37,15 @@ export class AuthService {
 
   // Fungsi helper membuat Token
   private generateJwt(user: any) {
-    const payload = { sub: user.id, email: user.email, role: user.role };
+    const payload = { 
+      sub: user.id, 
+      email: user.email, 
+      role: user.role,
+      schoolId: user.school_id
+    };
+
+    console.log(payload);
+    
     
     return {
       access_token: this.jwtService.sign(payload), // Token ini yang nanti dipakai Frontend
@@ -45,6 +53,7 @@ export class AuthService {
         id: user.id,
         name: user.name,
         email: user.email,
+        schoolId: user.schoolId,
         picture: user.picture // (Opsional jika ada di DB)
       }
     };

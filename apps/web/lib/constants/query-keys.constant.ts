@@ -11,6 +11,9 @@ export const QUERY_KEYS = {
   },
   QUESTION_BANKS: {
     LIST: (userId: string) => ['question_banks', 'list', userId] as const,
+  },
+  CLASSES: {
+    LIST: (schoolId: string) => ['classes', 'list', 'school', schoolId] as const,
   }
 };
 

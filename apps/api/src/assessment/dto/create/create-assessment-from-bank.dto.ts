@@ -3,7 +3,7 @@ import { IsDate, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID } from "clas
 export class CreateAssessmentFromBankDto {
     @IsString()
     @IsNotEmpty()
-    title: string;
+    title!: string;
 
     @IsString()
     @IsOptional()
@@ -11,15 +11,15 @@ export class CreateAssessmentFromBankDto {
 
     @IsNotEmpty()
     @IsNumber()
-    duration: number
+    duration!: number
 
     @IsString()
     @IsNotEmpty()
     @IsUUID()
-    question_bank_id: string;
+    question_bank_id!: string;
 
     @IsString()
     @IsUUID()
     @IsOptional()
-    school_id: string;
+    school_id!: string;
 }

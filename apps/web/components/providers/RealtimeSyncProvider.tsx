@@ -3,15 +3,16 @@
 
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { getSocket } from '@/lib/socket'; // Sesuaikan dengan lokasi inisiasi socket Anda
+import { getSocket } from '@/lib/socket';
 import { getKeysToInvalidate } from '@/lib/config/realtime-mapper.config';
 
 interface RealtimeSyncProviderProps {
   userId?: string;
+  schoolId?: string; // 👈 Pastikan ini ada (Sudah Anda buat)
   children: React.ReactNode;
 }
 
-export const RealtimeSyncProvider = ({ userId, children }: RealtimeSyncProviderProps) => {
+export const RealtimeSyncProvider = ({ userId, schoolId, children }: RealtimeSyncProviderProps) => {
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -19,25 +20,38 @@ export const RealtimeSyncProvider = ({ userId, children }: RealtimeSyncProviderP
 
     const socket = getSocket();
 
-    // 1. Buat fungsi khusus untuk mengetuk pintu room
     const joinRoom = () => {
-      console.log(`🚪 [WebSocket] Meminta masuk ke room: user-${userId}`);
+      console.log(`🚪 [WebSocket] Meminta masuk ke room user: user-${userId}`);
       socket.emit('join_volatile_room', `user-${userId}`);
+      
+      // 1. Masuk ke ruangan (room) sekolah bersama guru-guru lain
+      if (schoolId) {
+        console.log(`🏫 [WebSocket] Meminta masuk ke room sekolah: user-${schoolId}`);
+        socket.emit('join_volatile_room', `user-${schoolId}`); 
+      }
     };
 
-    // 2. Jika saat ini SUDAH connect, langsung join.
     if (socket.connected) {
       joinRoom();
     }
 
-    // 3. Jika BARU connect (atau RECONNECT setelah putus), selalu join ulang!
     socket.on('connect', joinRoom);
 
-    // 4. Tangkap sinyal data berubah
+    const handleDisconnect = (reason: string) => {
+      console.warn(`⚠️ [WebSocket] Terputus: ${reason}. Akan mencoba reconnect...`);
+    };
+    socket.on('disconnect', handleDisconnect);
+
     const handleDataUpdated = (payload: { entity: string; timestamp: number }) => {
       console.log(`🔥 [WebSocket] Sinyal DITERIMA! Payload:`, payload);
+
+      console.log(`📌 Nama Entity:`, payload.entity);
       
-      const keys = getKeysToInvalidate(payload.entity, userId);
+      // 👈 2. LEMPAR schoolId KE SINI!
+      const keys = getKeysToInvalidate(payload.entity, userId, schoolId); 
+
+      console.log(`🎯 Kunci (Keys) yang akan dihancurkan React Query:`, keys);
+      
       keys.forEach((queryKey) => {
         queryClient.invalidateQueries({ queryKey });
       });
@@ -45,18 +59,18 @@ export const RealtimeSyncProvider = ({ userId, children }: RealtimeSyncProviderP
 
     socket.on('data_updated', handleDataUpdated);
 
-    // 5. Buka koneksi jika belum terbuka
     if (!socket.connected) {
       socket.connect();
     }
 
-    // 6. Cleanup saat komponen dibongkar
     return () => {
       socket.off('connect', joinRoom);
+      socket.off('disconnect', handleDisconnect);
       socket.off('data_updated', handleDataUpdated);
     };
-  }, [userId, queryClient]);
+    
+  // 👈 3. WAJIB TAMBAHKAN schoolId KE DEPENDENCY ARRAY INI!
+  }, [userId, schoolId, queryClient]); 
 
-  // Kembalikan anak-anak komponen apa adanya
   return <>{children}</>;
 };

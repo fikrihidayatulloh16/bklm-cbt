@@ -43,9 +43,6 @@ export class AuthService {
       role: user.role,
       schoolId: user.school_id
     };
-
-    console.log(payload);
-    
     
     return {
       access_token: this.jwtService.sign(payload), // Token ini yang nanti dipakai Frontend

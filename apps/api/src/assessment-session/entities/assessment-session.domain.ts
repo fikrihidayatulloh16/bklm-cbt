@@ -32,8 +32,7 @@ export class AssessmentSessionDomain {
   public static createScheduled(
     assessmentId: string, sessionName: string, startTime: Date, endTime: Date, classIds: string[]
   ): AssessmentSessionDomain {
-    console.log('Di Domain: ', assessmentId, startTime, endTime, classIds);
-    
+    // Mengecek classid dan validitas waktu
     if (!classIds || classIds.length === 0) throw new Error("DomainError: Minimal 1 kelas.");
     if (startTime >= endTime) throw new Error("DomainError: Waktu mulai harus lebih awal dari waktu selesai.");
     

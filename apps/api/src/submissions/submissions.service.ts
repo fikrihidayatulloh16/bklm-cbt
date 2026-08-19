@@ -79,7 +79,6 @@ export class SubmissionsService {
     if (!assessment) {
       throw new NotFoundException('Assessment tidak ditemukan');
     }
-    console.log('assessment: ', assessment);
 
     if (assessment.assessment_status === 'DRAFT') {
       throw new ForbiddenException('Assessment belum dibuka (DRAFT)');

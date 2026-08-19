@@ -18,6 +18,7 @@ export const getKeysToInvalidate = (
     ],
     'question_banks': [
       QUERY_KEYS.DASHBOARD.STATS(userId),
+      ['question_banks'],
       QUERY_KEYS.QUESTION_BANKS.LIST(userId),
     ],
     // 👈 2. Cek apakah schoolId ada, jika ada jalankan, jika tidak kembalikan array kosong

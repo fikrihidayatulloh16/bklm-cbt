@@ -11,5 +11,5 @@ export interface QuestionBankResponse {
 export interface IQuestionBankGateway {
   // Ubah parameternya menjadi ID Bank Soal, bukan User ID, 
   // karena saat create assessment kita menarik 1 spesifik Bank Soal
-  findOneQbId(bankId: string): Promise<QuestionBankResponse | null>; 
+  findOneQbId(userId, bankId: string): Promise<QuestionBankResponse | null>; 
 }

@@ -47,28 +47,29 @@ export class QuestionBankController {
 
  @Get(':id') // Endpoint: /question-banks/123-abc
  @ApiOperation({ summary: 'Ambil detil satu bank soal' })
-    findOne(@Param('id') id: string) 
+    findOne(@Param('id') id: string, @User('id') user_id: string) 
   {
-    return this.questionBankService.findOne(id);
+    return this.questionBankService.findOne(user_id, id);
   }
 
   // Endpoint untuk delete question bank
   @Delete(':id')
   @ApiOperation({ summary: 'Menghapus satu question Bank (Soft Delete)' })
   // Gunakan ParseUUIDPipe biar otomatis 400 Bad Request kalau ID ngawur
-  async removeQuestionBank(@Param('id', ParseUUIDPipe) questionBankId: string) {
-    return this.questionBankService.removeOneQuestionBank(questionBankId); // Hapus 'await' yang tidak perlu
+  async removeQuestionBank(@Param('id', ParseUUIDPipe) questionBankId: string, @User('id') user_id: string) {
+    return this.questionBankService.removeOneQuestionBank(user_id, questionBankId); // Hapus 'await' yang tidak perlu
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Mengubah satu question Bank (Surgycal)' })
   async updateQuestionBank(
     @Param('id', ParseUUIDPipe) questionBankId: string, 
+    @User('id') user_id: string,
     @Body() updateQuestionBankDto: UpdateQuestionBankDto
   ) {
     const params = QuestionBankMapper.toUpdateParams(updateQuestionBankDto);
 
-    return this.questionBankService.updateQuestionBank(questionBankId, params);
+    return this.questionBankService.updateQuestionBank(user_id, questionBankId, params);
   }
 
 }

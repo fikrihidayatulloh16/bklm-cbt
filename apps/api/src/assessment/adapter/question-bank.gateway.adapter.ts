@@ -9,9 +9,9 @@ export class QuestionBankGatewayAdapter implements IQuestionBankGateway {
   // Inject Service dari modul tetangga yang belum di-refactor
   constructor(private readonly qbService: QuestionBankService) {}
 
-  async findOneQbId(qbId: string): Promise<QuestionBankResponse | null> {
+  async findOneQbId(userId: string, qbId: string): Promise<QuestionBankResponse | null> {
     // 1. Memanggil kode gaya lama Anda (kembalian dari Prisma)
-    const bank = await this.qbService.findOne(qbId); 
+    const bank = await this.qbService.findOne(userId, qbId); 
     
     // 2. Jika tidak ada, kembalikan NULL (Bukan array kosong [])
     if (!bank) {

@@ -1,31 +1,34 @@
+// apps/web/features/question-bank/hooks/useQBListLogic.ts
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query"; // ✅ Import Utama
+import { useQuery } from "@tanstack/react-query";
 import { getQuestionBankList } from "../api/question-bank.api";
 import { showToast } from "@/components/ui/toast/toast-trigger";
 import { QuestionBankListType } from "../types/question-bank.types";
+import { QUERY_KEYS } from "@/lib/constants/query-keys.constant"; // 🔥 IMPORT INI
 
-export const useQBListLogic = () => {
-    // 1. State hanya untuk Search (Client Side)
+// 🚨 TAMBAHKAN userId SEBAGAI PARAMETER
+export const useQBListLogic = (userId: string) => {
     const [searchValue, setSearchValue] = useState("");
 
-    // 2. Ganti useEffect manual dengan useQuery
     const { 
-        data,       // Data hasil fetch (otomatis disimpan disini)
-        isLoading,  // Status loading otomatis
-        isError,    // Status error otomatis
-        error,      // Detail error
-        refetch     // Fungsi untuk refresh data manual
+        data,       
+        isLoading,  
+        isError,    
+        error,      
+        refetch     
     } = useQuery({
-        queryKey: ['question-bank-list'], // ID Unik untuk cache ini
-        queryFn: getQuestionBankList,     // Fungsi API yang dipanggil
-        staleTime: 60 * 1000,          // (Opsional) Data dianggap segar selama 1 menit
+        // 🔥 UBAH QUERY KEY MENJADI DINAMIS SESUAI WEBSOCKET
+        queryKey: QUERY_KEYS.QUESTION_BANKS.LIST(userId), 
+        
+        // Fungsi API tetap TIDAK perlu parameter (karena pakai JWT)
+        queryFn: getQuestionBankList,     
+        
+        staleTime: 60 * 1000,
+        enabled: !!userId, // Proteksi tambahan
     });
 
-    // 3. Safety Check: Pastikan data selalu Array (cegah crash jika API error/null)
     const qbList: QuestionBankListType[] = Array.isArray(data) ? data : [];
 
-    // 4. Handle Error Notification (Side Effect)
-    // Karena useQuery v5 tidak punya callback onError, kita pakai useEffect simple ini
     useEffect(() => {
         if (isError) {
             console.error(error);
@@ -37,7 +40,13 @@ export const useQBListLogic = () => {
         }
     }, [isError, error]);
 
-    // 5. Filter Logic (Tetap sama)
+    // 🔥 Pindahkan console.log ke sini agar lebih jelas
+    useEffect(() => {
+        if (!isLoading) {
+            console.log('🧐 Hasil akhir data di Hook:', data);
+        }
+    }, [data, isLoading]);
+
     const filteredQuestionBank = qbList.filter((item) =>
         item.title?.toLowerCase().includes(searchValue.toLowerCase())
     );

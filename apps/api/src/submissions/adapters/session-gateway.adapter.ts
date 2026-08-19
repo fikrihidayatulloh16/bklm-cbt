@@ -15,8 +15,6 @@ export class SessionServiceAdapter implements ISessionGateway {
 
     // 2. Ambil sesi pertama yang ditemukan dari dalam Array
     // const session = sessionData[0];
-
-    console.log(`submission session gateway \n sessionId: ${sessionId} \n sessiondata._endTime: ${sessionData._endTime}` );
     
 
     return {

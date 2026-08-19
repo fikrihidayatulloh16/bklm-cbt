@@ -36,7 +36,7 @@ export class AssessmentService {
     private readonly iassessmentRepo: IAssessmentRepository,
 
     @Inject(I_CACHE_REPOSITORY)
-    private readonly cacheRepo: ICacheRepository, // 👈 Port disuntikkan
+    private readonly cacheRepo: ICacheRepository,
 
     @Inject(I_SESSION_GATEWAY)
     private readonly sessionGatewsy: ISessionGateway, // 👈 Port disuntikkan
@@ -46,7 +46,7 @@ export class AssessmentService {
     // 1. AMBIL BAHAN BAKU (Lewat Gateway)
     // Walaupun user bisa melihat list bank pakai findAllByUserId di frontend,
     // Saat create, kita tetap butuh menarik detail 1 bank secara spesifik
-    const bank = await this.qbGateway.findOneQbId(dto.question_bank_id);
+    const bank = await this.qbGateway.findOneQbId(userId, dto.question_bank_id);
     
     if (!bank) {
       throw new NotFoundException('Question Bank tidak ditemukan');
@@ -59,9 +59,6 @@ export class AssessmentService {
       // Mapping dari bank ke format soal Assessment
       const mappedQuestions = AssessmentMapper.mapFromBankQuestions(bank.questions);
       newAssessment.attachQuestions(mappedQuestions);
-
-      console.log('newAssessment: ', newAssessment);
-      
 
       // 3. SIMPAN KE DB (Prisma akan mengisi UUID secara otomatis)
       const savedAssessment = await this.iassessmentRepo.createAssessmentFromBank(newAssessment);
@@ -89,16 +86,8 @@ export class AssessmentService {
   }
 
   async publishAssessment(assessmentId: string, dto: PublishAssessmentDto) {
-    console.log('assessment service fungsi publish assesment: ');
-    console.log('dto:', dto);
-    console.log('assessmentId: ', assessmentId);
-    
-    
     const assessment = await this.iassessmentRepo.findOneAssessmentByAssessmentId(assessmentId);
     if (!assessment) throw new NotFoundException("Ujian tidak ditemukan");
-
-    console.log('di service this.publishAssessment: ', assessment);
-    
 
     try {
       // 1. DOMAIN LOGIC DIRI SENDIRI: Ubah status Assessment
@@ -165,15 +154,11 @@ export class AssessmentService {
   }
 
   async findAssessmentResults(assessmentId: string, className?) {
-    console.log('fungsi 1 halaman mengambil detail satu assessment');
     return await this.iassessmentRepo.findAssessmentResults(assessmentId, className);
   }
 
   async findStudentAnswerDetails(assessmentId: string, submissionId: string) {
     const assessment = await this.iassessmentRepo.findOneAssessmentWithDetail(assessmentId);
-
-    console.log('findStudentAnswerDetails: ', assessment);
-    
 
     // Memastikan melihat jawaban hanya pada saat assessment tidak PUBLISHED
     if (assessment?.assessment_status == 'PUBLISHED') {
@@ -208,14 +193,10 @@ export class AssessmentService {
   }
 
   async forceCloseTimeouts(assessmentId: string) {
-    console.log('memasuki endpoint sinkron dan fungsi forceCloseTimeouts di assessment dengan id:', assessmentId);
 
     // 🔥 1. VALIDASI DOMAIN ASSESSMENT (Lakukan di sini!)
     const assessment = await this.iassessmentRepo.findAssessmentstatus(assessmentId);
-
-    console.log('assessment: ', assessment);
     
-
     // Sesuaikan pesan error INI persis dengan ekspektasi E2E Test Anda
     if (!assessment || assessment.assessment_status === "PUBLISHED") {
       throw new ForbiddenException("Assessment harus ada dan dilarang sinkron saat PUBLISHED");
@@ -227,9 +208,6 @@ export class AssessmentService {
   //mengambil assesment unik dan menghitung jumlah soal dan siswa submit
   async findOneAssessmentWithDetail(assessmentId: string) {
     const assessment = await this.iassessmentRepo.findOneAssessmentWithDetail(assessmentId);
-
-    console.log('fungsi 2 halaman mengambil detail satu assessment');
-    
 
     if (!assessment) {
       // Opsional: Throw error di sini atau di controller jika tidak ketemu return null;

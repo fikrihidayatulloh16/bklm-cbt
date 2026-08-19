@@ -21,13 +21,13 @@ export const RealtimeSyncProvider = ({ userId, schoolId, children }: RealtimeSyn
     const socket = getSocket();
 
     const joinRoom = () => {
-      console.log(`🚪 [WebSocket] Meminta masuk ke room user: user-${userId}`);
-      socket.emit('join_volatile_room', `user-${userId}`);
+      console.log(`🚪 [WebSocket] Meminta masuk ke room user`);
+      socket.emit('join_volatile_room user');
       
       // 1. Masuk ke ruangan (room) sekolah bersama guru-guru lain
       if (schoolId) {
-        console.log(`🏫 [WebSocket] Meminta masuk ke room sekolah: user-${schoolId}`);
-        socket.emit('join_volatile_room', `user-${schoolId}`); 
+        console.log(`🏫 [WebSocket] Meminta masuk ke room sekolah`);
+        socket.emit('join_volatile_room sekolah'); 
       }
     };
 
@@ -43,9 +43,9 @@ export const RealtimeSyncProvider = ({ userId, schoolId, children }: RealtimeSyn
     socket.on('disconnect', handleDisconnect);
 
     const handleDataUpdated = (payload: { entity: string; timestamp: number }) => {
-      console.log(`🔥 [WebSocket] Sinyal DITERIMA! Payload:`, payload);
+      console.log(`🔥 [WebSocket] Sinyal DITERIMA!`);
 
-      console.log(`📌 Nama Entity:`, payload.entity);
+      console.log(`Nama Entity diterima`);
       
       // 👈 2. LEMPAR schoolId KE SINI!
       const keys = getKeysToInvalidate(payload.entity, userId, schoolId); 

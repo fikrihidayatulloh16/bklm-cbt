@@ -6,9 +6,26 @@ const ENDPOINTS = {
     QBDETAIL: (questionBankId: string) => `/question-bank/${questionBankId}`
 }
 
-export const getQuestionBankList = async (): Promise<QuestionBankListType> => {
-    const data = await api.get(ENDPOINTS.QUESTIONBANK)
-    return data.data
+export const getQuestionBankList = async (): Promise<QuestionBankListType[]> => {
+  
+  // 🚨 PERHATIKAN: Gunakan kurung kurawal { data } untuk mengekstrak isi response Axios
+  const { data } = await api.get(ENDPOINTS.QUESTIONBANK);
+  
+  console.log("📦 Paket asli dari Backend:", data);
+
+  // 1. Jika data itu sendiri sudah berupa array murni
+  if (Array.isArray(data)) {
+    return data;
+  }
+  
+  // 2. Jika NestJS membungkusnya (contoh: { statusCode: 200, data: [...] })
+  if (data && Array.isArray(data.data)) {
+    return data.data;
+  }
+
+  // 3. Jika tidak dikenali
+  console.warn("⚠️ Bentuk data Bank Soal tidak dikenali!", data);
+  return [];
 }
 
 export const getQBDetail = async (questionBankId: string): Promise<QuestionBankDetailType> => {

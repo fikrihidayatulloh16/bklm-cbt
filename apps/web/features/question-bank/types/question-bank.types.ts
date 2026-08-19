@@ -3,11 +3,11 @@ export interface QuestionBankListType {
     id: string;
     title: string;
     description: string;
-    shared:      Boolean   
-    created_at:  String 
-    updated_at:  String 
-    deleted_at:  String
-    author_id:   String
+    shared:      boolean   
+    created_at:  string 
+    updated_at:  string 
+    deleted_at:  string
+    author_id:   string
     author: { name: string}
     _count: {
         questions: number;

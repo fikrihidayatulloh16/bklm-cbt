@@ -16,10 +16,7 @@ export class SubmissionsController {
     @Param('assessmentId') assessment_id: string,
     @Param('sessionId') session_id: string,
   ) {
-    console.log('memasuki endpoint submission start di submission \n', startSubmission, assessment_id, session_id);
-
     try {
-      console.log('memasuki endpoint submission start di submission');
       const result = await this.submissionsService.startSubmission(startSubmission, assessment_id, session_id);
       
       return {

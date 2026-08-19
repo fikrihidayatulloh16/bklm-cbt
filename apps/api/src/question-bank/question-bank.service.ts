@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateQuestionBankDto } from './dto/create/create-question-bank.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateBankQuestionDto } from './dto/create/create-bankquestion.dto';
@@ -6,18 +6,38 @@ import { QuestionBankMapper } from './mapper/question-bank.mapper';
 import { QuestionBankRepository } from './repository/question-bank.repository';
 import { error } from 'console';
 import { UpdateQuestionBankParams } from './helper/interfaces/question-bank.interface';
+import { CacheTTL, I_CACHE_REPOSITORY, ICacheRepository } from 'src/common/cache/cache.repository.port';
 // import { UpdateQuestionBankDto } from './dto/update-question-bank.dto';
 
 @Injectable()
 export class QuestionBankService {
+  private readonly CACHE_LIST = (userId: string) => `question_banks:list:v2:${userId}`;
+  private readonly CACHE_DETAIL = (userId: string, questionBankId: string) => 
+  `question_banks:detail:${userId}:${questionBankId}`;
+  private readonly CACHE_PATTERN_ALL = (userId: string) => `*question_banks:*${userId}*`;
+
   constructor(
-    private repo: QuestionBankRepository
+    private repo: QuestionBankRepository,
+
+    @Inject(I_CACHE_REPOSITORY)
+    private readonly cacheRepo: ICacheRepository,
   ) {}
 
   async createQuestionBank(dto: CreateQuestionBankDto, userId: string) {
-    this.ValidateQuestionLogic(dto.questions);
+    await this.ValidateQuestionLogic(dto.questions);
 
-    return await this.repo.createQuestionBank(dto, userId)
+    const savedQuestionBank = await this.repo.createQuestionBank(dto, userId)
+
+    // Delete previous cache 
+    if (savedQuestionBank!) {
+      await this.cacheRepo.invalidateAndNotify(
+          this.CACHE_PATTERN_ALL(userId), // Hapus semua cache terkait user ini di modul assessment
+          'question_banks',                  // Nama Entity yang dibawa ke Frontend
+          userId                          // ID User untuk mencari Room Websocket
+      );
+    }
+
+    return savedQuestionBank;
   }
 
   private ValidateQuestionLogic(questions: CreateBankQuestionDto[]) {
@@ -39,28 +59,57 @@ export class QuestionBankService {
     }
   }
 
-  async updateQuestionBank(questionBankId: string, params: UpdateQuestionBankParams) {
+  async updateQuestionBank(userId: string, questionBankId: string, params: UpdateQuestionBankParams) {
     // Cek dulu barangnya ada gak (Penting untuk Update)
     const existing = await this.repo.findOnlyQuestionBank(questionBankId);
     if (!existing) throw new NotFoundException('Question Bank tidak ditemukan');
 
+    const updatedQuestionBank = await this.repo.updateWithNestedTransaction(questionBankId, params);
+
+    if (updatedQuestionBank!) {
+      await this.cacheRepo.invalidateAndNotify(
+          this.CACHE_PATTERN_ALL(userId), // Hapus semua cache terkait user ini di modul assessment
+          'question_banks',                 // Nama Entity yang dibawa ke Frontend
+          userId                          // ID User untuk mencari Room Websocket
+      );
+    }
+
     // Panggil Repo untuk melakukan operasi database yang rumit
-    return this.repo.updateWithNestedTransaction(questionBankId, params);
+    return updatedQuestionBank
   }
 
-  async findAllByAuthor(author_id) {
-    const questionBanks = await this.repo.findAllQuestionBankById(author_id)
+  async findAllByAuthor(userId: string) {
+    const list = await this.repo.findAllQuestionBankById(userId)
+
+    console.log('listQB: ', list);
     
-    return questionBanks
+
+    return this.cacheRepo.getOrSet(
+      this.CACHE_LIST(userId),
+      async () => {
+        // Ingat! Di dalam findById ini, Prisma WAJIB menggunakan "include: { classes: true }"
+        // agar Domain memiliki array of classId
+        return list;
+      },
+      CacheTTL.LONG_LIVED // TTL 1 menit
+    );
   }
 
-  findOne(questionBank_id) {
-    const bankquestion = this.repo.findUniqueQuestionBank(questionBank_id)
-
-    return bankquestion
+  async findOne(userId, questionBank_id) {
+    return await this.cacheRepo.getOrSet(
+      this.CACHE_DETAIL(userId, questionBank_id),
+      
+      // 👇 Fungsi ini (Callback) HANYA akan dieksekusi JIKA cache tidak ditemukan / expired!
+      async () => {
+        // Panggil database di dalam sini!
+        return await this.repo.findUniqueQuestionBank(questionBank_id);
+      },
+      
+      CacheTTL.LONG_LIVED // TTL
+    );
   }
 
-  async removeOneQuestionBank(questionBankId: string) {
+  async removeOneQuestionBank(userId: string, questionBankId: string) {
     // 1. Cukup SATU kali call DB
     const questionBank = await this.repo.findOnlyQuestionBank(questionBankId);
 
@@ -75,7 +124,17 @@ export class QuestionBankService {
       throw new BadRequestException("Question Bank sudah dihapus sebelumnya");
     }
 
+    const deletedQuestionBank = await this.repo.softRemoveOneQuestionBank(questionBankId)
+
+    if (deletedQuestionBank!) {
+      await this.cacheRepo.invalidateAndNotify(
+          this.CACHE_PATTERN_ALL(userId), // Hapus semua cache terkait user ini di modul assessment
+          'question_banks',                 // Nama Entity yang dibawa ke Frontend
+          userId                          // ID User untuk mencari Room Websocket
+      );
+    }
+
     // 4. Eksekusi
-    return this.repo.softRemoveOneQuestionBank(questionBankId);
+    return deletedQuestionBank;
   }
 }

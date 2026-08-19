@@ -11,8 +11,6 @@ export class ClassController {
   @Post()
   async createClass(@Body() createClassDto: CreateClassDto) {
     // Kontroler hanya mengirim DTO ke Service dan mengembalikan respons
-    console.log("di class controller: ", createClassDto);
-    
     const result = await this.classService.createClass(createClassDto);
     return {
       status: 'success',

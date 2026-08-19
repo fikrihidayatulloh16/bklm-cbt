@@ -29,7 +29,6 @@ export class SubmissionDomain {
 
   // 🔥 PERBAIKAN 1: Validasi menggunakan classId
   public validateEligibilityToStart(session: SessionValidationInfo): void {
-    console.log('status: ', this.status);
     
     if (this.status === 'FINISHED') {
       throw new SubmissionDomainError('Anda sudah menyelesaikan ujian ini.');
@@ -37,8 +36,6 @@ export class SubmissionDomain {
 
     const now = new Date().getTime();
     if (session.endTime.getTime() < now) {
-      console.log('now: ',now);
-      console.log('session.endTime: ',session.endTime.getTime());
       
       throw new SubmissionDomainError('Waktu sesi ujian sudah habis! Anda terlambat.');
     }

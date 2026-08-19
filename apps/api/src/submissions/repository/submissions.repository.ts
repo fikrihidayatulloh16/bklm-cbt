@@ -48,13 +48,6 @@ export class SubmissionRepository implements ISubmissionRepository {
         sessionId: string,
     ): Promise<SubmissionDomain> {
         // 🚨 PASANG KAMERA PENGINTAI DI SINI
-    console.log("MENGIRIM KE PRISMA:", {
-      assessment_id: assessmentId,
-      session_id: sessionId, 
-      student_name: studentName,
-      class_name: className, 
-      gender: gender
-    });
 
         const record = await this.prisma.submission.create({
             data: {

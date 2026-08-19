@@ -6,7 +6,6 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private configService: ConfigService) {
-    // 🗑️ HAPUS console.log DEBUGGING DISINI
     
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),

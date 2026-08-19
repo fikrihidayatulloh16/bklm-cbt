@@ -75,8 +75,6 @@ export class AssessmentController {
     @Param('id') assessmentId: string, 
     @Body() dto: PublishAssessmentDto // 👈 TAMBAHKAN @Body() DI SINI
   ) {
-    console.log('Di controller:', dto);
-    
     return await this.assessmentService.publishAssessment(assessmentId, dto)
   }
   
@@ -107,8 +105,6 @@ export class AssessmentController {
   @Patch(':id/sync-status')
   // @UseGuards(TeacherGuard) // Pastikan hanya guru yang bisa akses
   async syncAssessmentStatus(@Param('id') AssessmentId: string) {
-    console.log(`memasuki endpoint sinkron dengan id: ${AssessmentId}`);
-    
     return this.assessmentService.forceCloseTimeouts(AssessmentId);
   }
 }

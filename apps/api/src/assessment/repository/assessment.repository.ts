@@ -192,8 +192,6 @@ export class AssessmentRepository implements IAssessmentRepository {
     }
 
     async createAssessmentFromBank(assessment: Assessment): Promise<Assessment> { // 👈 Hanya menerima 1 entitas utuh
-    console.log('======= di assessment prisma repo =======');
-    console.log('Author ID:', assessment.authorId);
     
     // 1. Petakan (Map) format pertanyaan dari Domain ke format Prisma Nested Create
     const questionsData = assessment.questions.map((q) => {

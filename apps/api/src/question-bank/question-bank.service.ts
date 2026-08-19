@@ -11,7 +11,7 @@ import { CacheTTL, I_CACHE_REPOSITORY, ICacheRepository } from 'src/common/cache
 
 @Injectable()
 export class QuestionBankService {
-  private readonly CACHE_LIST = (userId: string) => `question_banks:list:v2:${userId}`;
+  private readonly CACHE_LIST = (userId: string) => `question_banks:list:${userId}`;
   private readonly CACHE_DETAIL = (userId: string, questionBankId: string) => 
   `question_banks:detail:${userId}:${questionBankId}`;
   private readonly CACHE_PATTERN_ALL = (userId: string) => `*question_banks:*${userId}*`;

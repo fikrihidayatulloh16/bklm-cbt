@@ -21,13 +21,14 @@ export const RealtimeSyncProvider = ({ userId, schoolId, children }: RealtimeSyn
     const socket = getSocket();
 
     const joinRoom = () => {
+      // ✅ BENAR: Menggunakan koma dan melempar variabel userId
       console.log(`🚪 [WebSocket] Meminta masuk ke room user`);
-      socket.emit('join_volatile_room user');
+      socket.emit('join_volatile_room', `user-${userId}`);
       
-      // 1. Masuk ke ruangan (room) sekolah bersama guru-guru lain
       if (schoolId) {
+        // ✅ BENAR: Menggunakan koma dan melempar variabel schoolId
         console.log(`🏫 [WebSocket] Meminta masuk ke room sekolah`);
-        socket.emit('join_volatile_room sekolah'); 
+        socket.emit('join_volatile_room', `user-${schoolId}`); 
       }
     };
 

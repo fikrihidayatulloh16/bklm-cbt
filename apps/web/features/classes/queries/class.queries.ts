@@ -5,6 +5,8 @@ import { ClassFormValues } from "../schemas/class.schemas";
 import { QUERY_KEYS, QUERY_TTL } from "@/lib/constants/query-keys.constant";
 
 export const useClassesQuery = (schoolId: string) => {
+  console.log('get classess dari modal dengan id sekolah: ', schoolId);
+  
   return useQuery({
     // 🔥 Menggunakan Constant Query Key yang Anda buat!
     queryKey: QUERY_KEYS.CLASSES.LIST(schoolId),

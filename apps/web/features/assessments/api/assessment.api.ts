@@ -15,6 +15,7 @@ import {
 } from "../schemas/assessment.schemas";
 import z, { check } from "zod";
 import { error } from "console";
+import { PublishPayload } from "../components/publishModal";
 
 const ENCPOINTS = {
     ASSESSMENTLIST: '/assessments/',
@@ -77,6 +78,6 @@ export const getAssessmentAnalytics = async (id: string, className?: string): Pr
 };
 
 // 5. Publish
-export const publishAssessment = async (id: string): Promise<void> => {
-  await api.patch(`/assessments/${id}/publish`);
+export const publishAssessment = async (id: string, payload: PublishPayload): Promise<void> => {
+  await api.patch(`/assessments/${id}/publish`, payload);
 };

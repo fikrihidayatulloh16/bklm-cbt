@@ -10,16 +10,19 @@ export class AssessmentSessionController {
   async createSession(@Body() dto: CreateAssessmentSessionDto) {
     try {
       // Panggil service
-      const data = await this.sessionService.createScheduledSession(dto);
+      // const data = await this.sessionService.createScheduledSession(dto);
+      const data = console.log('data create sesion: ', dto);
+      ;
       
       return {
         status: 'success',
         message: 'Sesi ujian terjadwal berhasil dibuat dan didistribusikan ke kelas.',
-        data: {
-          id: data._id,
-          name: data._name,
-          classIds: data._classIds
-        },
+        data: data,
+        // { 
+        //   id: data._id,
+        //   name: data._name,
+        //   classIds: data._classIds
+        // },
       };
     } catch (error: any) {
       // 🔥 PENERJEMAH ERROR DOMAIN KE HTTP 400

@@ -3,14 +3,21 @@
 
 import { 
   Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, 
-  Button, Select, SelectItem, Chip 
+  Button, Select, SelectItem, Chip, Input 
 } from "@nextui-org/react";
-import { usePublishLogic } from "../hooks/usePublishLogic";
+import { Controller } from "react-hook-form";
+import { usePublishLogic, PublishFormValues } from "../hooks/usePublishLogic";
+
+// 🚨 PERHATIKAN: onConfirm sekarang menerima Object, bukan sekadar array string
+export interface PublishPayload {
+  session_name: string;
+  class_ids: string[];
+}
 
 interface PublishModalProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onConfirm: (selectedClassIds: string[]) => void;
+  onConfirm: (payload: PublishPayload) => void; 
   isLoading: boolean;
   schoolId: string; 
 }
@@ -23,8 +30,8 @@ export default function PublishModal({
   schoolId
 }: PublishModalProps) {
   
-  // 🔌 Hubungkan ke "Otak" (Hook)
   const {
+    form,
     isLoadingClasses,
     selectedLevel,
     setSelectedLevel,
@@ -36,24 +43,54 @@ export default function PublishModal({
     resetState
   } = usePublishLogic(schoolId);
 
+  // Destructure form methods
+  const { control, handleSubmit, formState: { errors } } = form;
+
   const handleClose = () => {
     resetState();
     onOpenChange(false);
+  };
+
+  // 🔥 Fungsi ini akan dipanggil oleh handleSubmit milik React Hook Form
+  const onSubmitForm = (data: PublishFormValues) => {
+    // Gabungkan data dari Input Text dan State Chip Kelas
+    onConfirm({
+      session_name: data.session_name,
+      class_ids: selectedClasses.map(c => c.id)
+    });
   };
 
   return (
     <Modal isOpen={isOpen} onOpenChange={handleClose} placement="top-center" size="md">
       <ModalContent>
         {() => (
-          <>
+          // 🚨 PENTING: Bungkus dengan <form>
+          <form onSubmit={handleSubmit(onSubmitForm)}>
             <ModalHeader className="flex flex-col gap-1">Publish Ujian</ModalHeader>
             <ModalBody>
               <div className="bg-warning/10 text-warning-700 p-3 rounded-lg text-sm mb-2">
                 <strong>Perhatian:</strong> Akses akan segera diberikan ke kelas yang dipilih.
               </div>
 
+              {/* INPUT: JUDUL SESI */}
+              <Controller 
+                name="session_name"
+                control={control}
+                render={({field}) => (
+                  <Input
+                    {...field}
+                    label="Judul Sesi"
+                    placeholder="Contoh: PTS Ganjil X MIPA 1"
+                    variant="bordered"
+                    size="sm"
+                    // 🔥 FIX: Gunakan errors.session_name, bukan errors.title
+                    errorMessage={errors.session_name?.message}
+                    isInvalid={!!errors.session_name}
+                  />
+                )}
+              />
+
               {/* DROPDOWN 1: Pilih Level */}
-              {/* 🔥 Solusi Error NextUI: Gunakan props 'items' */}
               <Select 
                 items={levelOptions}
                 label="Filter Level" 
@@ -66,7 +103,6 @@ export default function PublishModal({
               </Select>
 
               {/* DROPDOWN 2: Pilih Kelas */}
-              {/* 🔥 Solusi Error NextUI: Gunakan props 'items' */}
               <Select 
                 items={filteredClasses}
                 label="Pilih Kelas" 
@@ -86,7 +122,7 @@ export default function PublishModal({
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {selectedClasses.length === 0 ? (
-                    <span className="text-xs text-gray-400 italic">Belum ada kelas dipilih.</span>
+                    <span className="text-xs text-danger italic">Wajib memilih minimal 1 kelas.</span>
                   ) : (
                     selectedClasses.map((c) => (
                       <Chip
@@ -106,16 +142,17 @@ export default function PublishModal({
               <Button color="danger" variant="light" onPress={handleClose}>
                 Batal
               </Button>
+              {/* 🚨 Ubah jadi type="submit" dan hapus event onPress */}
               <Button 
                 color="primary" 
-                onPress={() => onConfirm(selectedClasses.map(c => c.id))} 
+                type="submit" 
                 isLoading={isLoading}
                 isDisabled={selectedClasses.length === 0}
               >
                 Publish Sekarang
               </Button>
             </ModalFooter>
-          </>
+          </form>
         )}
       </ModalContent>
     </Modal>

@@ -1,9 +1,12 @@
+// apps/web/features/assessments/hooks/useAssessmentDetailLogic.ts
 import { useState, useMemo, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useDisclosure } from "@nextui-org/react";
 import { showToast } from "@/components/ui/toast/toast-trigger";
 import { SubmissionType } from "../schemas/assessment.schemas";
+import { PublishPayload } from "../components/publishModal";
+import { QUERY_KEYS } from "@/lib/constants/query-keys.constant";
 
 // API Imports
 import { 
@@ -80,17 +83,25 @@ export const useAssessmentDetailLogic = () => {
   // --- MUTATIONS ---
 
   const publishMutation = useMutation({
-    mutationFn: () => publishAssessment(id),
-    onSuccess: () => {
-      showToast({ type: "success", message: "Berhasil", description: "Ujian berhasil dipublish!" });
-      // Invalidate detail agar status berubah jadi 'PUBLISHED' tanpa reload window
-      queryClient.invalidateQueries({ queryKey: ["assessment-detail", id] });
-      onClose();
-    },
-    onError: () => {
-      showToast({ type: "danger", message: "Gagal", description: "Gagal mempublish ujian." });
-    }
-  });
+  // 🚨 1. Terima payload dan lempar ke fungsi API
+  mutationFn: (payload: PublishPayload) => publishAssessment(id, payload),
+  onSuccess: () => {
+    showToast({ type: "success", message: "Berhasil", description: "Ujian berhasil dipublish!" });
+    
+    // 🚨 2. (Opsional tapi disarankan) Gunakan konstanta Query Keys agar selaras dengan arsitektur Real-Time kita
+    queryClient.invalidateQueries({ queryKey: QUERY_KEYS.ASSESSMENTS.DETAIL(id) });
+    
+    onClose(); // Tutup modal
+  },
+  onError: (error) => {
+    console.error("Gagal Publish:", error);
+    showToast({ type: "danger", message: "Gagal", description: "Gagal mempublish ujian. Silakan coba lagi." });
+  }
+});
+
+const handlePublish = (payload: PublishPayload) => {
+  publishMutation.mutate(payload);
+};
 
   // 👇 LOGIC WEBSOCKET LIVE UPDATE
   useEffect(() => {
